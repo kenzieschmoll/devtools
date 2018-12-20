@@ -6,20 +6,10 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:file/file.dart';
+import 'package:devtools/vm_service_wrapper.dart';
 import 'package:pedantic/pedantic.dart';
 import 'package:vm_service_lib/vm_service_lib.dart';
 import 'package:vm_service_lib/vm_service_lib_io.dart';
-import 'package:devtools/vm_service_wrapper.dart';
-
-import 'base/file_system.dart';
-import 'base/io.dart';
-
-/// This class was copied from
-/// flutter/packages/flutter_tools/test/integration/test_driver.dart. Its
-/// supporting classes were also copied from flutter/packages/flutter_tools.
-/// Those files are marked as such and live in the parent directory of this file
-/// (flutter_tools/).
 
 // Set this to true for debugging to get JSON written to stdout.
 const bool _printDebugOutputToStdOut = false;
@@ -45,9 +35,13 @@ abstract class FlutterTestDriver {
   bool _hasExited = false;
 
   VmServiceWrapper vmService;
+
   String get lastErrorInfo => _errorBuffer.toString();
+
   Stream<String> get stdout => _stdout.stream;
+
   int get vmServicePort => _vmServiceWsUri.port;
+
   bool get hasExited => _hasExited;
 
   String _debugPrint(String msg) {
@@ -111,11 +105,12 @@ abstract class FlutterTestDriver {
 
   Future<int> _killForcefully() {
     _debugPrint('Sending SIGKILL to $_procPid..');
-    Process.killPid(_procPid, ProcessSignal.SIGKILL);
+    Process.killPid(_procPid, ProcessSignal.sigkill);
     return _proc.exitCode;
   }
 
   String _flutterIsolateId;
+
   Future<String> _getFlutterIsolateId() async {
     // Currently these tests only have a single isolate. If this
     // ceases to be the case, this code will need changing.
@@ -176,10 +171,13 @@ abstract class FlutterTestDriver {
   }
 
   Future<Isolate> resume({bool wait = true}) => _resume(wait: wait);
+
   Future<Isolate> stepOver({bool wait = true}) =>
       _resume(step: StepOption.kOver, wait: wait);
+
   Future<Isolate> stepOverAsync({bool wait = true}) =>
       _resume(step: StepOption.kOverAsyncSuspension, wait: wait);
+
   Future<Isolate> stepOverOrOverAsyncSuspension({bool wait = true}) async {
     return (await isAtAsyncSuspension())
         ? stepOverAsync(wait: wait)
@@ -188,6 +186,7 @@ abstract class FlutterTestDriver {
 
   Future<Isolate> stepInto({bool wait = true}) =>
       _resume(step: StepOption.kInto, wait: wait);
+
   Future<Isolate> stepOut({bool wait = true}) =>
       _resume(step: StepOption.kOut, wait: wait);
 
@@ -431,6 +430,7 @@ class FlutterRunTestDriver extends FlutterTestDriver {
 
   Future<void> hotRestart({bool pause = false}) =>
       _restart(fullRestart: true, pause: pause);
+
   Future<void> hotReload() => _restart(fullRestart: false);
 
   Future<void> _restart({bool fullRestart = false, bool pause = false}) async {
@@ -519,6 +519,7 @@ class FlutterRunTestDriver extends FlutterTestDriver {
   }
 
   int id = 1;
+
   Future<dynamic> _sendRequest(String method, dynamic params) async {
     final int requestId = id++;
     final Map<String, dynamic> request = <String, dynamic>{
