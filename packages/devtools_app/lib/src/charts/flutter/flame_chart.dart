@@ -139,6 +139,8 @@ class _ScrollingFlameChartRowState extends State<ScrollingFlameChartRow>
     with AutoDisposeMixin {
   ScrollController scrollController;
 
+  ValueNotifier<Set<FlameChartNode>> nodesInViewport;
+
   var lastStartNodeIndexInViewport = -1;
 
   double get horizontalScrollOffset => scrollController.hasClients
@@ -149,7 +151,24 @@ class _ScrollingFlameChartRowState extends State<ScrollingFlameChartRow>
   void initState() {
     super.initState();
     scrollController = widget.linkedScrollControllerGroup.addAndGet();
-    addAutoDisposeListener(scrollController);
+    addAutoDisposeListener(scrollController, () {
+      final nodesInViewportNow = rowNodesInViewport();
+      final newNodesInViewport =
+          nodesInViewportNow.difference(nodesInViewport.value);
+      if (newNodesInViewport.isNotEmpty) {
+        setState(() {
+          nodesInViewport.value = nodesInViewportNow;
+        });
+      }
+    });
+
+    nodesInViewport = ValueNotifier(rowNodesInViewport());
+  }
+
+  @override
+  void didUpdateWidget(ScrollingFlameChartRow oldWidget) {
+    nodesInViewport.value = rowNodesInViewport();
+    super.didUpdateWidget(oldWidget);
   }
 
   @override
@@ -169,22 +188,32 @@ class _ScrollingFlameChartRowState extends State<ScrollingFlameChartRow>
               height: sectionSpacing,
               width: widget.width,
             )
-          // TODO(kenz): use Flow instead of stack.
-          : Stack(
-              children: [
-                Container(
-                  height: rowHeightWithPadding,
-                  width: widget.width,
-                ),
-                ...rowNodesInViewport(),
-              ],
+          : SizedBox(
+              width: widget.width,
+              height: rowHeightWithPadding,
+              child: Flow(
+                delegate: FlowFlameChartRowDelegate(nodesInViewport),
+                children: [
+                  for (FlameChartNode node in nodesInViewport.value)
+                    node.buildWidget(node.data == widget.selected)
+                ],
+              ),
             ),
+//          : Stack(
+//              children: [
+//                Container(
+//                  height: rowHeightWithPadding,
+//                  width: widget.width,
+//                ),
+//                ...rowNodesInViewport(),
+//              ],
+//            ),
     );
   }
 
-  List<Widget> rowNodesInViewport() {
+  Set<FlameChartNode> rowNodesInViewport() {
     final nodes = widget.nodes;
-    final nodesInViewport = <Widget>[];
+    final nodesInViewport = <FlameChartNode>{};
     final startNodeIndex = findFirstIndexInView(nodes);
     if (startNodeIndex != -1) {
       for (int i = startNodeIndex; i < nodes.length; i++) {
@@ -192,7 +221,7 @@ class _ScrollingFlameChartRowState extends State<ScrollingFlameChartRow>
         if (!nodeFitsInViewport(node)) {
           break;
         }
-        nodesInViewport.add(node.buildWidget(node.data == widget.selected));
+        nodesInViewport.add(node);
       }
     }
     lastStartNodeIndexInViewport = startNodeIndex;
@@ -275,6 +304,65 @@ class _ScrollingFlameChartRowState extends State<ScrollingFlameChartRow>
   }
 }
 
+class FlowFlameChartRowDelegate<T> extends FlowDelegate {
+  FlowFlameChartRowDelegate(ValueListenable nodesInViewportNotifier)
+      : nodesInViewport = nodesInViewportNotifier.value,
+        super(repaint: nodesInViewportNotifier);
+
+  final Set<FlameChartNode> nodesInViewport;
+
+  List<FlameChartNode> get nodesInViewportList =>
+      _nodesInViewportList ??= nodesInViewport.toList();
+  List<FlameChartNode> _nodesInViewportList;
+
+  @override
+  bool shouldRelayout(FlowDelegate oldDelegate) {
+    // TODO: implement shouldRelayout
+    final result = super.shouldRelayout(oldDelegate);
+    if (result) print('shouldRelayout = $result');
+    return result;
+  }
+
+  @override
+  bool shouldRepaint(FlowDelegate oldDelegate) {
+    // TODO(kenz): implement shouldRepaint with checks for selected state
+    // changes and new nodes in view.\
+    final newNodes = nodesInViewport;
+    final oldNodes = (oldDelegate as FlowFlameChartRowDelegate).nodesInViewport;
+    if (newNodes.difference(oldNodes).isNotEmpty) {
+      print('shouldRepaint for row with ${newNodes.first?.text}: true');
+    }
+    return newNodes.difference(oldNodes).isNotEmpty;
+  }
+
+  @override
+  void paintChildren(FlowPaintingContext context) {
+    assert(nodesInViewport.length == context.childCount);
+    for (int i = 0; i < context.childCount; i++) {
+      final node = nodesInViewportList[i];
+      if (i == context.childCount - 1) {
+        print('painting ${node.text}');
+        context.paintChild(
+          i,
+          transform: Matrix4.translationValues(
+            node.rect.left,
+            0.0,
+            0.0,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  BoxConstraints getConstraintsForChild(int i, BoxConstraints constraints) {
+    return BoxConstraints(
+      maxHeight: nodesInViewportList[i].rect.height,
+      maxWidth: nodesInViewportList[i].rect.width,
+    );
+  }
+}
+
 class FlameChartSection {
   FlameChartSection(
     this.index, {
@@ -341,9 +429,9 @@ class FlameChartNode<T> {
 
   Widget buildWidget(bool selected) {
     selected = selectable ? selected : false;
-    return Positioned.fromRect(
-      key: key,
-      rect: rect,
+    return Container(
+      width: rect.width,
+      height: rect.height,
       child: Tooltip(
         message: tooltip,
         waitDuration: tooltipWait,
