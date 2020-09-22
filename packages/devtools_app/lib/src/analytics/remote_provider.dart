@@ -21,7 +21,7 @@ class _RemoteAnalyticsProvider implements AnalyticsProvider {
   final bool _isEnabled;
 
   @override
-  bool get shouldPrompt => _isFirstRun && !_isConfigured;
+  bool get shouldPrompt => true; // _isFirstRun && !_isConfigured;
   final bool _isFirstRun;
 
   @override
