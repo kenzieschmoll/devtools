@@ -108,7 +108,7 @@ class VmServiceWrapper implements VmService {
   Future<Response> callServiceExtension(
     String method, {
     String isolateId,
-    Map args,
+    Map<String, dynamic> args,
   }) {
     return trackFuture(
         'callServiceExtension $method',
@@ -152,7 +152,7 @@ class VmServiceWrapper implements VmService {
   Future get onDone => _vmService.onDone;
 
   @override
-  void dispose() => _vmService.dispose();
+  Future<void> dispose() => _vmService.dispose();
 
   @override
   Future<Response> evaluate(
