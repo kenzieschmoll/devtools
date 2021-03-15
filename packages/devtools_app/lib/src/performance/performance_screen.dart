@@ -144,17 +144,22 @@ class PerformanceScreenBodyState extends State<PerformanceScreenBody>
         if (isOfflineFlutterApp ||
             (!offlineMode && serviceManager.connectedApp.isFlutterAppNow))
           ValueListenableBuilder(
-            valueListenable: controller.flutterFrames,
-            builder: (context, frames, _) => ValueListenableBuilder(
-              valueListenable: controller.displayRefreshRate,
-              builder: (context, displayRefreshRate, _) {
-                return FlutterFramesChart(
-                  frames,
-                  displayRefreshRate,
-                );
-              },
+            valueListenable: controller.flutterScreenshots,
+            builder: (context, screenshots, _) => ValueListenableBuilder(
+              valueListenable: controller.flutterFrames,
+              builder: (context, frames, _) => ValueListenableBuilder(
+                valueListenable: controller.displayRefreshRate,
+                builder: (context, displayRefreshRate, _) {
+                  return FlutterFramesChart(
+                    frames,
+                    screenshots,
+                    displayRefreshRate,
+                  );
+                },
+              ),
             ),
           ),
+        const SizedBox(height: denseSpacing),
         Expanded(
           child: Split(
             axis: Axis.vertical,
@@ -308,27 +313,12 @@ class PerformanceSettingsDialog extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ...dialogSubHeader(theme, 'Default Recorded Timeline Streams'),
+            ...dialogSubHeader(theme, 'Recorded Timeline Streams'),
             ..._defaultRecordedStreams(theme),
-            const SizedBox(height: denseSpacing),
-            ...dialogSubHeader(theme, 'Advanced Recorded Timeline Streams'),
             ..._advancedStreams(theme),
             if (serviceManager.connectedApp.isFlutterAppNow) ...[
               const SizedBox(height: denseSpacing),
-              ...dialogSubHeader(theme, 'Additional Settings'),
-              Row(
-                children: [
-                  NotifierCheckbox(notifier: controller.badgeTabForJankyFrames),
-                  RichText(
-                    overflow: TextOverflow.visible,
-                    text: TextSpan(
-                      text:
-                          'Badge Performance tab when Flutter UI jank is detected',
-                      style: theme.regularTextStyle,
-                    ),
-                  ),
-                ],
-              ),
+              ..._additionalFlutterSettings(theme),
             ],
           ],
         ),
@@ -341,6 +331,12 @@ class PerformanceSettingsDialog extends StatelessWidget {
 
   List<Widget> _defaultRecordedStreams(ThemeData theme) {
     return [
+      RichText(
+        text: TextSpan(
+          text: 'Default',
+          style: theme.subtleTextStyle,
+        ),
+      ),
       ..._timelineStreams(theme, advanced: false),
       // Special case "Network Traffic" because it is not implemented as a
       // Timeline recorded stream in the VM. The user does not need to be aware of
@@ -356,7 +352,15 @@ class PerformanceSettingsDialog extends StatelessWidget {
   }
 
   List<Widget> _advancedStreams(ThemeData theme) {
-    return _timelineStreams(theme, advanced: true);
+    return [
+      RichText(
+        text: TextSpan(
+          text: 'Advanced',
+          style: theme.subtleTextStyle,
+        ),
+      ),
+      ..._timelineStreams(theme, advanced: true),
+    ];
   }
 
   List<Widget> _timelineStreams(
@@ -412,6 +416,83 @@ class PerformanceSettingsDialog extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  List<Widget> _additionalFlutterSettings(ThemeData theme) {
+    return [
+      ...dialogSubHeader(theme, 'Additional Settings'),
+      HideDebugEventsSetting(),
+      _BadgeJankyFramesSetting(controller),
+    ];
+  }
+}
+
+class HideDebugEventsSetting extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Checkbox(
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          value: true,
+          onChanged: (_) {},
+        ),
+        // Extra padding so that the text left-aligns with the other settings.
+        const SizedBox(width: denseSpacing),
+        Expanded(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Extra padding so that the checkbox and the text align.
+              const SizedBox(height: denseSpacing + densePadding),
+              RichText(
+                text: TextSpan(
+                  text: 'Hide events caused by Flutter tooling (recommended)',
+                  style: theme.regularTextStyle,
+                ),
+              ),
+              const SizedBox(height: denseRowSpacing),
+              RichText(
+                text: TextSpan(
+                  text: 'Some tooling features (e.g. app screenshots) add '
+                    'debugging-related activity to your app and can skew '
+                    'performance calculations. Enable this setting to hide '
+                    'debugging-related data and to ignore this activity in '
+                    'performance calculations.',
+                  style: theme.subtleTextStyle,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+
+class _BadgeJankyFramesSetting extends StatelessWidget {
+  const _BadgeJankyFramesSetting(this.controller);
+
+  final PerformanceController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        NotifierCheckbox(notifier: controller.badgeTabForJankyFrames),
+        RichText(
+          overflow: TextOverflow.visible,
+          text: TextSpan(
+            text: 'Badge Performance tab when Flutter UI jank is detected',
+            style: Theme.of(context).regularTextStyle,
           ),
         ),
       ],

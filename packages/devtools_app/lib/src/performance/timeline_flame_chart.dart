@@ -349,7 +349,11 @@ class TimelineFlameChartState
       if (event.isAsyncEvent) {
         backgroundColor = nextAsyncColor(row);
       } else if (event.isUiEvent) {
-        backgroundColor = nextUiColor(row);
+        if (event.isDebugPostFrameCallbackEvent) {
+          backgroundColor = devtoolsWarning;
+        } else {
+          backgroundColor = nextUiColor(row);
+        }
       } else if (event.isRasterEvent) {
         backgroundColor = nextRasterColor(row);
       } else {

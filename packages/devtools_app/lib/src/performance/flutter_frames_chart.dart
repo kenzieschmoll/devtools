@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 
 import '../auto_dispose_mixin.dart';
 import '../common_widgets.dart';
+import '../flutter_widgets/linked_scroll_controller.dart';
 import '../theme.dart';
 import '../ui/colors.dart';
 import '../utils.dart';
@@ -18,12 +19,17 @@ import 'performance_model.dart';
 class FlutterFramesChart extends StatefulWidget {
   const FlutterFramesChart(
     this.frames,
+    this.screenshots,
     this.displayRefreshRate,
   );
 
   static const chartLegendKey = Key('Flutter frames chart legend');
 
+  static const defaultFrameWidth = 32.0;
+
   final List<FlutterFrame> frames;
+
+  final List<FlutterScreenshot> screenshots;
 
   final double displayRefreshRate;
 
@@ -34,7 +40,7 @@ class FlutterFramesChart extends StatefulWidget {
 class _FlutterFramesChartState extends State<FlutterFramesChart>
     with AutoDisposeMixin {
   static const defaultFrameWidthWithPadding =
-      FlutterFramesChartItem.defaultFrameWidth + densePadding * 2;
+      FlutterFramesChart.defaultFrameWidth + densePadding * 2;
 
   static const yAxisUnitsSpace = 48.0;
 
@@ -42,13 +48,19 @@ class _FlutterFramesChartState extends State<FlutterFramesChart>
 
   static const outlineBorderWidth = 1.0;
 
+  static const screenshotViewHeight = 50.0;
+
   PerformanceController _controller;
 
-  ScrollController scrollController;
+  LinkedScrollControllerGroup scrollControllerGroup;
+
+  ScrollController framesChartScrollController;
+
+  ScrollController screenshotsScrollController;
 
   FlutterFrame _selectedFrame;
 
-  double horizontalScrollOffset = 0.0;
+  int _selectedFrameIndex;
 
   double get availableChartHeight => defaultChartHeight - defaultSpacing;
 
@@ -63,10 +75,9 @@ class _FlutterFramesChartState extends State<FlutterFramesChart>
   @override
   void initState() {
     super.initState();
-    scrollController = ScrollController()
-      ..addListener(() {
-        horizontalScrollOffset = scrollController.offset;
-      });
+    scrollControllerGroup = LinkedScrollControllerGroup();
+    framesChartScrollController = scrollControllerGroup.addAndGet();
+    screenshotsScrollController = scrollControllerGroup.addAndGet();
   }
 
   @override
@@ -77,9 +88,16 @@ class _FlutterFramesChartState extends State<FlutterFramesChart>
     _controller = newController;
 
     cancel();
+    _selectedFrame = _controller.selectedFrame.value;
+    _selectedFrameIndex = _selectedFrame != null
+        ? widget.frames.indexOf(_selectedFrame)
+        : -1;
     addAutoDisposeListener(_controller.selectedFrame, () {
       setState(() {
         _selectedFrame = _controller.selectedFrame.value;
+        _selectedFrameIndex = _selectedFrame != null
+            ? widget.frames.indexOf(_selectedFrame)
+            : -1;
       });
     });
   }
@@ -87,43 +105,134 @@ class _FlutterFramesChartState extends State<FlutterFramesChart>
   @override
   void didUpdateWidget(FlutterFramesChart oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (scrollController.hasClients && scrollController.atScrollBottom) {
-      scrollController.autoScrollToBottom();
+    if (framesChartScrollController.hasClients && framesChartScrollController.atScrollBottom) {
+      framesChartScrollController.autoScrollToBottom();
     }
   }
 
   @override
   void dispose() {
-    scrollController.dispose();
+    framesChartScrollController.dispose();
+    screenshotsScrollController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.only(
-        left: denseSpacing,
-        right: denseSpacing,
-        bottom: defaultSpacing,
-      ),
-      height: defaultChartHeight + defaultScrollBarOffset,
+    return SizedBox(
+      height: defaultChartHeight + screenshotViewHeight,
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(child: _buildChart()),
-          const SizedBox(width: defaultSpacing),
-          Padding(
-            padding: const EdgeInsets.only(bottom: defaultScrollBarOffset),
+          Expanded(
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                _buildChartLegend(),
-                if (widget.frames.isNotEmpty) _buildAverageFps(),
+                SizedBox(
+                  height: defaultChartHeight,
+                  child: _buildChart(),
+                ),
+                _buildScreenshotsView(),
               ],
             ),
           ),
+          const SizedBox(width: defaultSpacing),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildChartLegend(),
+                  const SizedBox(height: denseSpacing),
+                  if (widget.frames.isNotEmpty) _buildAverageFps(),
+                ],
+              ),
+              const SizedBox(width: denseSpacing),
+              _buildSelectedScreenshot(),
+            ],
+          ),
         ],
       ),
+    );
+  }
+
+  Widget _buildScreenshotsView() {
+    Widget content;
+    if (widget.screenshots.isEmpty) {
+      content = Center(
+        child: Text(
+          'No screenshots recorded',
+          style: Theme.of(context).subtleTextStyle,
+        ),
+      );
+    } else {
+      content = ListView.builder(
+        physics: const ClampingScrollPhysics(),
+        controller: screenshotsScrollController,
+        scrollDirection: Axis.horizontal,
+        itemExtent: defaultFrameWidthWithPadding,
+        itemCount: widget.screenshots.length,
+        itemBuilder: (context, index) => _buildScreenshot(widget.screenshots[index]),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.only(left: yAxisUnitsSpace),
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: Theme.of(context).focusColor),
+        ),
+        height: screenshotViewHeight,
+        child: content,
+      ),
+    );
+  }
+
+  Widget _buildScreenshot(FlutterScreenshot screenshot) {
+    return Container(
+      height: 50.0,
+      width: defaultFrameWidthWithPadding,
+      decoration: BoxDecoration(
+        border: Border.all(color: Theme.of(context).focusColor),
+      ),
+      child: Image.memory(
+        screenshot.image,
+        fit: BoxFit.fill,
+      ),
+    );
+  }
+
+  Widget _buildSelectedScreenshot() {
+    Widget content;
+    final selectedScreenshot = widget.screenshots.safeGet(_selectedFrameIndex);
+    if (selectedScreenshot != null) {
+      final imageBytes = widget.screenshots.safeGet(_selectedFrameIndex)?.image;
+      content = Image.memory(
+        imageBytes,
+        fit: BoxFit.contain,
+      );
+    } else {
+      content = Container(
+        width: 105.0,
+        padding: const EdgeInsets.all(defaultSpacing),
+        child: Center(
+          child: Text(
+            _selectedFrameIndex == -1
+                ? 'No frame selected'
+                : 'No screenshot available',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).subtleTextStyle,
+          ),
+        ),
+      );
+    }
+    return Container(
+      height: 105.0,
+      decoration: BoxDecoration(
+        border: Border.all(color: Theme.of(context).focusColor),
+      ),
+      child: content,
     );
   }
 
@@ -133,12 +242,13 @@ class _FlutterFramesChartState extends State<FlutterFramesChart>
         final themeData = Theme.of(context);
         final chart = Scrollbar(
           isAlwaysShown: true,
-          controller: scrollController,
+          controller: framesChartScrollController,
           child: Padding(
             padding: const EdgeInsets.only(bottom: defaultScrollBarOffset),
             child: RoundedOutlinedBorder(
               child: ListView.builder(
-                controller: scrollController,
+                physics: const ClampingScrollPhysics(),
+                controller: framesChartScrollController,
                 scrollDirection: Axis.horizontal,
                 itemCount: widget.frames.length,
                 itemExtent: defaultFrameWidthWithPadding,
@@ -247,8 +357,6 @@ class FlutterFramesChartItem extends StatelessWidget {
     @required this.displayRefreshRate,
   });
 
-  static const defaultFrameWidth = 32.0;
-
   static const selectedIndicatorHeight = 8.0;
 
   static const selectedFrameIndicatorKey =
@@ -273,13 +381,13 @@ class FlutterFramesChartItem extends StatelessWidget {
     // available axis space.
     final ui = Container(
       key: Key('frame ${frame.id} - ui'),
-      width: defaultFrameWidth / 2,
+      width: FlutterFramesChart.defaultFrameWidth / 2,
       height: (frame.uiDurationMs / msPerPx).clamp(0.0, availableChartHeight),
       color: janky ? uiJankColor : mainUiColor,
     );
     final raster = Container(
       key: Key('frame ${frame.id} - raster'),
-      width: defaultFrameWidth / 2,
+      width: FlutterFramesChart.defaultFrameWidth / 2,
       height:
           (frame.rasterDurationMs / msPerPx).clamp(0.0, availableChartHeight),
       color: janky ? rasterJankColor : mainRasterColor,

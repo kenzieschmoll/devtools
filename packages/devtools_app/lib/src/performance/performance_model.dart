@@ -522,6 +522,8 @@ abstract class TimelineEvent extends TreeNode<TimelineEvent> {
   bool get isGCEvent =>
       traceEvents.first.event.category == TraceEvent.gcCategory;
 
+  bool isDebugPostFrameCallbackEvent = false;
+
   bool get isWellFormed => time.start != null && time.end != null;
 
   bool get isWellFormedDeep => _isWellFormedDeep(this);

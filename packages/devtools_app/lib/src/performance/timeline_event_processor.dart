@@ -336,10 +336,18 @@ class TimelineEventProcessor {
     root.endAsyncEvent(eventWrapper);
   }
 
+  static const debugPostFrameCallbackEventName = 'DebugPostFrameCallbacks';
+
   void _handleDurationBeginEvent(TraceEventWrapper eventWrapper) {
     final current = currentDurationEventNodes[eventWrapper.event.threadId];
     final timelineEvent = SyncTimelineEvent(eventWrapper);
+    if (timelineEvent.name == debugPostFrameCallbackEventName) {
+      timelineEvent.isDebugPostFrameCallbackEvent = true;
+    }
     if (current != null) {
+      if (current.isDebugPostFrameCallbackEvent) {
+        timelineEvent.isDebugPostFrameCallbackEvent = true;
+      }
       current.addChild(timelineEvent);
     }
     currentDurationEventNodes[eventWrapper.event.threadId] = timelineEvent;

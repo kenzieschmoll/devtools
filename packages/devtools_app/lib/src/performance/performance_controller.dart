@@ -2,8 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:pedantic/pedantic.dart';
 import 'package:vm_service/vm_service.dart' as vm_service;
 
@@ -62,6 +65,10 @@ class PerformanceController
   /// The flutter frames in the current timeline.
   ValueListenable<List<FlutterFrame>> get flutterFrames => _flutterFrames;
   final _flutterFrames = ValueNotifier<List<FlutterFrame>>([]);
+
+  /// The flutter screenshots.
+  ValueListenable<List<FlutterScreenshot>> get flutterScreenshots => _flutterScreenshots;
+  final _flutterScreenshots = ValueNotifier<List<FlutterScreenshot>>([]);
 
   /// Whether an empty timeline recording was just recorded.
   ValueListenable<bool> get emptyTimeline => _emptyTimeline;
@@ -245,8 +252,32 @@ class PerformanceController
       return;
     }
 
+    final screenshotsResponse = await serviceManager.service.callServiceExtension(
+      'ext.flutter.inspector.screenshots',
+      isolateId: serviceManager.isolateManager.mainIsolate.value.id,
+    );
+
     _processing.value = true;
     await processTraceEvents(allTraceEvents);
+
+    final List<dynamic> screenshots = screenshotsResponse.json['result'];
+    final typedScreenshots = screenshots.map<FlutterScreenshot>((screenshot) => FlutterScreenshot.parse(screenshot)).toList();
+    final filteredScreenshots = <FlutterScreenshot>[];
+    if (data.frames.isNotEmpty) {
+      final firstFrameStart = data.frames.first.time.start.inMicroseconds;
+      final lastFrameEnd = data.frames.last.time.end.inMicroseconds;
+      print('firstFrameStart = $firstFrameStart');
+      print('lastFrameEnd = $lastFrameEnd');
+      filteredScreenshots.addAll(typedScreenshots.where((screenshot) =>
+         screenshot.timestamp > data.frames.first.time.start
+             && screenshot.timestamp < data.frames.last.time.end
+      ));
+    }
+    if (filteredScreenshots.isNotEmpty) {
+      print('firstScreenshot ts = ${filteredScreenshots.first.timestamp.inMicroseconds}');
+    }
+    _flutterScreenshots.value = filteredScreenshots;
+
     _processing.value = false;
 
     _flutterFrames.value = data.frames;
@@ -483,6 +514,11 @@ class PerformanceController
   Future<void> clearData({bool clearVmTimeline = true}) async {
     if (clearVmTimeline && serviceManager.hasConnection) {
       await serviceManager.service.clearVMTimeline();
+      await serviceManager.service.callServiceExtension(
+        'ext.flutter.inspector.screenshots',
+        isolateId: serviceManager.isolateManager.mainIsolate.value.id,
+        args: {'clear': 'true'},
+      );
     }
     allTraceEvents.clear();
     offlinePerformanceData = null;
@@ -491,6 +527,7 @@ class PerformanceController
     processor?.reset();
     _emptyTimeline.value = true;
     _flutterFrames.value = [];
+    _flutterScreenshots.value = [];
     _selectedTimelineEventNotifier.value = null;
     _selectedFrameNotifier.value = null;
     _processing.value = false;
@@ -514,4 +551,20 @@ class PerformanceController
     cpuProfilerController.dispose();
     _selectedTimelineEventNotifier.dispose();
   }
+}
+
+class FlutterScreenshot {
+  const FlutterScreenshot._(this.timestamp, this.image);
+
+  factory FlutterScreenshot.parse(Map<String, dynamic> json) {
+    final ts = json['ts'];
+    final data = json['data'];
+    final timestamp = Duration(microseconds: int.parse(ts));
+    final image = base64Decode(data);
+    return FlutterScreenshot._(timestamp, image);
+  }
+
+  final Duration timestamp;
+
+  final Uint8List image;
 }
