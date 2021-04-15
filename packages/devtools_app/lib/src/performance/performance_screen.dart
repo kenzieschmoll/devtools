@@ -64,9 +64,6 @@ class PerformanceScreenBodyState extends State<PerformanceScreenBody>
     with
         AutoDisposeMixin,
         OfflineScreenMixin<PerformanceScreenBody, OfflinePerformanceData> {
-  static const _primaryControlsMinIncludeTextWidth = 725.0;
-  static const _secondaryControlsMinIncludeTextWidth = 1100.0;
-
   PerformanceController controller;
 
   bool processing = false;
@@ -196,36 +193,94 @@ class PerformanceScreenBodyState extends State<PerformanceScreenBody>
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        _buildPrimaryStateControls(),
-        _buildSecondaryControls(),
+        PrimaryPerformanceControls(controller),
+        SecondaryPerformanceControls(controller),
       ],
     );
   }
 
-  Widget _buildPrimaryStateControls() {
+  @override
+  FutureOr<void> processOfflineData(OfflinePerformanceData offlineData) async {
+    // await controller.timelineController.processOfflineData(offlineData);
+  }
+
+  @override
+  bool shouldLoadOfflineData() {
+    return offlineMode &&
+        offlineDataJson.isNotEmpty &&
+        offlineDataJson[PerformanceScreen.id] != null &&
+        offlineDataJson[TimelineController.traceEventsKey] != null;
+  }
+}
+
+class PrimaryPerformanceControls extends StatelessWidget {
+  const PrimaryPerformanceControls(this.controller);
+
+  static const minIncludeTextWidth = 725.0;
+
+  final PerformanceController controller;
+
+  @override
+  Widget build(BuildContext context) {
     return ValueListenableBuilder(
       valueListenable: controller.refreshing,
       builder: (context, refreshing, _) {
-        return Row(
-          children: [
-            RefreshButton(
-              includeTextWidth: _primaryControlsMinIncludeTextWidth,
-              onPressed:
-                  (refreshing || processing) ? null : _refreshPerformanceData,
-            ),
-            const SizedBox(width: defaultSpacing),
-            ClearButton(
-              includeTextWidth: _primaryControlsMinIncludeTextWidth,
-              onPressed:
-                  (refreshing || processing) ? null : _clearPerformanceData,
-            ),
-          ],
+        return ValueListenableBuilder(
+          valueListenable: controller.flutterFramesController.recordingFrames,
+          builder: (context, recording, _) {
+            return ValueListenableBuilder(
+              valueListenable: controller.timelineController.processing,
+              builder: (context, processing, _) {
+                return Row(
+                  children: [
+                    PauseButton(
+                      includeTextWidth: minIncludeTextWidth,
+                      onPressed: recording ? _pauseFrameRecording : null,
+                    ),
+                    const SizedBox(width: denseSpacing),
+                    ResumeButton(
+                      includeTextWidth: minIncludeTextWidth,
+                      onPressed: recording ? null : _resumeFrameRecording,
+                    ),
+                    const SizedBox(width: defaultSpacing),
+                    ClearButton(
+                      includeTextWidth: minIncludeTextWidth,
+                      onPressed: (refreshing || processing)
+                          ? null
+                          : _clearPerformanceData,
+                    ),
+                  ],
+                );
+              },
+            );
+          },
         );
       },
     );
   }
 
-  Widget _buildSecondaryControls() {
+  void _pauseFrameRecording() {
+    controller.flutterFramesController.toggleRecordingFrames(false);
+  }
+
+  void _resumeFrameRecording() {
+    controller.flutterFramesController.toggleRecordingFrames(true);
+  }
+
+  Future<void> _clearPerformanceData() async {
+    await controller.clearData();
+  }
+}
+
+class SecondaryPerformanceControls extends StatelessWidget {
+  const SecondaryPerformanceControls(this.controller);
+
+  final PerformanceController controller;
+
+  static const minIncludeTextWidth = 1100.0;
+
+  @override
+  Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
@@ -233,42 +288,26 @@ class PerformanceScreenBodyState extends State<PerformanceScreenBody>
         const SizedBox(width: defaultSpacing),
         if (!serviceManager.connectedApp.isDartCliAppNow)
           ServiceExtensionButtonGroup(
-            minIncludeTextWidth: _secondaryControlsMinIncludeTextWidth,
+            minIncludeTextWidth: minIncludeTextWidth,
             extensions: [performanceOverlay, profileWidgetBuilds],
           ),
         // TODO(kenz): hide or disable button if http timeline logging is not
         // available.
         const SizedBox(width: defaultSpacing),
         ExportButton(
-          onPressed: _exportPerformanceData,
-          includeTextWidth: _secondaryControlsMinIncludeTextWidth,
+          onPressed: () => _exportPerformanceData(context),
+          includeTextWidth: minIncludeTextWidth,
         ),
         const SizedBox(width: defaultSpacing),
         SettingsOutlinedButton(
-          onPressed: _openSettingsDialog,
+          onPressed: () => _openSettingsDialog(context),
           tooltip: 'Performance Settings',
         ),
       ],
     );
   }
 
-  void _openSettingsDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => PerformanceSettingsDialog(controller),
-    );
-  }
-
-  Future<void> _refreshPerformanceData() async {
-    await controller.refreshData();
-  }
-
-  Future<void> _clearPerformanceData() async {
-    await controller.clearData();
-    setState(() {});
-  }
-
-  void _exportPerformanceData() {
+  void _exportPerformanceData(BuildContext context) {
     final exportedFile = controller.exportData();
     // TODO(kenz): investigate if we need to do any error handling here. Is the
     // download always successful?
@@ -277,17 +316,11 @@ class PerformanceScreenBodyState extends State<PerformanceScreenBody>
     Notifications.of(context).push(successfulExportMessage(exportedFile));
   }
 
-  @override
-  FutureOr<void> processOfflineData(OfflinePerformanceData offlineData) async {
-    await controller.processOfflineData(offlineData);
-  }
-
-  @override
-  bool shouldLoadOfflineData() {
-    return offlineMode &&
-        offlineDataJson.isNotEmpty &&
-        offlineDataJson[PerformanceScreen.id] != null &&
-        offlineDataJson[PerformanceData.traceEventsKey] != null;
+  void _openSettingsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => PerformanceSettingsDialog(controller),
+    );
   }
 }
 
