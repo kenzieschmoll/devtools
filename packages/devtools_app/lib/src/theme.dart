@@ -138,6 +138,7 @@ const denseSpacing = 8.0;
 const denseRowSpacing = 6.0;
 
 const defaultBorderRadius = 4.0;
+const defaultElevation = 4.0;
 
 const borderPadding = 2.0;
 const densePadding = 4.0;
@@ -364,6 +365,8 @@ TextStyle linkTextStyle(ColorScheme colorScheme) => TextStyle(
 const wideSearchTextWidth = 400.0;
 const defaultSearchTextWidth = 200.0;
 const defaultTextFieldHeight = 32.0;
+
+const evalBorder = BorderSide(color: Colors.white, width: 2);
 
 /// Default color of cursor and color used by search's TextField.
 /// Guarantee that the Search TextField on all platforms renders in the same

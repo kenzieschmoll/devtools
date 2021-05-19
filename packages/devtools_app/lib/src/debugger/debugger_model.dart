@@ -7,6 +7,7 @@ import 'package:meta/meta.dart';
 import 'package:vm_service/vm_service.dart';
 
 import '../trees.dart';
+import '../ui/search.dart';
 import '../utils.dart';
 
 /// A tuple of a script and an optional location.
@@ -53,6 +54,19 @@ class SourcePosition {
 
   @override
   String toString() => '$line:$column';
+}
+
+class SourceToken with DataSearchStateMixin {
+  SourceToken({@required this.position, @required this.length});
+
+  final SourcePosition position;
+
+  final int length;
+
+  @override
+  String toString() {
+    return '$position-${position.column + length}';
+  }
 }
 
 /// A tuple of a breakpoint and a source position.

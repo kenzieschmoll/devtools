@@ -73,7 +73,7 @@ void main() {
     test('initial values', () {
       expect(history.hasNext, false);
       expect(history.hasPrevious, false);
-      expect(history.currentScript, isNull);
+      expect(history.current.value, isNull);
       expect(history.hasScripts, false);
     });
 
@@ -84,19 +84,19 @@ void main() {
 
       expect(history.hasNext, false);
       expect(history.hasPrevious, true);
-      expect(history.currentScript, ref3);
+      expect(history.current.value, ref3);
 
       history.moveBack();
 
       expect(history.hasNext, true);
       expect(history.hasPrevious, true);
-      expect(history.currentScript, ref2);
+      expect(history.current.value, ref2);
 
       history.moveBack();
 
       expect(history.hasNext, true);
       expect(history.hasPrevious, false);
-      expect(history.currentScript, ref1);
+      expect(history.current.value, ref1);
     });
 
     test('moveBack', () {
@@ -105,19 +105,19 @@ void main() {
 
       expect(history.hasNext, false);
       expect(history.hasPrevious, true);
-      expect(history.currentScript, ref2);
+      expect(history.current.value, ref2);
 
       history.moveBack();
 
       expect(history.hasNext, true);
       expect(history.hasPrevious, false);
-      expect(history.currentScript, ref1);
+      expect(history.current.value, ref1);
 
       history.moveForward();
 
       expect(history.hasNext, false);
       expect(history.hasPrevious, true);
-      expect(history.currentScript, ref2);
+      expect(history.current.value, ref2);
     });
 
     test('openedScripts', () {
@@ -138,26 +138,26 @@ void main() {
       history.pushEntry(ref1);
       history.pushEntry(ref2);
 
-      expect(history.currentScript, ref2);
+      expect(history.current.value, ref2);
       history.moveBack();
-      expect(history.currentScript, ref1);
+      expect(history.current.value, ref1);
       history.moveBack();
-      expect(history.currentScript, ref2);
+      expect(history.current.value, ref2);
       history.moveBack();
-      expect(history.currentScript, ref1);
+      expect(history.current.value, ref1);
     });
 
     test('pushEntry removes next entries', () {
       history.pushEntry(ref1);
       history.pushEntry(ref2);
 
-      expect(history.currentScript, ref2);
+      expect(history.current.value, ref2);
       expect(history.hasNext, isFalse);
       history.moveBack();
-      expect(history.currentScript, ref1);
+      expect(history.current.value, ref1);
       expect(history.hasNext, isTrue);
       history.pushEntry(ref3);
-      expect(history.currentScript, ref3);
+      expect(history.current.value, ref3);
       expect(history.hasNext, isFalse);
     });
   });
@@ -254,4 +254,64 @@ void main() {
       expect(evalHistory.canNavigateDown, false);
     });
   });
+
+  group('search', () {
+    DebuggerController debuggerController;
+
+    setUp(() {
+      debuggerController = DebuggerController(initialSwitchToIsolate: false);
+      debuggerController.parsedScript.value = ParsedScript(
+        script: testScript,
+        highlighter: null,
+        executableLines: {},
+      );
+    });
+
+    test('matchesForSearch', () {
+      expect(
+        debuggerController.matchesForSearch('import').toString(),
+        equals('[0:0-6, 1:0-6, 2:0-6]'),
+      );
+      expect(
+        debuggerController.matchesForSearch('foo').toString(),
+        equals('[1:8-11, 2:8-11]'),
+      );
+      expect(
+        debuggerController.matchesForSearch('bar').toString(),
+        equals('[0:8-11, 2:11-14]'),
+      );
+      expect(
+        debuggerController.matchesForSearch('hello world').toString(),
+        equals('[5:28-39, 6:9-20]'),
+      );
+      expect(
+        debuggerController.matchesForSearch('').toString(),
+        equals('[]'),
+      );
+      expect(
+        debuggerController.matchesForSearch(null).toString(),
+        equals('[]'),
+      );
+    });
+  });
 }
+
+final testScript = Script(
+  source: '''
+import 'bar.dart';
+import 'foo.dart';
+import 'foobar.dart';
+
+void main() {
+  // This is a comment in a hello world app.
+  print('hello world');
+}
+''',
+  id: 'test-script',
+  uri: 'debugger/test/script.dart',
+  library: LibraryRef(
+    id: 'debugger-test-lib',
+    name: 'debugger-test',
+    uri: 'debugger/test',
+  ),
+);

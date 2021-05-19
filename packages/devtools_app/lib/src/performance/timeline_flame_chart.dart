@@ -88,7 +88,7 @@ class _TimelineFlameChartContainerState
             selectionNotifier: controller.selectedTimelineEvent,
             searchMatchesNotifier: controller.searchMatches,
             activeSearchMatchNotifier: controller.activeSearchMatch,
-            onSelection: (e) => controller.selectTimelineEvent(e),
+            onDataSelected: (e) => controller.selectTimelineEvent(e),
           );
         },
       );
@@ -100,9 +100,8 @@ class _TimelineFlameChartContainerState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          areaPaneHeader(
-            context,
-            title: 'Timeline Events',
+          AreaPaneHeader(
+            title: const Text('Timeline Events'),
             tall: true,
             needsTopBorder: false,
             rightPadding: 0.0,
@@ -157,7 +156,7 @@ class TimelineFlameChart extends FlameChart<PerformanceData, TimelineEvent> {
     @required ValueListenable<TimelineEvent> selectionNotifier,
     @required ValueListenable<List<TimelineEvent>> searchMatchesNotifier,
     @required ValueListenable<TimelineEvent> activeSearchMatchNotifier,
-    @required Function(TimelineEvent event) onSelection,
+    @required Function(TimelineEvent event) onDataSelected,
   }) : super(
           data,
           time: data.time,
@@ -167,7 +166,7 @@ class TimelineFlameChart extends FlameChart<PerformanceData, TimelineEvent> {
           selectionNotifier: selectionNotifier,
           searchMatchesNotifier: searchMatchesNotifier,
           activeSearchMatchNotifier: activeSearchMatchNotifier,
-          onSelected: onSelection,
+          onDataSelected: onDataSelected,
         );
 
   static double _calculateStartInset(PerformanceData data) {
@@ -214,7 +213,7 @@ class TimelineFlameChartState
 
   int widestRow = -1;
 
-  PerformanceController _timelineController;
+  PerformanceController _performanceController;
 
   FlutterFrame _selectedFrame;
 
@@ -240,11 +239,11 @@ class TimelineFlameChartState
   void didChangeDependencies() {
     super.didChangeDependencies();
     final newController = Provider.of<PerformanceController>(context);
-    if (newController == _timelineController) return;
-    _timelineController = newController;
+    if (newController == _performanceController) return;
+    _performanceController = newController;
 
     addAutoDisposeListener(
-      _timelineController.selectedFrame,
+      _performanceController.selectedFrame,
       _handleSelectedFrame,
     );
   }
@@ -268,7 +267,10 @@ class TimelineFlameChartState
 
   @override
   double topYForData(TimelineEvent data) {
-    final eventGroup = widget.data.eventGroups[computeEventGroupKey(data)];
+    final eventGroup = widget.data.eventGroups[computeEventGroupKey(
+      data,
+      _performanceController.threadNamesById,
+    )];
     assert(eventGroup != null);
     final rowOffsetInGroup = eventGroup.rowIndexForEvent[data];
     return eventGroupStartYValues[eventGroup] +
@@ -381,17 +383,17 @@ class TimelineFlameChartState
   }
 
   void _handleSelectedFrame() async {
-    final FlutterFrame selectedFrame = _timelineController.selectedFrame.value;
-    if (selectedFrame != null) {
-      if (selectedFrame == _selectedFrame) return;
+    final selectedFrame = _performanceController.selectedFrame.value;
+    if (selectedFrame == _selectedFrame) return;
 
-      setState(() {
-        _selectedFrame = selectedFrame;
-      });
+    setState(() {
+      _selectedFrame = selectedFrame;
+    });
 
-      // TODO(kenz): consider using jumpTo for some of these animations to
-      // improve performance.
+    // TODO(kenz): consider using jumpTo for some of these animations to
+    // improve performance.
 
+    if (_selectedFrame != null) {
       // Zoom and scroll to the frame's UI event.
       await zoomAndScrollToData(
         startMicros: selectedFrame.time.start.inMicroseconds,
@@ -433,6 +435,9 @@ class TimelineFlameChartState
       Color backgroundColor;
       if (event.isAsyncEvent) {
         backgroundColor = nextAsyncColor(row);
+      } else if (event.isGCEvent) {
+        // TODO(kenz): should we have a different color palette for GC events?
+        backgroundColor = nextUnknownColor(row);
       } else if (event.isUiEvent) {
         backgroundColor = nextUiColor(row);
       } else if (event.isRasterEvent) {
@@ -451,12 +456,11 @@ class TimelineFlameChartState
       final node = FlameChartNode<TimelineEvent>(
         key: Key('${event.name} ${event.traceEvents.first.id}'),
         text: event.name,
-        tooltip: '${event.name} - ${msText(event.time.duration)}',
         rect: Rect.fromLTRB(left, flameChartNodeTop, right, rowHeight),
         backgroundColor: backgroundColor,
         textColor: textColor,
         data: event,
-        onSelected: (dynamic event) => widget.onSelected(event),
+        onSelected: (dynamic event) => widget.onDataSelected(event),
         sectionIndex: section,
       );
       chartNodesByEvent[event] = node;
@@ -563,7 +567,7 @@ class TimelineFlameChartState
 
   Widget _buildSectionLabels({@required BoxConstraints constraints}) {
     final colorScheme = Theme.of(context).colorScheme;
-    final eventGroups = _timelineController.data.eventGroups;
+    final eventGroups = _performanceController.data.eventGroups;
 
     final children = <Widget>[];
     for (int i = 0; i < eventGroups.length; i++) {
@@ -628,7 +632,7 @@ class TimelineFlameChartState
     @required BoxConstraints constraints,
   }) {
     const threadButtonContainerWidth = buttonMinWidth + defaultSpacing;
-    final eventGroups = _timelineController.data.eventGroups;
+    final eventGroups = _performanceController.data.eventGroups;
 
     Widget buildNavigatorButton(int index, {@required bool isNext}) {
       // Add spacing to account for timestamps at top of chart.

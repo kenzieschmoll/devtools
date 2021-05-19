@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'package:flutter/material.dart';
+import 'package:image/image.dart' as image;
 
 import '../common_widgets.dart';
 import '../http/http.dart';
@@ -64,7 +65,7 @@ class HttpRequestHeadersView extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          SelectableText(
             '$key: ',
             style: Theme.of(context).textTheme.subtitle2,
           ),
@@ -142,10 +143,106 @@ class HttpResponseView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: SelectableText(
-        data.responseBody,
-        style: Theme.of(context).fixedFontStyle,
+    Widget child;
+    // We shouldn't try and display an image response view when using the
+    // timeline profiler since it's possible for response body data to get
+    // dropped.
+    if (data is DartIOHttpRequestData && data.contentType.contains('image')) {
+      child = ImageResponseView(data);
+    } else {
+      child = FormattedJson(
+        formattedString: data.responseBody,
+      );
+    }
+    // TODO(kenz): use a collapsible json tree for the response
+    // https://github.com/flutter/devtools/issues/2952.
+    // TODO(bkonyi): add syntax highlighting to these responses
+    // https://github.com/flutter/devtools/issues/2604. We may be able to use
+    // the new tree widget used in the Provider page.
+    return Padding(
+      padding: const EdgeInsets.all(denseSpacing),
+      child: SingleChildScrollView(child: child),
+    );
+  }
+}
+
+class ImageResponseView extends StatelessWidget {
+  const ImageResponseView(this.data);
+
+  final DartIOHttpRequestData data;
+
+  @override
+  Widget build(BuildContext context) {
+    final img = image.decodeImage(data.encodedResponse);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _buildTile(
+          'Image Preview',
+          [
+            Padding(
+              padding: const EdgeInsets.all(
+                denseSpacing,
+              ),
+              child: Image.memory(
+                data.encodedResponse,
+              ),
+            ),
+          ],
+        ),
+        _buildTile(
+          'Metadata',
+          [
+            _buildRow(
+              context,
+              'Format',
+              data.type,
+            ),
+            _buildRow(
+              context,
+              'Size',
+              prettyPrintBytes(
+                data.encodedResponse.lengthInBytes,
+                includeUnit: true,
+              ),
+            ),
+            _buildRow(
+              context,
+              'Dimensions',
+              '${img.width} x ${img.height}',
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRow(
+    BuildContext context,
+    String key,
+    String value,
+  ) {
+    return Padding(
+      padding: _rowPadding,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SelectableText(
+            '$key: ',
+            style: Theme.of(context).textTheme.subtitle2,
+          ),
+          Expanded(
+            child: SelectableText(
+              value,
+              // TODO(kenz): use top level overflow parameter if
+              // https://github.com/flutter/flutter/issues/82722 is fixed.
+              // TODO(kenz): add overflow after flutter 2.3.0 is stable. It was
+              // added in commit 65388ee2eeaf0d2cf087eaa4a325e3689020c46a.
+              // style: const TextStyle(overflow: TextOverflow.ellipsis),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -182,7 +279,7 @@ class HttpRequestCookiesView extends StatelessWidget {
     );
   }
 
-  DataCell _buildCell(String value) => DataCell(Text(value ?? '--'));
+  DataCell _buildCell(String value) => DataCell(SelectableText(value ?? '--'));
 
   DataCell _buildIconCell(IconData icon) =>
       DataCell(Icon(icon, size: defaultIconSize));
@@ -202,10 +299,16 @@ class HttpRequestCookiesView extends StatelessWidget {
     }) {
       return DataColumn(
         label: Expanded(
-          child: Text(
+          child: SelectableText(
             title ?? '--',
+            // TODO(kenz): use top level overflow parameter if
+            // https://github.com/flutter/flutter/issues/82722 is fixed.
+            // TODO(kenz): add overflow after flutter 2.3.0 is stable. It was
+            // added in commit 65388ee2eeaf0d2cf087eaa4a325e3689020c46a.
+            // style: theme.textTheme.subtitle1.copyWith(
+            //   overflow: TextOverflow.fade,
+            // ),
             style: theme.textTheme.subtitle1,
-            overflow: TextOverflow.fade,
           ),
         ),
         numeric: numeric,
@@ -559,7 +662,7 @@ class NetworkRequestOverviewView extends StatelessWidget {
       children: [
         Container(
           width: _keyWidth,
-          child: Text(
+          child: SelectableText(
             title != null ? '$title: ' : '',
             style: Theme.of(context).textTheme.subtitle2,
           ),
