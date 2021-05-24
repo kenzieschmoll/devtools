@@ -204,6 +204,7 @@ class _LandingScreenBodyState extends State<LandingScreenBody> {
   }
 
   Future<void> _connect() async {
+    connectDialogController.text = 'http://127.0.0.1:52638/CWmi5qJvulc=/';
     if (connectDialogController.text?.isEmpty ?? true) {
       Notifications.of(context).push(
         'Please enter a VM Service URL.',

@@ -65,14 +65,18 @@ class EventDetails extends StatelessWidget {
       // In [offlineMode], we do not need to worry about whether the profiler is
       // enabled.
       if (offlineMode) {
-        return _buildCpuProfiler(controller.cpuProfilerController);
+        return _buildCpuProfiler(
+            controller.performanceCpuProfilerController.cpuProfilerController);
       }
       return ValueListenableBuilder<Flag>(
-        valueListenable: controller.cpuProfilerController.profilerFlagNotifier,
+        valueListenable: controller.performanceCpuProfilerController
+            .cpuProfilerController.profilerFlagNotifier,
         builder: (context, profilerFlag, _) {
           return profilerFlag.valueAsString == 'true'
-              ? _buildCpuProfiler(controller.cpuProfilerController)
-              : CpuProfilerDisabled(controller.cpuProfilerController);
+              ? _buildCpuProfiler(controller
+                  .performanceCpuProfilerController.cpuProfilerController)
+              : CpuProfilerDisabled(controller
+                  .performanceCpuProfilerController.cpuProfilerController);
         },
       );
     }

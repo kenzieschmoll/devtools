@@ -26,6 +26,8 @@ import 'performance_model.dart';
 /// debug info on click.
 bool debugTimeline = false;
 
+bool hideMessageLoopFlushTaskEvents = true;
+
 /// List that will store trace event json in the order we handle the events.
 ///
 /// This list is for debug purposes. When [debugTimeline] is true, we will be
@@ -55,7 +57,7 @@ class TimelineEventProcessor {
   /// Number of traceEvents we will process in each batch.
   static const _defaultBatchSize = 2000;
 
-  final PerformanceController timelineController;
+  final TimelineController timelineController;
 
   /// Notifies with the current progress value of processing Timeline data.
   ///
@@ -85,13 +87,6 @@ class TimelineEventProcessor {
   /// Bug tracking dupes: https://github.com/flutter/flutter/issues/47020.
   final _previousDurationEndEvents = <int, TraceEvent>{};
 
-  /// Frames we are in the process of assembling.
-  ///
-  /// Once frames have a start and end time, we will remove them from this Map
-  /// and add them to the timeline.
-  @visibleForTesting
-  final pendingFrames = <String, FlutterFrame>{};
-
   /// Pending root duration complete event that has not yet been added to the
   /// timeline.
   ///
@@ -112,10 +107,10 @@ class TimelineEventProcessor {
 
   Future<void> processTimeline(
     List<TraceEventWrapper> traceEvents, {
-    bool resetAfterProcessing = true,
+    bool firstProcess = false,
   }) async {
-    // Reset the processor before processing.
-    reset();
+    _traceEventsProcessed = 0;
+    _progressNotifier.value = 0.0;
 
 // Uncomment this code for testing the timeline.
 //    traceEvents = simpleTraceEvents['traceEvents']
@@ -136,7 +131,8 @@ class TimelineEventProcessor {
       // (e.g. thread_name events) as well as events from before we started
       // recording.
       final ts = event.event.timestampMicros;
-      final shouldProcess = ts != null && !isMessageLoopFlushTasks;
+      final shouldProcess = ts != null &&
+          !(hideMessageLoopFlushTaskEvents && isMessageLoopFlushTasks);
 
       // TODO(kenz): remove this code once
       // https://github.com/flutter/flutter/issues/76875 is resolved. We are
@@ -152,10 +148,7 @@ class TimelineEventProcessor {
       return shouldProcess;
     }).toList())
       // Events need to be in increasing timestamp order.
-      ..sort()
-      ..map((event) => event.event.json)
-          .toList()
-          .forEach(timelineController.recordTrace);
+      ..sort();
 
     // At minimum, process the data in 4 batches to smooth the appearance of
     // the progress indicator.
@@ -165,6 +158,9 @@ class TimelineEventProcessor {
 
     while (_traceEventsProcessed < _traceEvents.length) {
       _processBatch(batchSize, _traceEvents);
+      // Divide by 2 because once this finishes, we'll consider the progress to
+      // be at 50%. After we process the events we need to do the work of
+      // putting them in their proper event groups in [TimelineController].
       _progressNotifier.value = _traceEventsProcessed / _traceEvents.length;
 
       // Await a small delay to give the UI thread a chance to update the
@@ -183,32 +179,27 @@ class TimelineEventProcessor {
 
     _addPendingCompleteRootToTimeline(force: true);
 
-    pendingFrames.values.forEach(_maybeAddCompletedFrame);
-
-    timelineController.data.timelineEvents.sort((a, b) =>
+    print('starting sort');
+    timelineController.sortTimelineEventsAndNotify((a, b) =>
         a.time.start.inMicroseconds.compareTo(b.time.start.inMicroseconds));
-    if (timelineController.data.timelineEvents.isNotEmpty) {
-      timelineController.data.time
-        // We process trace events in timestamp order, so we can ensure the first
-        // trace event has the earliest starting timestamp.
-        ..start = Duration(
-            microseconds: timelineController
-                .data.timelineEvents.first.time.start.inMicroseconds)
-        // We cannot guarantee that the last trace event is the latest timestamp
-        // in the timeline. DurationComplete events' timestamps refer to their
-        // starting timestamp, but their end time is derived from the same trace
-        // via the "dur" field. For this reason, we use the cached value stored in
-        // [timelineController.fullTimeline].
-        ..end =
-            Duration(microseconds: timelineController.data.endTimestampMicros);
+    print('finishing sort');
+    if (timelineController.timelineEvents.value.isNotEmpty) {
+      // We process trace events in timestamp order, so we can ensure the first
+      // trace event has the earliest starting timestamp.
+      timelineController.time.start = Duration(
+          microseconds: timelineController
+              .timelineEvents.value.first.time.start.inMicroseconds);
+      // We cannot guarantee that the last trace event is the latest timestamp
+      // in the timeline. DurationComplete events' timestamps refer to their
+      // starting timestamp, but their end time is derived from the same trace
+      // via the "dur" field. For this reason, we use the cached value stored in
+      // [timelineController].
+      timelineController.time.end =
+          Duration(microseconds: timelineController.endTimestampMicros);
     } else {
-      timelineController.data.time
+      timelineController.time
         ..start = Duration.zero
         ..end = Duration.zero;
-    }
-
-    if (resetAfterProcessing) {
-      reset();
     }
   }
 
@@ -217,7 +208,10 @@ class TimelineEventProcessor {
         math.min(_traceEventsProcessed + batchSize, traceEvents.length);
     for (int i = _traceEventsProcessed; i < batchEnd; i++) {
       final eventWrapper = traceEvents[i];
+      timelineController.traceEvents.add(eventWrapper);
       _traceEventsProcessed++;
+
+      if (eventWrapper.event.timestampMicros == null) continue;
 
       // TODO(kenz): stop manually setting the type once we have that data
       // from the engine.
@@ -246,15 +240,7 @@ class TimelineEventProcessor {
           break;
         // TODO(kenz): add additional support for flows.
         case TraceEvent.flowStartPhase:
-          if (eventWrapper.event.name.contains(pipelineItem)) {
-            _handleFrameStartEvent(eventWrapper.event);
-          }
-          break;
         case TraceEvent.flowEndPhase:
-          if (eventWrapper.event.name.contains(pipelineItem)) {
-            _handleFrameEndEvent(eventWrapper.event);
-          }
-          break;
         default:
           break;
       }
@@ -453,8 +439,6 @@ class TimelineEventProcessor {
         current.format(debugFrameTracking, '   ');
       }
       timelineController.addTimelineEvent(current);
-      // TODO(kenz): only make this call if we are connected to a Flutter app.
-      _maybeAddFlutterFrameEvent(current);
     }
   }
 
@@ -487,129 +471,19 @@ class TimelineEventProcessor {
     }
   }
 
-  void _handleFrameStartEvent(TraceEvent event) {
-    if (event.id == null) return;
-    final pendingFrame = _frameFromEvent(event);
-    pendingFrame.pipelineItemTime.start = Duration(
-      microseconds: nullSafeMin(
-        pendingFrame.pipelineItemTime.start?.inMicroseconds,
-        event.timestampMicros,
-      ),
-    );
-    if (pendingFrame.pipelineItemTime.start.inMicroseconds ==
-        event.timestampMicros) {
-      pendingFrame.pipelineItemStartTrace = event;
-    }
-    _maybeAddCompletedFrame(pendingFrame);
-  }
-
-  void _handleFrameEndEvent(TraceEvent event) async {
-    if (event.id == null) return;
-    // Since we handle events in ascending timestamp order, we should ignore
-    // frame end events that we receive before the corresponding frame start
-    // event.
-    if (!pendingFrames.containsKey(_frameId(event))) return;
-    final pendingFrame = _frameFromEvent(event);
-    pendingFrame.pipelineItemTime.end = Duration(
-      microseconds: nullSafeMax(
-        pendingFrame.pipelineItemTime.end?.inMicroseconds,
-        event.timestampMicros,
-      ),
-    );
-    if (pendingFrame.pipelineItemTime.end.inMicroseconds ==
-        event.timestampMicros) {
-      pendingFrame.pipelineItemEndTrace = event;
-    }
-    _maybeAddCompletedFrame(pendingFrame);
-  }
-
-  /// Add event to an available frame in [pendingFrames] if we can.
-  void _maybeAddFlutterFrameEvent(SyncTimelineEvent event) {
-    if (!(event.isUiEventFlow &&
-            event.traceEvents.first.event.threadId == uiThreadId) &&
-        !(event.isRasterEventFlow &&
-            event.traceEvents.first.event.threadId == rasterThreadId)) {
-      // We do not care about events that are neither the main flow of UI
-      // events nor the main flow of Raster events.
-      return;
-    }
-
-    final frames = pendingFrames.values
-        .where((frame) => frame.pipelineItemTime.start != null)
-        .toList()
-          ..sort((FlutterFrame a, FlutterFrame b) {
-            return a.pipelineItemTime.start.inMicroseconds
-                .compareTo(b.pipelineItemTime.start.inMicroseconds);
-          });
-    for (FlutterFrame frame in frames) {
-      final eventAdded = _maybeAddEventToFrame(event, frame);
-      if (eventAdded) {
-        break;
-      }
-    }
-  }
-
-  /// Attempts to add [event] to [frame], and returns a bool indicating whether
-  /// the attempt was successful.
-  bool _maybeAddEventToFrame(SyncTimelineEvent event, FlutterFrame frame) {
-    // Ensure the frame does not already have an event of this type and that
-    // the event fits within the frame's time boundaries.
-    if (frame.eventFlows[event.type.index] != null ||
-        !satisfiesUiRasterOrder(event, frame)) return false;
-
-    frame.setEventFlow(event);
-
-    // Adding event [e] could mean we have completed the frame. Check if we
-    // should add the completed frame to [_frameCompleteController].
-    _maybeAddCompletedFrame(frame);
-
-    return true;
-  }
-
-  // The [rasterEventFlow] should always start after the [uiEventFlow].
-  @visibleForTesting
-  bool satisfiesUiRasterOrder(SyncTimelineEvent e, FlutterFrame f) {
-    if (e.isUiEventFlow && f.rasterEventFlow != null) {
-      return e.time.start.inMicroseconds <
-          f.rasterEventFlow.time.start.inMicroseconds;
-    } else if (e.isRasterEventFlow && f.uiEventFlow != null) {
-      return e.time.start.inMicroseconds >
-          f.uiEventFlow.time.start.inMicroseconds;
-    }
-    // We do not have enough information about the frame to compare UI and
-    // Raster start times, so return true.
-    return true;
-  }
-
-  void _maybeAddCompletedFrame(FlutterFrame frame) {
-    assert(pendingFrames.containsKey(frame.id));
-    if (frame.isReadyForTimeline) {
-      timelineController.addFrame(frame);
-      pendingFrames.remove(frame.id);
-    }
-  }
-
-  FlutterFrame _frameFromEvent(TraceEvent event) {
-    final id = _frameId(event);
-    return pendingFrames.putIfAbsent(id, () => FlutterFrame(id));
-  }
-
-  String _frameId(TraceEvent event) {
-    return '${event.name}-${event.id}';
-  }
-
   void reset() {
     _asyncEventsById.clear();
     currentDurationEventNodes.clear();
     _previousDurationEndEvents.clear();
-    pendingFrames.clear();
     _pendingRootCompleteEvent = null;
     _traceEventsProcessed = 0;
     _progressNotifier.value = 0.0;
   }
 
-  void primeThreadIds(
-      {@required int uiThreadId, @required int rasterThreadId}) {
+  void primeThreadIds({
+    @required int uiThreadId,
+    @required int rasterThreadId,
+  }) {
     this.uiThreadId = uiThreadId;
     this.rasterThreadId = rasterThreadId;
   }
@@ -625,7 +499,7 @@ class TimelineEventProcessor {
     } else if (event.threadId == rasterThreadId) {
       return TimelineEventType.raster;
     } else {
-      return TimelineEventType.unknown;
+      return TimelineEventType.other;
     }
   }
 }

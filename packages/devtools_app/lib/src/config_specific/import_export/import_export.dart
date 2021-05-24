@@ -7,7 +7,7 @@ import 'dart:convert';
 import '../../../devtools.dart';
 import '../../globals.dart';
 import '../../notifications.dart';
-import '../../performance/performance_model.dart';
+import '../../performance/performance_controller.dart';
 import '../../performance/performance_screen.dart';
 import '../../utils.dart';
 import '_export_stub.dart'
@@ -104,9 +104,9 @@ abstract class ExportController {
     // require a top level field named "traceEvents".
     if (activeScreenId == PerformanceScreen.id) {
       final traceEvents = List<Map<String, dynamic>>.from(
-          contents[PerformanceData.traceEventsKey]);
-      _contents[PerformanceData.traceEventsKey] = traceEvents;
-      contents.remove(PerformanceData.traceEventsKey);
+          contents[TimelineController.traceEventsKey]);
+      _contents[TimelineController.traceEventsKey] = traceEvents;
+      contents.remove(TimelineController.traceEventsKey);
     }
     return jsonEncode(_contents..addAll({activeScreenId: contents}));
   }

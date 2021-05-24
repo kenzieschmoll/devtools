@@ -77,9 +77,12 @@ class _FlutterFramesChartState extends State<FlutterFramesChart>
     _controller = newController;
 
     cancel();
-    addAutoDisposeListener(_controller.selectedFrame, () {
+    _selectedFrame = _controller.flutterFramesController.selectedFrame.value;
+    addAutoDisposeListener(_controller.flutterFramesController.selectedFrame,
+        () {
       setState(() {
-        _selectedFrame = _controller.selectedFrame.value;
+        _selectedFrame =
+            _controller.flutterFramesController.selectedFrame.value;
       });
     });
   }
@@ -180,7 +183,11 @@ class _FlutterFramesChartState extends State<FlutterFramesChart>
 
   Widget _buildFrame(FlutterFrame frame) {
     return InkWell(
+<<<<<<< Updated upstream
       onTap: () => _controller.toggleSelectedFrame(frame),
+=======
+      onTap: () => _controller.flutterFramesController.selectFrame(frame),
+>>>>>>> Stashed changes
       child: FlutterFramesChartItem(
         frame: frame,
         selected: frame == _selectedFrame,
@@ -226,7 +233,10 @@ class _FlutterFramesChartState extends State<FlutterFramesChart>
           sum +
           math.max(
             1000 / widget.displayRefreshRate,
-            math.max(frame.uiDurationMs, frame.rasterDurationMs),
+            math.max(
+              frame.buildTime.inMilliseconds,
+              frame.rasterTime.inMilliseconds,
+            ),
           ),
     );
     final avgFrameTime = sumFrameTimesMs / widget.frames.length;
@@ -274,14 +284,15 @@ class FlutterFramesChartItem extends StatelessWidget {
     final ui = Container(
       key: Key('frame ${frame.id} - ui'),
       width: defaultFrameWidth / 2,
-      height: (frame.uiDurationMs / msPerPx).clamp(0.0, availableChartHeight),
+      height: (frame.buildTime.inMilliseconds / msPerPx)
+          .clamp(0.0, availableChartHeight),
       color: janky ? uiJankColor : mainUiColor,
     );
     final raster = Container(
       key: Key('frame ${frame.id} - raster'),
       width: defaultFrameWidth / 2,
-      height:
-          (frame.rasterDurationMs / msPerPx).clamp(0.0, availableChartHeight),
+      height: (frame.rasterTime.inMilliseconds / msPerPx)
+          .clamp(0.0, availableChartHeight),
       color: janky ? rasterJankColor : mainRasterColor,
     );
     return Stack(
@@ -319,8 +330,8 @@ class FlutterFramesChartItem extends StatelessWidget {
   }
 
   String _tooltipText(FlutterFrame frame) {
-    return 'UI: ${msText(frame.uiEventFlow.time.duration)}\n'
-        'Raster: ${msText(frame.rasterEventFlow.time.duration)}';
+    return 'UI: ${msText(frame.buildTime)}\n'
+        'Raster: ${msText(frame.rasterTime)}';
   }
 }
 

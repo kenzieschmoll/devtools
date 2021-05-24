@@ -49,6 +49,8 @@ class _TimelineFlameChartContainerState
     with AutoDisposeMixin, SearchFieldMixin<TimelineFlameChartContainer> {
   PerformanceController controller;
 
+  bool staleData;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -56,38 +58,56 @@ class _TimelineFlameChartContainerState
     final newController = Provider.of<PerformanceController>(context);
     if (newController == controller) return;
     controller = newController;
+
+    staleData = controller.timelineController.staleData.value;
+    addAutoDisposeListener(controller.timelineController.staleData, () {
+      setState(() {
+        staleData = controller.timelineController.staleData.value;
+      });
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     Widget content;
-    final timelineEmpty = (controller.data?.isEmpty ?? true) ||
-        controller.data.eventGroups.isEmpty;
-    if (widget.processing || timelineEmpty) {
-      content = ValueListenableBuilder<bool>(
-        valueListenable: controller.emptyTimeline,
-        builder: (context, emptyRecording, _) {
-          return emptyRecording
-              ? Center(
-                  key: TimelineFlameChartContainer.emptyTimelineKey,
-                  child: Text(
-                    'No timeline events',
-                    style: Theme.of(context).subtleTextStyle,
-                  ),
-                )
-              : _buildProcessingInfo();
-        },
+    final timelineEmpty = controller.timelineController.isDataEmpty ||
+        controller.timelineController.eventGroups.isEmpty;
+    if (widget.processing) {
+      content = _buildProcessingInfo();
+    } else if (timelineEmpty) {
+      content = Center(
+        key: TimelineFlameChartContainer.emptyTimelineKey,
+        child: Text(
+          'No timeline events',
+          style: Theme.of(context).subtleTextStyle,
+        ),
       );
+      // content = ValueListenableBuilder<bool>(
+      //   valueListenable: controller.timelineController.emptyTimeline,
+      //   builder: (context, emptyRecording, _) {
+      //     return emptyRecording
+      //         ? Center(
+      //             key: TimelineFlameChartContainer.emptyTimelineKey,
+      //             child: Text(
+      //               'No timeline events',
+      //               style: Theme.of(context).subtleTextStyle,
+      //             ),
+      //           )
+      //         : _buildProcessingInfo();
+      //   },
+      // );
     } else {
       content = LayoutBuilder(
         builder: (context, constraints) {
           return TimelineFlameChart(
-            controller.data,
+            controller.timelineController,
             width: constraints.maxWidth,
             height: constraints.maxHeight,
-            selectionNotifier: controller.selectedTimelineEvent,
-            searchMatchesNotifier: controller.searchMatches,
-            activeSearchMatchNotifier: controller.activeSearchMatch,
+            selectionNotifier:
+                controller.timelineController.selectedTimelineEvent,
+            searchMatchesNotifier: controller.timelineController.searchMatches,
+            activeSearchMatchNotifier:
+                controller.timelineController.activeSearchMatch,
             onDataSelected: (e) => controller.selectTimelineEvent(e),
           );
         },
@@ -95,7 +115,7 @@ class _TimelineFlameChartContainerState
     }
 
     final searchFieldEnabled =
-        !(controller.data?.isEmpty ?? true) && !widget.processing;
+        !controller.timelineController.isDataEmpty && !widget.processing;
     return OutlineDecoration(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -105,7 +125,17 @@ class _TimelineFlameChartContainerState
             tall: true,
             needsTopBorder: false,
             rightPadding: 0.0,
-            actions: [
+            leftActions: [
+              _buildRefreshTimelineEventsButton(),
+              // if (processing)
+              //   Container(
+              //     width: 50.0,
+              //     child: LinearProgressIndicator(
+              //       value: processingProgress,
+              //     ),
+              //   ),
+            ],
+            rightActions: [
               _buildSearchField(searchFieldEnabled),
               FlameChartHelpButton(),
             ],
@@ -121,12 +151,32 @@ class _TimelineFlameChartContainerState
     );
   }
 
+  Widget _buildRefreshTimelineEventsButton() {
+    return DevToolsTooltip(
+      tooltip: 'Refresh timeline events',
+      child: TextButton(
+        onPressed: controller.timelineController.processAvailableEvents,
+        // onPressed: staleData
+        //     ? controller.timelineController.processAvailableEvents
+        //     : null,
+        child: Container(
+          height: defaultButtonHeight,
+          width: defaultButtonHeight,
+          child: const Icon(
+            Icons.refresh,
+            size: defaultIconSize,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildSearchField(bool searchFieldEnabled) {
     return Container(
       width: wideSearchTextWidth,
       height: defaultTextFieldHeight,
       child: buildSearchField(
-        controller: controller,
+        controller: controller.timelineController,
         searchFieldKey: timelineSearchFieldKey,
         searchFieldEnabled: searchFieldEnabled,
         shouldRequestFocus: false,
@@ -148,9 +198,9 @@ class _TimelineFlameChartContainerState
 
 // TODO(kenz): make flame chart sections collapsible.
 
-class TimelineFlameChart extends FlameChart<PerformanceData, TimelineEvent> {
+class TimelineFlameChart extends FlameChart<TimelineController, TimelineEvent> {
   TimelineFlameChart(
-    PerformanceData data, {
+    TimelineController timelineController, {
     @required double width,
     @required double height,
     @required ValueListenable<TimelineEvent> selectionNotifier,
@@ -158,22 +208,22 @@ class TimelineFlameChart extends FlameChart<PerformanceData, TimelineEvent> {
     @required ValueListenable<TimelineEvent> activeSearchMatchNotifier,
     @required Function(TimelineEvent event) onDataSelected,
   }) : super(
-          data,
-          time: data.time,
+          timelineController,
+          time: timelineController.time,
           containerWidth: width,
           containerHeight: height,
-          startInset: _calculateStartInset(data),
+          startInset: _calculateStartInset(timelineController),
           selectionNotifier: selectionNotifier,
           searchMatchesNotifier: searchMatchesNotifier,
           activeSearchMatchNotifier: activeSearchMatchNotifier,
           onDataSelected: onDataSelected,
         );
 
-  static double _calculateStartInset(PerformanceData data) {
+  static double _calculateStartInset(TimelineController timelineController) {
     const spaceFor0msText = 55.0;
     const maxStartInset = 300.0;
     var maxMeasuredWidth = 0.0;
-    for (String groupName in data.eventGroups.keys) {
+    for (String groupName in timelineController.eventGroups.keys) {
       final textPainter = TextPainter(
         text: TextSpan(text: groupName),
         textDirection: TextDirection.ltr,
@@ -223,6 +273,8 @@ class TimelineFlameChartState
 
   ScrollController _nextInGroupButtonsScrollController;
 
+  bool staleData;
+
   @override
   int get rowOffsetForTopPadding => TimelineFlameChart.rowOffsetForTopPadding;
 
@@ -243,9 +295,17 @@ class TimelineFlameChartState
     _performanceController = newController;
 
     addAutoDisposeListener(
-      _performanceController.selectedFrame,
+      _performanceController.flutterFramesController.selectedFrame,
       _handleSelectedFrame,
     );
+
+    staleData = _performanceController.timelineController.staleData.value;
+    addAutoDisposeListener(_performanceController.timelineController.staleData,
+        () {
+      setState(() {
+        staleData = _performanceController.timelineController.staleData.value;
+      });
+    });
   }
 
   @override
@@ -269,7 +329,7 @@ class TimelineFlameChartState
   double topYForData(TimelineEvent data) {
     final eventGroup = widget.data.eventGroups[computeEventGroupKey(
       data,
-      _performanceController.threadNamesById,
+      _performanceController.timelineController.threadNamesById,
     )];
     assert(eventGroup != null);
     final rowOffsetInGroup = eventGroup.rowIndexForEvent[data];
@@ -279,9 +339,11 @@ class TimelineFlameChartState
 
   @override
   double startXForData(TimelineEvent data) {
-    final timeMicros = data.time.start.inMicroseconds;
-    // Horizontally scroll to the frame.
-    final relativeStartTime = timeMicros - startTimeOffset;
+    return _startXForTimestamp(data.time.start);
+  }
+
+  double _startXForTimestamp(Duration timestamp) {
+    final relativeStartTime = timestamp.inMicroseconds - startTimeOffset;
     final ratio = relativeStartTime / widget.data.time.duration.inMicroseconds;
     return contentWidthWithZoom * ratio;
   }
@@ -290,7 +352,7 @@ class TimelineFlameChartState
     final boundEvent = SyncTimelineEvent(
       TraceEventWrapper(
         TraceEvent({'ts': visibleTimeRange.start.inMicroseconds})
-          ..type = TimelineEventType.unknown,
+          ..type = TimelineEventType.other,
         0, // This is arbitrary
       ),
     )..time = visibleTimeRange;
@@ -306,6 +368,7 @@ class TimelineFlameChartState
     final firstInViewIndex = _indexOfFirstEventInView(group);
     if (firstInViewIndex > 0) {
       final event = group.sortedEventRoots[firstInViewIndex - 1];
+      programmaticZoom = true;
       await zoomAndScrollToData(
         startMicros: event.time.start.inMicroseconds,
         durationMicros: event.time.duration.inMicroseconds,
@@ -313,6 +376,7 @@ class TimelineFlameChartState
         scrollVertically: false,
         jumpZoom: true,
       );
+      programmaticZoom = false;
       return;
     }
     // This notification should not be shown, as we are disabling the previous
@@ -328,7 +392,7 @@ class TimelineFlameChartState
     final boundEvent = SyncTimelineEvent(
       TraceEventWrapper(
         TraceEvent({'ts': visibleTimeRange.end.inMicroseconds})
-          ..type = TimelineEventType.unknown,
+          ..type = TimelineEventType.other,
         0, // This is arbitrary
       ),
     )..time = (TimeRange()
@@ -359,6 +423,7 @@ class TimelineFlameChartState
     }
 
     if (zoomTo != null) {
+      programmaticZoom = true;
       await zoomAndScrollToData(
         startMicros: zoomTo.time.start.inMicroseconds,
         durationMicros: zoomTo.time.duration.inMicroseconds,
@@ -366,40 +431,69 @@ class TimelineFlameChartState
         scrollVertically: false,
         jumpZoom: true,
       );
+      programmaticZoom = false;
       return;
     }
 
-    // TODO(kenz): once the performance view records live frame data, perform
-    // a refresh of timeline events here if we know there are more events we
-    // have yet to render.
+    if (staleData ?? false) {
+      await _performanceController.timelineController.processAvailableEvents();
+      group.clearCachedEventRoots();
+      if (firstOutOfViewIndex < group.sortedEventRoots.length) {
+        final event = group.sortedEventRoots[firstOutOfViewIndex];
+        programmaticZoom = true;
+        await zoomAndScrollToData(
+          startMicros: event.time.start.inMicroseconds,
+          durationMicros: event.time.duration.inMicroseconds,
+          data: event,
+          scrollVertically: false,
+          jumpZoom: true,
+        );
+        programmaticZoom = false;
+      }
+      return;
+    }
 
     // This notification should not be shown, as we are disabling the next
     // button when there are no more events out of view for the group. Leave
     // this here as a fallback though, so that we do not give the user a
     // completely broken experience if we regress or if there is a race.
-    Notifications.of(context).push(
-      'There are no events on this thread that occurred after this time range.',
-    );
+    if (mounted) {
+      Notifications.of(context).push(
+        'There are no events on this thread that occurred after this time range.',
+      );
+    }
+  }
+
+  Future<void> scrollHorizontallyToTimestamp(Duration time) async {
+    final offset = _startXForTimestamp(time) +
+        widget.startInset -
+        widget.containerWidth * 0.1;
+    await scrollToX(offset);
   }
 
   void _handleSelectedFrame() async {
-    final selectedFrame = _performanceController.selectedFrame.value;
+    final selectedFrame =
+        _performanceController.flutterFramesController.selectedFrame.value;
     if (selectedFrame == _selectedFrame) return;
 
-    setState(() {
-      _selectedFrame = selectedFrame;
-    });
+    // setState(() {
+    //   _selectedFrame = selectedFrame;
+    // });
 
     // TODO(kenz): consider using jumpTo for some of these animations to
     // improve performance.
 
     if (_selectedFrame != null) {
       // Zoom and scroll to the frame's UI event.
-      await zoomAndScrollToData(
-        startMicros: selectedFrame.time.start.inMicroseconds,
-        durationMicros: selectedFrame.time.duration.inMicroseconds,
-        data: selectedFrame.uiEventFlow,
-      );
+      // await zoomAndScrollToData(
+      //   startMicros: selectedFrame.time.start.inMicroseconds,
+      //   durationMicros: selectedFrame.time.duration.inMicroseconds,
+      //   data: selectedFrame.uiEventFlow,
+      // );
+
+      // do something with this
+      // Horizontally scroll to the frame.
+      // await scrollHorizontallyToTimestamp(selectedFrame.time.start);
     }
   }
 
@@ -542,24 +636,24 @@ class TimelineFlameChartState
           colorScheme: colorScheme,
         ),
       ),
-      CustomPaint(
-        painter: SelectedFrameBracketPainter(
-          _selectedFrame,
-          zoom: zoom,
-          constraints: constraints,
-          verticalScrollOffset: verticalScrollOffset,
-          horizontalScrollOffset: horizontalScrollOffset,
-          chartStartInset: widget.startInset,
-          startTimeOffsetMicros: startTimeOffset,
-          startingPxPerMicro: startingPxPerMicro,
-          // Subtract [rowHeight] because [_calculateVerticalGuidelineStartY]
-          // returns the Y value at the bottom of the flame chart node, and we
-          // want the Y value at the top of the node.
-          yForEvent: (event) =>
-              _calculateVerticalGuidelineStartY(event) - rowHeight,
-          colorScheme: colorScheme,
-        ),
-      ),
+      // CustomPaint(
+      //   painter: SelectedFrameBracketPainter(
+      //     _selectedFrame,
+      //     zoom: zoom,
+      //     constraints: constraints,
+      //     verticalScrollOffset: verticalScrollOffset,
+      //     horizontalScrollOffset: horizontalScrollOffset,
+      //     chartStartInset: widget.startInset,
+      //     startTimeOffsetMicros: startTimeOffset,
+      //     startingPxPerMicro: startingPxPerMicro,
+      //     // Subtract [rowHeight] because [_calculateVerticalGuidelineStartY]
+      //     // returns the Y value at the bottom of the flame chart node, and we
+      //     // want the Y value at the top of the node.
+      //     yForEvent: (event) =>
+      //         _calculateVerticalGuidelineStartY(event) - rowHeight,
+      //     colorScheme: colorScheme,
+      //   ),
+      // ),
       _buildSectionLabels(constraints: constraints),
       ..._buildEventThreadNavigationButtons(constraints: constraints),
     ];
@@ -567,7 +661,7 @@ class TimelineFlameChartState
 
   Widget _buildSectionLabels({@required BoxConstraints constraints}) {
     final colorScheme = Theme.of(context).colorScheme;
-    final eventGroups = _performanceController.data.eventGroups;
+    final eventGroups = _performanceController.timelineController.eventGroups;
 
     final children = <Widget>[];
     for (int i = 0; i < eventGroups.length; i++) {
@@ -632,7 +726,7 @@ class TimelineFlameChartState
     @required BoxConstraints constraints,
   }) {
     const threadButtonContainerWidth = buttonMinWidth + defaultSpacing;
-    final eventGroups = _performanceController.data.eventGroups;
+    final eventGroups = _performanceController.timelineController.eventGroups;
 
     Widget buildNavigatorButton(int index, {@required bool isNext}) {
       // Add spacing to account for timestamps at top of chart.
@@ -708,6 +802,8 @@ class TimelineFlameChartState
   }
 
   bool _shouldEnableNextInThreadButton(TimelineEventGroup group) {
+    if (staleData ?? false) return true;
+
     final firstEventInView = _indexOfFirstEventInView(group);
     final noEventsAfterVisibleTimeRange =
         horizontalControllerGroup.hasAttachedControllers &&
@@ -1054,8 +1150,8 @@ class SelectedFrameBracketPainter extends FlameChartPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth;
 
-    _paintBrackets(canvas, paint, event: selectedFrame.uiEventFlow);
-    _paintBrackets(canvas, paint, event: selectedFrame.rasterEventFlow);
+    // _paintBrackets(canvas, paint, event: selectedFrame.uiEventFlow);
+    // _paintBrackets(canvas, paint, event: selectedFrame.rasterEventFlow);
   }
 
   void _paintBrackets(

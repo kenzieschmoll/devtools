@@ -651,7 +651,8 @@ class AreaPaneHeader extends StatelessWidget implements PreferredSizeWidget {
     this.needsTopBorder = true,
     this.needsBottomBorder = true,
     this.needsLeftBorder = false,
-    this.actions = const [],
+    this.leftActions = const [],
+    this.rightActions = const [],
     this.rightPadding = densePadding,
     this.tall = false,
   }) : super(key: key);
@@ -660,7 +661,8 @@ class AreaPaneHeader extends StatelessWidget implements PreferredSizeWidget {
   final bool needsTopBorder;
   final bool needsBottomBorder;
   final bool needsLeftBorder;
-  final List<Widget> actions;
+  final List<Widget> leftActions;
+  final List<Widget> rightActions;
   final double rightPadding;
   final bool tall;
 
@@ -691,7 +693,9 @@ class AreaPaneHeader extends StatelessWidget implements PreferredSizeWidget {
                 child: title,
               ),
             ),
-            ...actions,
+            ...leftActions,
+            const Spacer(),
+            ...rightActions,
           ],
         ),
       ),

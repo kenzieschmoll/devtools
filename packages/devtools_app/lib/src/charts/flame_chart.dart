@@ -459,9 +459,16 @@ abstract class FlameChartState<T extends FlameChart,
       // to call this that guarantees the scroll controller offsets will be
       // updated for the new zoom level and layout size
       // https://github.com/flutter/devtools/issues/2012.
-      scrollToX(newScrollOffset, jump: true);
+      if (!programmaticZoom) {
+        // If we are in the middle of a programmatic zoom, the caller that
+        // modified the zoom level will be responsible for updating the
+        // horizontal scroll offset.
+        scrollToX(newScrollOffset, jump: true);
+      }
     });
   }
+
+  bool programmaticZoom = false;
 
   Future<void> zoomTo(
     double zoom, {
@@ -534,6 +541,8 @@ abstract class FlameChartState<T extends FlameChart,
     bool scrollVertically = true,
     bool jumpZoom = false,
   }) async {
+    if (!mounted) return;
+
     await Future.wait([
       zoomToTimeRange(
         startMicros: startMicros,

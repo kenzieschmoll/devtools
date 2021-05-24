@@ -1140,10 +1140,12 @@ class ListValueNotifier<T> extends ChangeNotifier
   List<T> get value => _currentList;
 
   /// Adds an element to the list and notifies listeners.
-  void add(T element) {
+  void add(T element, {bool notify = true}) {
     _rawList.add(element);
     _currentList = ImmutableList(_rawList);
-    notifyListeners();
+    if (notify) {
+      notifyListeners();
+    }
   }
 
   /// Adds elements to the list and notifies listeners.
@@ -1157,6 +1159,16 @@ class ListValueNotifier<T> extends ChangeNotifier
   void clear() {
     _rawList = [];
     _currentList = ImmutableList(_rawList);
+    notifyListeners();
+  }
+
+  void sort([Function(T a, T b) compare]) {
+    _rawList = List<T>.from(_rawList)..sort(compare);
+    _currentList = ImmutableList(_rawList);
+    notifyListeners();
+  }
+
+  void forceNotify() {
     notifyListeners();
   }
 }

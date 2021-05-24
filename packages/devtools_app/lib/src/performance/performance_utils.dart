@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'performance_controller.dart';
 import 'performance_model.dart';
 
 String computeEventGroupKey(
@@ -13,12 +14,16 @@ String computeEventGroupKey(
   } else if (event.isAsyncEvent) {
     return event.root.name;
   } else if (event.isUiEvent) {
-    return PerformanceData.uiKey;
+    return TimelineController.uiKey;
   } else if (event.isRasterEvent) {
+<<<<<<< Updated upstream
     return PerformanceData.rasterKey;
+=======
+    return TimelineController.rasterKey;
+>>>>>>> Stashed changes
   } else if (threadNamesById[event.threadId] != null) {
     return threadNamesById[event.threadId];
   } else {
-    return PerformanceData.unknownKey;
+    return TimelineController.unknownKey;
   }
 }

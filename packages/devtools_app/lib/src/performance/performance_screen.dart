@@ -66,10 +66,6 @@ class PerformanceScreenBodyState extends State<PerformanceScreenBody>
         OfflineScreenMixin<PerformanceScreenBody, OfflinePerformanceData> {
   PerformanceController controller;
 
-  bool processing = false;
-
-  double processingProgress = 0.0;
-
   @override
   void initState() {
     super.initState();
@@ -87,27 +83,14 @@ class PerformanceScreenBodyState extends State<PerformanceScreenBody>
 
     cancel();
 
-    processing = controller.processing.value;
-    addAutoDisposeListener(controller.processing, () {
-      setState(() {
-        processing = controller.processing.value;
-      });
-    });
+    // todo(kenz) i don;t think we need this
+    // addAutoDisposeListener(controller.flutterFramesController.selectedFrame);
 
-    processingProgress = controller.processor.progressNotifier.value;
-    addAutoDisposeListener(controller.processor.progressNotifier, () {
-      setState(() {
-        processingProgress = controller.processor.progressNotifier.value;
-      });
-    });
-
-    addAutoDisposeListener(controller.selectedFrame);
-
-    // Refresh data on page load if data is null. On subsequent tab changes,
-    // this should not be called.
-    if (controller.data == null && !offlineMode) {
-      controller.refreshData();
-    }
+    // // Refresh data on page load if data is null. On subsequent tab changes,
+    // // this should not be called.
+    // if (controller.data == null && !offlineMode) {
+    //   controller.refreshData();
+    // }
 
     // Load offline timeline data if available.
     if (shouldLoadOfflineData()) {
@@ -118,8 +101,8 @@ class PerformanceScreenBodyState extends State<PerformanceScreenBody>
       final timelineJson =
           Map<String, dynamic>.from(offlineDataJson[PerformanceScreen.id])
             ..addAll({
-              PerformanceData.traceEventsKey:
-                  offlineDataJson[PerformanceData.traceEventsKey]
+              TimelineController.traceEventsKey:
+                  offlineDataJson[TimelineController.traceEventsKey]
             });
       final offlinePerformanceData = OfflinePerformanceData.parse(timelineJson);
       if (!offlinePerformanceData.isEmpty) {
@@ -130,20 +113,20 @@ class PerformanceScreenBodyState extends State<PerformanceScreenBody>
 
   @override
   Widget build(BuildContext context) {
-    final isOfflineFlutterApp = offlineMode &&
-        controller.offlinePerformanceData != null &&
-        controller.offlinePerformanceData.frames.isNotEmpty;
+    final isOfflineFlutterApp =
+        offlineMode && controller.offlinePerformanceData != null;
 
     final performanceScreen = Column(
       children: [
-        if (!offlineMode) _buildPerformanceControls(),
+        if (!offlineMode) PerformanceControls(controller),
         const SizedBox(height: denseRowSpacing),
         if (isOfflineFlutterApp ||
             (!offlineMode && serviceManager.connectedApp.isFlutterAppNow))
           ValueListenableBuilder(
-            valueListenable: controller.flutterFrames,
+            valueListenable: controller.flutterFramesController.flutterFrames,
             builder: (context, frames, _) => ValueListenableBuilder(
-              valueListenable: controller.displayRefreshRate,
+              valueListenable:
+                  controller.flutterFramesController.displayRefreshRate,
               builder: (context, displayRefreshRate, _) {
                 return FlutterFramesChart(
                   frames,
@@ -157,12 +140,24 @@ class PerformanceScreenBodyState extends State<PerformanceScreenBody>
             axis: Axis.vertical,
             initialFractions: const [0.6, 0.4],
             children: [
-              TimelineFlameChartContainer(
-                processing: processing,
-                processingProgress: processingProgress,
+              ValueListenableBuilder(
+                valueListenable: controller.timelineController.processing,
+                builder: (context, processing, _) {
+                  return ValueListenableBuilder(
+                    valueListenable: controller
+                        .timelineController.processor.progressNotifier,
+                    builder: (context, processingProgress, _) {
+                      return TimelineFlameChartContainer(
+                        processing: processing,
+                        processingProgress: processingProgress,
+                      );
+                    },
+                  );
+                },
               ),
               ValueListenableBuilder(
-                valueListenable: controller.selectedTimelineEvent,
+                valueListenable:
+                    controller.timelineController.selectedTimelineEvent,
                 builder: (context, selectedEvent, _) {
                   return EventDetails(selectedEvent);
                 },
@@ -189,7 +184,28 @@ class PerformanceScreenBodyState extends State<PerformanceScreenBody>
     );
   }
 
-  Widget _buildPerformanceControls() {
+  @override
+  FutureOr<void> processOfflineData(OfflinePerformanceData offlineData) async {
+    await controller.processOfflineData(offlineData);
+  }
+
+  @override
+  bool shouldLoadOfflineData() {
+    return offlineMode &&
+        offlineDataJson.isNotEmpty &&
+        offlineDataJson[PerformanceScreen.id] != null;
+  }
+}
+
+class PerformanceControls extends StatelessWidget {
+  const PerformanceControls(this.controller);
+
+  static const minIncludeTextWidth = 725.0;
+
+  final PerformanceController controller;
+
+  @override
+  Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -197,19 +213,6 @@ class PerformanceScreenBodyState extends State<PerformanceScreenBody>
         SecondaryPerformanceControls(controller),
       ],
     );
-  }
-
-  @override
-  FutureOr<void> processOfflineData(OfflinePerformanceData offlineData) async {
-    // await controller.timelineController.processOfflineData(offlineData);
-  }
-
-  @override
-  bool shouldLoadOfflineData() {
-    return offlineMode &&
-        offlineDataJson.isNotEmpty &&
-        offlineDataJson[PerformanceScreen.id] != null &&
-        offlineDataJson[TimelineController.traceEventsKey] != null;
   }
 }
 
@@ -376,8 +379,8 @@ class PerformanceSettingsDialog extends StatelessWidget {
       _buildStream(
         name: 'Network',
         description: ' • Http traffic',
-        listenable: controller.httpTimelineLoggingEnabled,
-        onChanged: controller.toggleHttpRequestLogging,
+        listenable: controller.timelineController.httpTimelineLoggingEnabled,
+        onChanged: controller.timelineController.toggleHttpRequestLogging,
         theme: theme,
       ),
     ];
@@ -400,7 +403,7 @@ class PerformanceSettingsDialog extends StatelessWidget {
     @required bool advanced,
   }) {
     final settings = <Widget>[];
-    final streams = controller.recordedStreams
+    final streams = controller.timelineController.recordedStreams
         .where((s) => s.advanced == advanced)
         .toList();
     for (final stream in streams) {
@@ -408,7 +411,8 @@ class PerformanceSettingsDialog extends StatelessWidget {
         name: stream.name,
         description: ' • ${stream.description}',
         listenable: stream.enabled,
-        onChanged: (_) => controller.toggleTimelineStream(stream),
+        onChanged: (_) =>
+            controller.timelineController.toggleTimelineStream(stream),
         theme: theme,
       ));
     }
@@ -471,7 +475,9 @@ class _BadgeJankyFramesSetting extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        NotifierCheckbox(notifier: controller.badgeTabForJankyFrames),
+        NotifierCheckbox(
+            notifier:
+                controller.flutterFramesController.badgeTabForJankyFrames),
         RichText(
           overflow: TextOverflow.visible,
           text: TextSpan(

@@ -237,10 +237,18 @@ class DebuggerScreenBodyState extends State<DebuggerScreenBody>
               title: Text(callStackTitle),
               needsTopBorder: false,
             ),
+<<<<<<< Updated upstream
             const AreaPaneHeader(title: Text(variablesTitle)),
             AreaPaneHeader(
               title: const Text(breakpointsTitle),
               actions: [
+=======
+            areaPaneHeader(context, title: variablesTitle),
+            areaPaneHeader(
+              context,
+              title: breakpointsTitle,
+              rightActions: [
+>>>>>>> Stashed changes
                 _breakpointsRightChild(),
               ],
               rightPadding: 0.0,

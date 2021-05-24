@@ -1,0 +1,177 @@
+diff --git a/packages/devtools_app/lib/src/performance/performance_controller.dart b/packages/devtools_app/lib/src/performance/performance_controller.dart
+index abdafcb1..495de442 100644
+--- a/packages/devtools_app/lib/src/performance/performance_controller.dart
++++ b/packages/devtools_app/lib/src/performance/performance_controller.dart
+@@ -205,6 +205,7 @@ class PerformanceController
+       return;
+     }
+ 
++    print('frame.time: ${frame.time}');
+     data.selectedFrame = frame;
+     _selectedFrameNotifier.value = frame;
+ 
+@@ -420,8 +421,7 @@ class PerformanceController
+     }
+ 
+     if (offlinePerformanceData.cpuProfileData != null) {
+-      cpuProfilerController
+-          .loadOfflineData(offlinePerformanceData.cpuProfileData);
++      cpuProfilerController.loadData(offlinePerformanceData.cpuProfileData);
+     }
+   }
+ 
+diff --git a/packages/devtools_app/lib/src/profiler/cpu_profile_controller.dart b/packages/devtools_app/lib/src/profiler/cpu_profile_controller.dart
+index 2acbd897..0bcc6fcf 100644
+--- a/packages/devtools_app/lib/src/profiler/cpu_profile_controller.dart
++++ b/packages/devtools_app/lib/src/profiler/cpu_profile_controller.dart
+@@ -104,7 +104,7 @@ class CpuProfilerController with SearchControllerMixin<CpuStackFrame> {
+     return matches;
+   }
+ 
+-  void loadOfflineData(CpuProfileData data) {
++  void loadData(CpuProfileData data) {
+     assert(data.processed);
+     _dataNotifier.value = data;
+   }
+diff --git a/packages/devtools_app/lib/src/profiler/profiler_screen.dart b/packages/devtools_app/lib/src/profiler/profiler_screen.dart
+index 120f3ff4..53685108 100644
+--- a/packages/devtools_app/lib/src/profiler/profiler_screen.dart
++++ b/packages/devtools_app/lib/src/profiler/profiler_screen.dart
+@@ -85,6 +85,7 @@ class _ProfilerScreenBodyState extends State<ProfilerScreenBody>
+     final newController = Provider.of<ProfilerScreenController>(context);
+     if (newController == controller) return;
+     controller = newController;
++    controller.init();
+ 
+     cancel();
+ 
+@@ -192,7 +193,7 @@ class _ProfilerScreenBodyState extends State<ProfilerScreenBody>
+   @override
+   FutureOr<void> processOfflineData(CpuProfileData offlineData) async {
+     await controller.cpuProfilerController.transformer.processData(offlineData);
+-    controller.cpuProfilerController.loadOfflineData(offlineData);
++    controller.cpuProfilerController.loadData(offlineData);
+   }
+ 
+   @override
+@@ -274,11 +275,22 @@ class _SecondaryControls extends StatelessWidget {
+     return Row(
+       mainAxisAlignment: MainAxisAlignment.end,
+       children: [
+-        RefreshButton(
+-          label: 'Load all CPU samples',
+-          onPressed: controller.loadAllSamples,
+-        ),
+-        const SizedBox(width: defaultSpacing),
++        // TODO(kenz): consider showing this for non-flutter apps if it is
++        // useful.
++        if (serviceManager.connectedApp.isFlutterAppNow) ...[
++          ValueListenableBuilder(
++            valueListenable: controller.showProfileStartupButton,
++            builder: (context, showButton, _) {
++              return RefreshButton(
++                label: 'Profile app startup',
++                onPressed: controller.firstFrameMicros.isCompleted
++                    ? controller.profileAppStartup
++                    : null,
++              );
++            },
++          ),
++          const SizedBox(width: defaultSpacing),
++        ],
+         const ProfileGranularityDropdown(ProfilerScreen.id),
+         const SizedBox(width: defaultSpacing),
+         ExportButton(
+diff --git a/packages/devtools_app/lib/src/profiler/profiler_screen_controller.dart b/packages/devtools_app/lib/src/profiler/profiler_screen_controller.dart
+index 49c200dd..b0dc4ef2 100644
+--- a/packages/devtools_app/lib/src/profiler/profiler_screen_controller.dart
++++ b/packages/devtools_app/lib/src/profiler/profiler_screen_controller.dart
+@@ -2,15 +2,20 @@
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
++import 'dart:async';
++
+ import 'package:flutter/foundation.dart';
+ 
++import '../auto_dispose.dart';
+ import '../config_specific/import_export/import_export.dart';
++import '../globals.dart';
+ import '../utils.dart';
+ import 'cpu_profile_controller.dart';
+ import 'cpu_profile_model.dart';
+ import 'profiler_screen.dart';
+ 
+-class ProfilerScreenController with CpuProfilerControllerProviderMixin {
++class ProfilerScreenController extends DisposableController
++    with CpuProfilerControllerProviderMixin, AutoDisposeControllerMixin {
+   final _exportController = ExportController();
+ 
+   CpuProfileData get cpuProfileData => cpuProfilerController.dataNotifier.value;
+@@ -21,6 +26,29 @@ class ProfilerScreenController with CpuProfilerControllerProviderMixin {
+ 
+   final int _profileStartMicros = 0;
+ 
++  final firstFrameMicros = Completer<int>();
++
++  ValueListenable<bool> get showProfileStartupButton =>
++      _showProfileStartupButton;
++
++  final _showProfileStartupButton = ValueNotifier<bool>(false);
++
++  CpuProfileData startupProfile;
++
++  void init() async {
++    if (!firstFrameMicros.isCompleted) {
++      autoDispose(serviceManager.service.onExtensionEventWithHistory.listen(
++        (event) {
++          if (event.extensionKind == 'Flutter.FirstFrame') {
++            firstFrameMicros.complete(event.timestamp);
++            _showProfileStartupButton.value = true;
++            print('first frame timestamp = ${event.timestamp}');
++          }
++        },
++      ));
++    }
++  }
++
+   Future<void> startRecording() async {
+     await clear();
+     _recordingNotifier.value = true;
+@@ -36,14 +64,23 @@ class ProfilerScreenController with CpuProfilerControllerProviderMixin {
+     );
+   }
+ 
+-  Future<void> loadAllSamples() async {
++  Future<void> profileAppStartup() async {
++    if (startupProfile != null) {
++      cpuProfilerController.loadData(startupProfile);
++      return;
++    }
++
+     cpuProfilerController.reset();
++    final firstFrame = await firstFrameMicros.future;
+     await cpuProfilerController.pullAndProcessProfile(
+       startMicros: 0,
+       // Using [maxJsInt] as [extentMicros] for the getCpuProfile requests will
+       // give us all cpu samples we have available
+-      extentMicros: maxJsInt,
++      // TODO(kenz): this is not an accurate end time because the clocks are
++      // different.
++      extentMicros: firstFrame,
+     );
++    startupProfile = cpuProfilerController.dataNotifier.value;
+   }
+ 
+   /// Exports the current profiler data to a .json file.
+@@ -59,8 +96,10 @@ class ProfilerScreenController with CpuProfilerControllerProviderMixin {
+     await cpuProfilerController.clear();
+   }
+ 
++  @override
+   void dispose() {
+     _recordingNotifier.dispose();
+     cpuProfilerController.dispose();
++    super.dispose();
+   }
+ }
