@@ -8,7 +8,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'src/analytics/stub_provider.dart'
     if (dart.library.html) 'src/analytics/remote_provider.dart';
 import 'src/app.dart';
-import 'src/app_error_handling.dart';
 import 'src/config_specific/framework_initialize/framework_initialize.dart';
 import 'src/config_specific/ide_theme/ide_theme.dart';
 import 'src/debugger/syntax_highlighter.dart';
@@ -35,13 +34,11 @@ void main() async {
   setGlobal(DevToolsExtensionPoints, ExternalDevToolsExtensionPoints());
   setGlobal(IdeTheme, getIdeTheme());
 
-  setupErrorHandling(() async {
-    // Run the app.
-    runApp(
-      ProviderScope(
-        observers: const [ErrorLoggerObserver()],
-        child: DevToolsApp(defaultScreens, await analyticsProvider),
-      ),
-    );
-  });
+  // Now run the app.
+  runApp(
+    ProviderScope(
+      observers: const [ErrorLoggerObserver()],
+      child: DevToolsApp(defaultScreens, await analyticsProvider),
+    ),
+  );
 }
