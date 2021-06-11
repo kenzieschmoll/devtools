@@ -487,9 +487,7 @@ abstract class FlameChartState<T extends FlameChart,
     if (offset > horizontalControllerGroup.position.maxScrollExtent) {
       horizontalControllerGroup.position.applyContentDimensions(
           horizontalControllerGroup.position.minScrollExtent,
-          // This extra value is arbitrary, might be worth it to recalculate the
-          // new maxScrollExtent just like the new scroll offset based on the
-          // updated zoom level
+          // This extra value is arbitrary
           offset + 1000,
       );
     }
