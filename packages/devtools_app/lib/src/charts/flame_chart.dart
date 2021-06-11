@@ -455,7 +455,7 @@ abstract class FlameChartState<T extends FlameChart,
       // to call this that guarantees the scroll controller offsets will be
       // updated for the new zoom level and layout size
       // https://github.com/flutter/devtools/issues/2012.
-      scrollToX(newScrollOffset, jump: true);
+      // scrollToX(newScrollOffset, jump: true);
     });
   }
 
@@ -484,6 +484,15 @@ abstract class FlameChartState<T extends FlameChart,
     double offset, {
     bool jump = false,
   }) async {
+    if (offset > horizontalControllerGroup.position.maxScrollExtent) {
+      horizontalControllerGroup.position.applyContentDimensions(
+          horizontalControllerGroup.position.minScrollExtent,
+          // This extra value is arbitrary, might be worth it to recalculate the
+          // new maxScrollExtent just like the new scroll offset based on the
+          // updated zoom level
+          offset + 1000,
+      );
+    }
     final target = offset.clamp(
       FlameChart.minScrollOffset,
       horizontalControllerGroup.position.maxScrollExtent,
@@ -868,7 +877,7 @@ class FlameChartUtils {
     // the issue described in the bug where the scroll extent is smaller than
     // where we want to `jumpTo`. Smaller values were experimented with but the
     // issue still persisted, so we are using a very large number.
-    if (index == nodes.length - 1) return 10000000.0;
+    // if (index == nodes.length - 1) return 10000000.0;
     final node = nodes[index];
     final nextNode = index == nodes.length - 1 ? null : nodes[index + 1];
     final nodeZoom = zoomForNode(node, chartZoom);
