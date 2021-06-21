@@ -506,7 +506,6 @@ abstract class FlameChartState<T extends FlameChart,
       FlameChart.minScrollOffset,
       horizontalControllerGroup.position.maxScrollExtent,
     );
-    if( target > horizontalControllerGroup.position.maxScrollExtent)
     if (jump) {
       horizontalControllerGroup.jumpTo(target);
     } else {
