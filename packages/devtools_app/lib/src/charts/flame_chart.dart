@@ -463,7 +463,6 @@ abstract class FlameChartState<T extends FlameChart,
       // to call this that guarantees the scroll controller offsets will be
       // updated for the new zoom level and layout size
       // https://github.com/flutter/devtools/issues/2012.
-      // This needs to go in the select path
       if (_handlingPointerScroll) {
         scrollToX(newScrollOffset, jump: true);
       }
