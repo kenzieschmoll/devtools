@@ -396,13 +396,11 @@ abstract class FlameChartState<T extends FlameChart,
 
   void _handlePointerSignal(PointerSignalEvent event) async {
     if (event is PointerScrollEvent) {
-      print('PointerScrollEvent');
       setState(() {
         _handlingPointerScroll = true;
       });
       final deltaX = event.scrollDelta.dx;
       double deltaY = event.scrollDelta.dy;
-      print('deltaY: $deltaY');
       if (deltaY.abs() >= deltaX.abs()) {
         if (_altKeyPressed) {
           verticalControllerGroup.jumpTo(math.max(
@@ -417,7 +415,6 @@ abstract class FlameChartState<T extends FlameChart,
             -FlameChart.maxScrollWheelDelta,
             FlameChart.maxScrollWheelDelta,
           );
-          print('clamped deltaY: $deltaY');
           // TODO(kenz): if https://github.com/flutter/flutter/issues/52762 is,
           // resolved, consider adjusting the multiplier based on the scroll device
           // kind (mouse or track pad).
@@ -429,7 +426,6 @@ abstract class FlameChartState<T extends FlameChart,
           await zoomTo(newZoomLevel, jump: true);
           if (newZoomLevel == FlameChart.minZoomLevel &&
               horizontalControllerGroup.offset != 0.0) {
-            print('extra scrollToX');
             // We do not need to call this in a post frame callback because
             // `FlameChart.minScrollOffset` (0.0) is guaranteed to be less than
             // the scroll controllers max scroll extent.
@@ -444,7 +440,6 @@ abstract class FlameChartState<T extends FlameChart,
   }
 
   void _handleZoomControllerValueUpdate() {
-    print('_handleZoomControllerValueUpdate');
     final previousZoom = currentZoom;
     final newZoom = zoomController.value;
     if (previousZoom == newZoom) return;
@@ -470,7 +465,6 @@ abstract class FlameChartState<T extends FlameChart,
       // https://github.com/flutter/devtools/issues/2012.
       // This needs to go in the select path
       if (_handlingPointerScroll) {
-        print('scrollToX because we are pointer scrolling');
         scrollToX(newScrollOffset, jump: true);
       }
     });
@@ -481,7 +475,6 @@ abstract class FlameChartState<T extends FlameChart,
     double forceMouseX,
     bool jump = false,
   }) async {
-    print('zoomTo');
     if (forceMouseX != null) {
       mouseHoverX = forceMouseX;
     }
@@ -502,9 +495,7 @@ abstract class FlameChartState<T extends FlameChart,
     double offset, {
     bool jump = false,
   }) async {
-    print('scrollToX');
     if (offset > horizontalControllerGroup.position.maxScrollExtent) {
-      print('Not doing the thing after all');
       horizontalControllerGroup.position.applyContentDimensions(
           horizontalControllerGroup.position.minScrollExtent,
           // This extra value is arbitrary
@@ -515,6 +506,7 @@ abstract class FlameChartState<T extends FlameChart,
       FlameChart.minScrollOffset,
       horizontalControllerGroup.position.maxScrollExtent,
     );
+    if( target > horizontalControllerGroup.position.maxScrollExtent)
     if (jump) {
       horizontalControllerGroup.jumpTo(target);
     } else {
@@ -544,7 +536,6 @@ abstract class FlameChartState<T extends FlameChart,
   /// this method should be placed inside of a postFrameCallback:
   /// `WidgetsBinding.instance.addPostFrameCallback((_) { ... });`.
   Future<void> scrollHorizontallyToData(V data) async {
-    print('scrollHorizontallyToData');
     final offset =
         startXForData(data) + widget.startInset - widget.containerWidth * 0.1;
     await scrollToX(offset);
@@ -557,7 +548,6 @@ abstract class FlameChartState<T extends FlameChart,
     bool scrollVertically = true,
     bool jumpZoom = false,
   }) async {
-    print('zoomAndScrollToData');
     await zoomToTimeRange(
       startMicros: startMicros,
       durationMicros: durationMicros,
@@ -581,7 +571,6 @@ abstract class FlameChartState<T extends FlameChart,
     double targetWidth,
     bool jump = false,
   }) async {
-    print('zoomToTimeRange');
     targetWidth ??= widget.containerWidth * 0.8;
     final startingWidth = durationMicros * startingPxPerMicro;
     final zoom = targetWidth / startingWidth;
