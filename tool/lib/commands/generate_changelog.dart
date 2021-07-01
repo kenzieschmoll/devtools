@@ -36,12 +36,24 @@ import '../model.dart';
 ///
 /// The command will write commits after the last tagged non-dev release
 /// into the changelog file. It will ignore commits with names strictly matching
-/// [ignoredCommitNames].  It will then add 1 to the build version number
+/// [lowercaseIgnoredCommitNames].  It will then add 1 to the build version number
 /// (eg 0.2.2 -> 0.2.3) when it determines the next version number.
 ///
 /// If pushing a `-dev` build or using a different version number, you can edit
 /// this by hand.
 class GenerateChangelogCommand extends Command {
+  GenerateChangelogCommand() {
+    argParser
+      ..addOption(
+        'version',
+        help: 'Specify the target changelog version',
+      )
+      ..addOption(
+        'since-tag',
+        help: 'Specify the name of the tag to mark the lower bound',
+      );
+  }
+
   // You can authorize your access if you run into a github rate limit.
   // Don't check in your passwords or auth tokens.
   static const auth = '';
@@ -50,10 +62,9 @@ class GenerateChangelogCommand extends Command {
   ///
   /// We will only check for exact matches on this, after trimming out the
   /// trailing commit number.
-  static const ignoredCommitNames = [
+  static const lowercaseIgnoredCommitNames = [
     'update goldens',
-    'Update Goldens',
-    'Update goldens'
+    'updated goldens',
   ];
 
   @override
@@ -75,37 +86,58 @@ class GenerateChangelogCommand extends Command {
     final versionEnd = devtoolsVersionFile.indexOf('\';');
     final version = devtoolsVersionFile.substring(
         versionDeclaration + versionDeclarationPrefix.length, versionEnd);
-    final List tags = jsonDecode((await http.get(
-            Uri.https('${auth}api.github.com', '/repos/flutter/devtools/tags')))
-        .body);
+    final List tags = (jsonDecode((await http.get(Uri.https(
+                '${auth}api.github.com', '/repos/flutter/devtools/tags')))
+            .body) as List)
+        .cast<Map<String, dynamic>>();
 
-    print('Current Devtools version is $version.  Retrieving the tagged commit '
-        'with the closest version number to this version.');
-    bool isDevBuild(String tagName) => tagName.split('-').length > 1;
+    bool isDevBuild(String tagName) => tagName.contains('-');
+    bool isCherryPickRelease(String tagName) => tagName.contains('+');
     String nameOf(tag) => tag['name'];
-    var closestTag = tags.skipWhile((tag) => isDevBuild(nameOf(tag))).first;
-    for (var tag in tags) {
-      if (isDevBuild(nameOf(tag))) {
-        // This was a dev build.
-        continue;
-      }
-      final tagVersion = getVersion(nameOf(tag));
-      final closestTagVersion =
-          closestTag == null ? null : getVersion(nameOf(closestTag));
-      // TODO(djshuckerow): The script does not process dev versioning, so
-      // ignore if the version file reports a dev version.
-      final versionFileVersion =
-          isDevBuild(version) ? null : getVersion(version);
-      if ((versionFileVersion == null || tagVersion < versionFileVersion) &&
-          (closestTagVersion == null || tagVersion > closestTagVersion)) {
-        closestTag = tag;
-      }
-    }
 
-    print('Getting the date of the tagged commit for ${closestTag["name"]}.');
+    print('Current Devtools version is $version.');
+    String sinceTag = argResults['since-tag'];
+    var closestTag;
+    if (sinceTag != null) {
+      closestTag = tags.firstWhere((tag) => nameOf(tag) == sinceTag);
+    } else {
+      print(
+          'Retrieving the tagged commit with the closest version number to this '
+          'version.');
+      closestTag = tags.skipWhile((tag) {
+        print(nameOf(tag));
+        final skip =
+            isDevBuild(nameOf(tag)) || isCherryPickRelease(nameOf(tag));
+        return skip;
+      }).first;
+    }
+    // for (var tag in tags) {
+    //   if (isDevBuild(nameOf(tag))) {
+    //     // This was a dev build.
+    //     continue;
+    //   }
+    //   if (isCherryPickRelease(nameOf(tag))) {
+    //     // This was a dot release.
+    //     continue;
+    //   }
+    //   final tagVersion = getVersion(nameOf(tag));
+    //   final closestTagVersion =
+    //       closestTag == null ? null : getVersion(nameOf(closestTag));
+    //   // TODO(djshuckerow): The script does not process dev versioning, so
+    //   // ignore if the version file reports a dev version.
+    //   final versionFileVersion =
+    //       isDevBuild(version) ? null : getVersion(version);
+    //   if ((versionFileVersion == null || tagVersion < versionFileVersion) &&
+    //       (closestTagVersion == null || tagVersion > closestTagVersion)) {
+    //     closestTag = tag;
+    //   }
+    // }
+
+    final commitInfo = closestTag['commit'] as Map<String, dynamic>;
+    print('Getting the date of the tagged commit for ${closestTag['name']}.');
     final taggedCommit = jsonDecode((await http.get(Uri.https(
       '${auth}api.github.com',
-      '/repos/flutter/devtools/commits/${closestTag["commit"]["sha"]}',
+      '/repos/flutter/devtools/commits/${commitInfo['sha']}',
     )))
         .body);
 
@@ -114,37 +146,45 @@ class GenerateChangelogCommand extends Command {
     final uri = Uri.https(
       '${auth}api.github.com',
       '/repos/flutter/devtools/commits',
-      {'since': commitDate},
+      {
+        'since': commitDate,
+        'per_page': '100',
+      },
     );
     final commits = jsonDecode((await http.get(uri)).body);
+    print('all commits:');
+    print(commits);
     final changes = <String>[];
     for (var commit in commits) {
-      if (commit['sha'] == taggedCommit['sha']) continue;
+      if (commit['sha'] == taggedCommit['sha']) {
+        print('continuing');
+        continue;
+      }
       final message = commit['commit']['message'];
       if (_shouldSkip(commit['commit']['message'])) {
         print('Skipping commit marked to be ignored: $message');
         continue;
       }
       changes.add('* ' + _sanitize(commit['commit']['message']));
-      // TODO(djshuckerow): modify the commit message to link to the commit.
     }
 
-    print('Incrementing version number');
-    // TODO(djshuckerow): Support overriding the nextVersionNumber with a flag.
-    String nextVersionNumber = nameOf(closestTag).replaceFirst('v', '');
-    final List parts = nextVersionNumber.split('.');
-    parts[2] = '${int.parse(parts[2]) + 1}';
-    nextVersionNumber = parts.join('.');
-    print('Incremented version number for the changelog from '
-        '${closestTag["name"]} to $nextVersionNumber. Note that this is not '
-        'inserted to any files other than changelog.');
-    final versionDate = DateTime.now().toIso8601String().split('T').first;
+    String nextVersion = argResults['version'];
+    if (nextVersion != null) {
+      print('Using specified version $nextVersion');
+    } else {
+      print('Incrementing version number');
+      nextVersion = nameOf(closestTag).replaceFirst('v', '');
+      final List parts = nextVersion.split('.');
+      parts[2] = '${int.parse(parts[2]) + 1}';
+      nextVersion = parts.join('.');
+      print('Incremented version number for the changelog from '
+          '${closestTag['name']} to $nextVersion. Note that this is not '
+          'inserted to any files other than changelog.');
+    }
+
     final changelogFile =
         File('${repo.repoPath}/packages/devtools/CHANGELOG.md');
-    final output = '## $nextVersionNumber '
-            '$versionDate\n' +
-        changes.join('\n') +
-        '\n\n';
+    final output = '## $nextVersion\n' + changes.join('\n') + '\n\n';
     await changelogFile.writeAsString(
       output + changelogFile.readAsStringSync(),
     );
@@ -157,15 +197,32 @@ class GenerateChangelogCommand extends Command {
 
   String _sanitize(String message) {
     message = message.split('\n').first;
-    final periodNumberIndex = message.lastIndexOf('. (#');
-    if (periodNumberIndex == -1) return message;
-    return message.replaceFirst('. (#', ' (#', periodNumberIndex);
+    message = message.substring(0, 1).toUpperCase() +
+        message.substring(1, message.length);
+    const prPrefix = ' (#';
+    final periodNumberIndex = message.lastIndexOf('.$prPrefix');
+    if (periodNumberIndex != -1) {
+      message = message.replaceFirst('.$prPrefix', prPrefix, periodNumberIndex);
+    }
+    final prIndex = message.indexOf(prPrefix);
+    final endPrIndexExclusive = message.lastIndexOf(')');
+    final pr = message.substring(
+      prIndex + prPrefix.length,
+      endPrIndexExclusive,
+    );
+    return message.substring(0, prIndex) +
+        ' [#$pr](https://github.com/flutter/devtools/pull/$pr)';
   }
 
   bool _shouldSkip(String message) {
     message = message.split('\n').first;
     message = message.replaceAll(RegExp('\\(#\\d*\\)'), '').trim();
-    return ignoredCommitNames.contains(message);
+    for (final ignore in lowercaseIgnoredCommitNames) {
+      if (message.toLowerCase().contains(ignore)) {
+        return true;
+      }
+    }
+    return false;
   }
 }
 
@@ -176,6 +233,9 @@ class GenerateChangelogCommand extends Command {
 /// after the tagged commit to release.
 int getVersion(String versionNumber) {
   final nums = versionNumber.replaceFirst('v', '').split('.');
+  // TODO(kenz): handle cherry pick dot releases. Ignore for now and resolve
+  // the changelog manually.
+  nums[2] = nums[2].split('+').first;
   return int.parse(nums[0]) * 1000000 +
       int.parse(nums[1]) * 1000 +
       int.parse(nums[2]);
