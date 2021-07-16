@@ -634,6 +634,8 @@ abstract class TimelineEvent extends TreeNode<TimelineEvent>
   static const eventStartTimeKey = 'startMicros';
   static const eventDurationKey = 'durationMicros';
 
+  String get uid => '$name - $time - $threadId';
+
   /// Trace events associated with this [TimelineEvent].
   ///
   /// There will either be one entry in the list (for DurationComplete events)

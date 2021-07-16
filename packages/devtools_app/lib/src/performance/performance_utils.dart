@@ -72,7 +72,7 @@ class PerformanceUtils {
   }
 }
 
-const debugTraceEventDuplicates = false;
+const debugTraceEventDuplicates = true;
 
 /// Helper method to call a callback only when debugging issues related to trace
 /// event duplicates (for example https://github.com/dart-lang/sdk/issues/46605).

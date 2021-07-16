@@ -210,20 +210,52 @@ class PerformanceController extends DisposableController
       await processTraceEvents(allTraceEvents);
       _processing.value = false;
 
-      _timelinePollingRateLimiter = RateLimiter(
-        timelinePollingRateLimit,
-        _pullTraceEventsFromVmTimeline,
-      );
+      // _timelinePollingRateLimiter = RateLimiter(
+      //   timelinePollingRateLimit,
+      //   _pullTraceEventsFromVmTimeline,
+      // );
+      //
+      // // Poll for new timeline events.
+      // // We are polling here instead of listening to the timeline event stream
+      // // because the event stream is sending out of order and duplicate events.
+      // // See https://github.com/dart-lang/sdk/issues/46605.
+      // _pollingTimer = Timer.periodic(const Duration(seconds: 1), (_) async {
+      //   _timelinePollingRateLimiter.scheduleRequest();
+      // });
 
-      // Poll for new timeline events.
-      // We are polling here instead of listening to the timeline event stream
-      // because the event stream is sending out of order and duplicate events.
-      // See https://github.com/dart-lang/sdk/issues/46605.
-      _pollingTimer = Timer.periodic(const Duration(seconds: 1), (_) async {
-        _timelinePollingRateLimiter.scheduleRequest();
-      });
+      // Listen for new timeline events.
+      autoDispose(serviceManager.service.onTimelineEvent.listen((event) {
+        final eventBatch = <TraceEventWrapper>[];
+        if (event.json['kind'] == 'TimelineEvents') {
+          final batchTime = event.json['timestamp'];
+          debugTraceEventCallback(
+              () => log('Receiving batch with timestamp $batchTime'));
+          if (batchTimestamps.contains(batchTime)) {
+            debugTraceEventCallback(
+                () => log('DUPLICATE BATCH with timestamp $batchTime'));
+          }
+          batchTimestamps.add(batchTime);
+
+          final List<dynamic> traceEvents = event.json['timelineEvents']
+              .map(
+                (e) => TraceEventWrapper(
+                  TraceEvent(e),
+                  DateTime.now().millisecondsSinceEpoch,
+                ),
+              )
+              .toList();
+          final wrappedTraceEvents = traceEvents.cast<TraceEventWrapper>();
+          eventBatch.addAll(wrappedTraceEvents);
+        }
+        allTraceEvents.addAll(eventBatch);
+        for (final e in eventBatch) {
+          debugTraceEventCallback(() => log(e.event.json));
+        }
+      }));
     }
   }
+
+  Set<int> batchTimestamps = {};
 
   Future<void> _initData() async {
     data = serviceManager.connectedApp.isFlutterAppNow
@@ -537,7 +569,14 @@ class PerformanceController extends DisposableController
     );
   }
 
+  final Set<String> eventsAdded = {};
+
   void addTimelineEvent(TimelineEvent event) {
+    if (eventsAdded.contains(event.uid)) {
+      debugTraceEventCallback(
+          () => log('Duplicate timeline event being added ${event.uid}'));
+    }
+    eventsAdded.add(event.uid);
     data.addTimelineEvent(event);
     if (event is SyncTimelineEvent) {
       if (!offlineMode &&
