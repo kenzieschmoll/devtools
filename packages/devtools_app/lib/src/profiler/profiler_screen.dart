@@ -252,7 +252,7 @@ class _PrimaryControls extends StatelessWidget {
       children: [
         RecordButton(
           recording: recording,
-          includeTextWidth: _primaryControlsMinIncludeTextWidth,
+          unscaledIncludeTextWidth: _primaryControlsMinIncludeTextWidth,
           onPressed: () {
             ga.select(
               analytics_constants.cpuProfiler,
@@ -264,7 +264,7 @@ class _PrimaryControls extends StatelessWidget {
         const SizedBox(width: denseSpacing),
         StopRecordingButton(
           recording: recording,
-          includeTextWidth: _primaryControlsMinIncludeTextWidth,
+          unscaledIncludeTextWidth: _primaryControlsMinIncludeTextWidth,
           onPressed: () {
             ga.select(
               analytics_constants.cpuProfiler,
@@ -275,7 +275,7 @@ class _PrimaryControls extends StatelessWidget {
         ),
         const SizedBox(width: denseSpacing),
         ClearButton(
-          includeTextWidth: _primaryControlsMinIncludeTextWidth,
+          unscaledIncludeTextWidth: _primaryControlsMinIncludeTextWidth,
           onPressed: recording
               ? null
               : () {
@@ -313,7 +313,7 @@ class _SecondaryControls extends StatelessWidget {
         RefreshButton(
           label: 'Load all CPU samples',
           tooltip: 'Load all available CPU samples from the profiler',
-          includeTextWidth: _loadAllCpuSamplesMinIncludeTextWidth,
+          unscaledIncludeTextWidth: _loadAllCpuSamplesMinIncludeTextWidth,
           onPressed: !recording
               ? () {
                   ga.select(
@@ -343,7 +343,7 @@ class _SecondaryControls extends StatelessWidget {
                   _exportPerformance(context);
                 }
               : null,
-          includeTextWidth: _secondaryControlsMinIncludeTextWidth,
+          unscaledIncludeTextWidth: _secondaryControlsMinIncludeTextWidth,
         ),
       ],
     );

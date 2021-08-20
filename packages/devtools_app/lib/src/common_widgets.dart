@@ -13,6 +13,7 @@ import 'scaffold.dart';
 import 'theme.dart';
 import 'ui/icons.dart';
 import 'ui/label.dart';
+import 'utils.dart';
 
 const tooltipWait = Duration(milliseconds: 500);
 const tooltipWaitLong = Duration(milliseconds: 1000);
@@ -23,8 +24,7 @@ const debuggerDeviceWidth = 800.0;
 const mediumDeviceWidth = 1000.0;
 
 const defaultDialogRadius = 20.0;
-
-const areaPaneHeaderHeight = 36.0;
+double get areaPaneHeaderHeight => scaleByFontFactor(36.0);
 
 /// Convenience [Divider] with [Padding] that provides a good divider in forms.
 class PaddedDivider extends StatelessWidget {
@@ -81,7 +81,7 @@ TextStyle primaryColorLight(TextStyle style, BuildContext context) {
 /// A button with an icon and a label.
 ///
 /// * `onPressed`: The callback to be called upon pressing the button.
-/// * `includeTextWidth`: The minimum width the button can be before the text is
+/// * `unscaledIncludeTextWidth`: The minimum width the button can be before the text is
 ///    omitted.
 class IconLabelButton extends StatelessWidget {
   const IconLabelButton({
@@ -91,7 +91,7 @@ class IconLabelButton extends StatelessWidget {
     @required this.label,
     @required this.onPressed,
     this.color,
-    this.includeTextWidth,
+    this.unscaledIncludeTextWidth,
     this.elevatedButton = false,
     this.tooltip,
   })  : assert((icon == null) != (imageIcon == null)),
@@ -103,7 +103,7 @@ class IconLabelButton extends StatelessWidget {
 
   final String label;
 
-  final double includeTextWidth;
+  final double unscaledIncludeTextWidth;
 
   final VoidCallback onPressed;
 
@@ -120,7 +120,7 @@ class IconLabelButton extends StatelessWidget {
       label: label,
       iconData: icon,
       imageIcon: imageIcon,
-      includeTextWidth: includeTextWidth,
+      unscaleIncludeTextWidth: unscaledIncludeTextWidth,
       color: color,
     );
     if (elevatedButton) {
@@ -138,9 +138,12 @@ class IconLabelButton extends StatelessWidget {
       tooltip,
       SizedBox(
         height: defaultButtonHeight,
-        width: !includeText(context, includeTextWidth) ? buttonMinWidth : null,
+        width: !includeText(context, unscaledIncludeTextWidth)
+            ? buttonMinWidth
+            : null,
         child: OutlinedButton(
-          style: denseAwareOutlinedButtonStyle(context, includeTextWidth),
+          style:
+              denseAwareOutlinedButtonStyle(context, unscaledIncludeTextWidth),
           onPressed: onPressed,
           child: iconLabel,
         ),
@@ -152,7 +155,7 @@ class IconLabelButton extends StatelessWidget {
 class PauseButton extends IconLabelButton {
   const PauseButton({
     Key key,
-    double includeTextWidth,
+    double unscaledIncludeTextWidth,
     String tooltip = 'Pause',
     @required VoidCallback onPressed,
   }) : super(
@@ -160,7 +163,7 @@ class PauseButton extends IconLabelButton {
           icon: Icons.pause,
           label: 'Pause',
           tooltip: tooltip,
-          includeTextWidth: includeTextWidth,
+          unscaledIncludeTextWidth: unscaledIncludeTextWidth,
           onPressed: onPressed,
         );
 }
@@ -168,7 +171,7 @@ class PauseButton extends IconLabelButton {
 class ResumeButton extends IconLabelButton {
   const ResumeButton({
     Key key,
-    double includeTextWidth,
+    double unscaledIncludeTextWidth,
     String tooltip = 'Resume',
     @required VoidCallback onPressed,
   }) : super(
@@ -176,7 +179,7 @@ class ResumeButton extends IconLabelButton {
           icon: Icons.play_arrow,
           label: 'Resume',
           tooltip: tooltip,
-          includeTextWidth: includeTextWidth,
+          unscaledIncludeTextWidth: unscaledIncludeTextWidth,
           onPressed: onPressed,
         );
 }
@@ -184,7 +187,7 @@ class ResumeButton extends IconLabelButton {
 class ClearButton extends IconLabelButton {
   const ClearButton({
     Key key,
-    double includeTextWidth,
+    double unscaledIncludeTextWidth,
     String tooltip = 'Clear',
     @required VoidCallback onPressed,
   }) : super(
@@ -192,7 +195,7 @@ class ClearButton extends IconLabelButton {
           icon: Icons.block,
           label: 'Clear',
           tooltip: tooltip,
-          includeTextWidth: includeTextWidth,
+          unscaledIncludeTextWidth: unscaledIncludeTextWidth,
           onPressed: onPressed,
         );
 }
@@ -201,14 +204,14 @@ class RefreshButton extends IconLabelButton {
   const RefreshButton({
     Key key,
     String label = 'Refresh',
-    double includeTextWidth,
+    double unscaledIncludeTextWidth,
     String tooltip,
     @required VoidCallback onPressed,
   }) : super(
           key: key,
           icon: Icons.refresh,
           label: label,
-          includeTextWidth: includeTextWidth,
+          unscaledIncludeTextWidth: unscaledIncludeTextWidth,
           tooltip: tooltip,
           onPressed: onPressed,
         );
@@ -217,7 +220,7 @@ class RefreshButton extends IconLabelButton {
 /// Button to start recording data.
 ///
 /// * `recording`: Whether recording is in progress.
-/// * `includeTextWidth`: The minimum width the button can be before the text is
+/// * `unscaledIncludeTextWidth`: The minimum width the button can be before the text is
 ///    omitted.
 /// * `labelOverride`: Optional alternative text to use for the button.
 /// * `onPressed`: The callback to be called upon pressing the button.
@@ -226,7 +229,7 @@ class RecordButton extends IconLabelButton {
     Key key,
     @required bool recording,
     @required VoidCallback onPressed,
-    double includeTextWidth,
+    double unscaledIncludeTextWidth,
     String labelOverride,
     String tooltip = 'Start recording',
   }) : super(
@@ -235,14 +238,14 @@ class RecordButton extends IconLabelButton {
           icon: Icons.fiber_manual_record,
           label: labelOverride ?? 'Record',
           tooltip: tooltip,
-          includeTextWidth: includeTextWidth,
+          unscaledIncludeTextWidth: unscaledIncludeTextWidth,
         );
 }
 
 /// Button to stop recording data.
 ///
 /// * `recording`: Whether recording is in progress.
-/// * `includeTextWidth`: The minimum width the button can be before the text is
+/// * `unscaledIncludeTextWidth`: The minimum width the button can be before the text is
 ///    omitted.
 /// * `onPressed`: The callback to be called upon pressing the button.
 class StopRecordingButton extends IconLabelButton {
@@ -250,7 +253,7 @@ class StopRecordingButton extends IconLabelButton {
     Key key,
     @required bool recording,
     @required VoidCallback onPressed,
-    double includeTextWidth,
+    double unscaledIncludeTextWidth,
     String tooltip = 'Stop recording',
   }) : super(
           key: key,
@@ -258,7 +261,7 @@ class StopRecordingButton extends IconLabelButton {
           icon: Icons.stop,
           label: 'Stop',
           tooltip: tooltip,
-          includeTextWidth: includeTextWidth,
+          unscaledIncludeTextWidth: unscaledIncludeTextWidth,
         );
 }
 
@@ -276,7 +279,7 @@ class SettingsOutlinedButton extends IconLabelButton {
           // impact on the existing UI and deal with the fact that some of the
           // existing label names are fairly verbose, we set a width that will
           // never be hit.
-          includeTextWidth: 20000,
+          unscaledIncludeTextWidth: 20000,
         );
 }
 
@@ -292,7 +295,7 @@ class HelpButton extends StatelessWidget {
       child: Container(
         height: defaultButtonHeight,
         width: defaultButtonHeight,
-        child: const Icon(
+        child: Icon(
           Icons.help_outline,
           size: defaultIconSize,
         ),
@@ -513,7 +516,7 @@ class BulletSpacer extends StatelessWidget {
 
   final bool useAccentColor;
 
-  static const width = DevToolsScaffold.actionWidgetSize / 2;
+  static double get width => DevToolsScaffold.actionWidgetSize / 2;
 
   @override
   Widget build(BuildContext context) {
@@ -719,7 +722,7 @@ class ToggleButton extends StatelessWidget {
     @required this.text,
     @required this.enabledTooltip,
     @required this.disabledTooltip,
-    @required this.includeTextWidth,
+    @required this.unscaledIncludeTextWidth,
     @required this.selected,
   });
 
@@ -727,7 +730,7 @@ class ToggleButton extends StatelessWidget {
   final String text;
   final String enabledTooltip;
   final String disabledTooltip;
-  final double includeTextWidth;
+  final double unscaledIncludeTextWidth;
   final bool selected;
 
   @override
@@ -741,7 +744,7 @@ class ToggleButton extends StatelessWidget {
         child: MaterialIconLabel(
           label: text,
           iconData: icon,
-          includeTextWidth: includeTextWidth,
+          unscaleIncludeTextWidth: unscaledIncludeTextWidth,
         ),
       ),
     );
@@ -750,14 +753,14 @@ class ToggleButton extends StatelessWidget {
 
 /// Button to export data.
 ///
-/// * `includeTextWidth`: The minimum width the button can be before the text is
+/// * `unscaledIncludeTextWidth`: The minimum width the button can be before the text is
 ///    omitted.
 /// * `onPressed`: The callback to be called upon pressing the button.
 class ExportButton extends IconLabelButton {
   const ExportButton({
     Key key,
     @required VoidCallback onPressed,
-    @required double includeTextWidth,
+    @required double unscaledIncludeTextWidth,
     String tooltip = 'Export data',
   }) : super(
           key: key,
@@ -765,7 +768,7 @@ class ExportButton extends IconLabelButton {
           icon: Icons.file_download,
           label: 'Export',
           tooltip: tooltip,
-          includeTextWidth: includeTextWidth,
+          unscaledIncludeTextWidth: unscaledIncludeTextWidth,
         );
 }
 
@@ -1018,7 +1021,7 @@ class CircularIconButton extends StatelessWidget {
       hoverColor: Theme.of(context).hoverColor,
       elevation: 0.0,
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      constraints: const BoxConstraints.tightFor(
+      constraints: BoxConstraints.tightFor(
         width: actionsIconSize,
         height: actionsIconSize,
       ),
