@@ -601,6 +601,10 @@ class DevToolsTooltip extends StatelessWidget {
       waitDuration: waitDuration,
       preferBelow: preferBelow,
       padding: padding,
+      textStyle: TextStyle(
+        color: Theme.of(context).colorScheme.tooltipTextColor,
+        fontSize: defaultFontSize,
+      ),
       child: child,
     );
   }

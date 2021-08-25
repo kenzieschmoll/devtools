@@ -47,9 +47,7 @@ class _FlutterFramesChartState extends State<FlutterFramesChart>
   static const defaultFrameWidthWithPadding =
       FlutterFramesChartItem.defaultFrameWidth + densePadding * 2;
 
-  static const yAxisUnitsSpace = 48.0;
-
-  static const legendSquareSize = 16.0;
+  double get yAxisUnitsSpace => scaleByFontFactor(48.0);
 
   static const outlineBorderWidth = 1.0;
 
@@ -154,8 +152,12 @@ class _FlutterFramesChartState extends State<FlutterFramesChart>
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildChartLegend(),
-                if (widget.frames.isNotEmpty) _buildAverageFps(),
+                const FlutterFramesChartLegend(),
+                if (widget.frames.isNotEmpty)
+                  AverageFPS(
+                    frames: widget.frames,
+                    displayRefreshRate: widget.displayRefreshRate,
+                  ),
               ],
             ),
           ),
@@ -188,6 +190,7 @@ class _FlutterFramesChartState extends State<FlutterFramesChart>
         final chartAxisPainter = CustomPaint(
           painter: ChartAxisPainter(
             constraints: constraints,
+            yAxisUnitsSpace: yAxisUnitsSpace,
             displayRefreshRate: widget.displayRefreshRate,
             msPerPx: msPerPx,
             themeData: themeData,
@@ -196,6 +199,7 @@ class _FlutterFramesChartState extends State<FlutterFramesChart>
         final fpsLinePainter = CustomPaint(
           painter: FPSLinePainter(
             constraints: constraints,
+            yAxisUnitsSpace: yAxisUnitsSpace,
             displayRefreshRate: widget.displayRefreshRate,
             msPerPx: msPerPx,
             themeData: themeData,
@@ -205,7 +209,7 @@ class _FlutterFramesChartState extends State<FlutterFramesChart>
           children: [
             chartAxisPainter,
             Padding(
-              padding: const EdgeInsets.only(left: yAxisUnitsSpace),
+              padding: EdgeInsets.only(left: yAxisUnitsSpace),
               child: chart,
             ),
             fpsLinePainter,
@@ -242,57 +246,6 @@ class _FlutterFramesChartState extends State<FlutterFramesChart>
         availableChartHeight: availableChartHeight - 2 * outlineBorderWidth,
         displayRefreshRate: widget.displayRefreshRate,
       ),
-    );
-  }
-
-  Widget _buildChartLegend() {
-    return Column(
-      key: FlutterFramesChart.chartLegendKey,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _legendItem('Frame Time (UI)', mainUiColor),
-        const SizedBox(height: denseRowSpacing),
-        _legendItem('Frame Time (Raster)', mainRasterColor),
-        const SizedBox(height: denseRowSpacing),
-        _legendItem('Jank (slow frame)', uiJankColor),
-        const SizedBox(height: denseRowSpacing),
-        _legendItem('Shader Compilation', shaderCompilationColor),
-      ],
-    );
-  }
-
-  Widget _legendItem(String description, Color color) {
-    return Row(
-      children: [
-        Container(
-          height: legendSquareSize,
-          width: legendSquareSize,
-          color: color,
-        ),
-        const SizedBox(width: denseSpacing),
-        Text(description),
-      ],
-    );
-  }
-
-  Widget _buildAverageFps() {
-    final double sumFrameTimesMs = widget.frames.fold(
-      0.0,
-      (sum, frame) =>
-          sum +
-          math.max(
-            1000 / widget.displayRefreshRate,
-            math.max(
-              frame.buildTime.inMilliseconds,
-              frame.rasterTime.inMilliseconds,
-            ),
-          ),
-    );
-    final avgFrameTime = sumFrameTimesMs / widget.frames.length;
-    final avgFps = (1 / avgFrameTime * 1000).round();
-    return Text(
-      '$avgFps FPS (average)',
-      maxLines: 2,
     );
   }
 }
@@ -432,6 +385,73 @@ class FlutterFramesChartItem extends StatelessWidget {
   }
 }
 
+class FlutterFramesChartLegend extends StatelessWidget {
+  const FlutterFramesChartLegend();
+
+  double get legendSquareSize => scaleByFontFactor(16.0);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      key: FlutterFramesChart.chartLegendKey,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _legendItem('Frame Time (UI)', mainUiColor),
+        const SizedBox(height: denseRowSpacing),
+        _legendItem('Frame Time (Raster)', mainRasterColor),
+        const SizedBox(height: denseRowSpacing),
+        _legendItem('Jank (slow frame)', uiJankColor),
+        const SizedBox(height: denseRowSpacing),
+        _legendItem('Shader Compilation', shaderCompilationColor),
+      ],
+    );
+  }
+
+  Widget _legendItem(String description, Color color) {
+    return Row(
+      children: [
+        Container(
+          height: legendSquareSize,
+          width: legendSquareSize,
+          color: color,
+        ),
+        const SizedBox(width: denseSpacing),
+        Text(description),
+      ],
+    );
+  }
+}
+
+class AverageFPS extends StatelessWidget {
+  const AverageFPS({this.frames, this.displayRefreshRate});
+
+  final List<FlutterFrame> frames;
+
+  final double displayRefreshRate;
+
+  @override
+  Widget build(BuildContext context) {
+    final double sumFrameTimesMs = frames.fold(
+      0.0,
+      (sum, frame) =>
+          sum +
+          math.max(
+            1000 / displayRefreshRate,
+            math.max(
+              frame.buildTime.inMilliseconds,
+              frame.rasterTime.inMilliseconds,
+            ),
+          ),
+    );
+    final avgFrameTime = sumFrameTimesMs / frames.length;
+    final avgFps = (1 / avgFrameTime * 1000).round();
+    return Text(
+      '$avgFps FPS (average)',
+      maxLines: 2,
+    );
+  }
+}
+
 class ShaderJankWarningIcon extends StatefulWidget {
   const ShaderJankWarningIcon({Key key}) : super(key: key);
 
@@ -483,6 +503,7 @@ class _ShaderJankWarningIconState extends State<ShaderJankWarningIcon> {
 class ChartAxisPainter extends CustomPainter {
   ChartAxisPainter({
     @required this.constraints,
+    @required this.yAxisUnitsSpace,
     @required this.displayRefreshRate,
     @required this.msPerPx,
     @required this.themeData,
@@ -491,6 +512,8 @@ class ChartAxisPainter extends CustomPainter {
   static const yAxisTickWidth = 8.0;
 
   final BoxConstraints constraints;
+
+  final double yAxisUnitsSpace;
 
   final double displayRefreshRate;
 
@@ -504,9 +527,9 @@ class ChartAxisPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     // The absolute coordinates of the chart's visible area.
     final chartArea = Rect.fromLTWH(
-      _FlutterFramesChartState.yAxisUnitsSpace,
+      yAxisUnitsSpace,
       0.0,
-      constraints.maxWidth - _FlutterFramesChartState.yAxisUnitsSpace,
+      constraints.maxWidth - yAxisUnitsSpace,
       constraints.maxHeight - defaultScrollBarOffset,
     );
 
@@ -584,7 +607,7 @@ class ChartAxisPainter extends CustomPainter {
     textPainter.paint(
       canvas,
       Offset(
-        _FlutterFramesChartState.yAxisUnitsSpace -
+        yAxisUnitsSpace -
             yAxisTickWidth / 2 -
             densePadding - // Padding between y axis tick and label
             textPainter.width,
@@ -605,14 +628,17 @@ class ChartAxisPainter extends CustomPainter {
 class FPSLinePainter extends CustomPainter {
   FPSLinePainter({
     @required this.constraints,
+    @required this.yAxisUnitsSpace,
     @required this.displayRefreshRate,
     @required this.msPerPx,
     @required this.themeData,
   });
 
-  static const fpsTextSpace = 45.0;
+  double get fpsTextSpace => scaleByFontFactor(45.0);
 
   final BoxConstraints constraints;
+
+  final double yAxisUnitsSpace;
 
   final double displayRefreshRate;
 
@@ -626,9 +652,9 @@ class FPSLinePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     // The absolute coordinates of the chart's visible area.
     final chartArea = Rect.fromLTWH(
-      _FlutterFramesChartState.yAxisUnitsSpace,
+      yAxisUnitsSpace,
       0.0,
-      constraints.maxWidth - _FlutterFramesChartState.yAxisUnitsSpace,
+      constraints.maxWidth - yAxisUnitsSpace,
       constraints.maxHeight - defaultScrollBarOffset,
     );
 
