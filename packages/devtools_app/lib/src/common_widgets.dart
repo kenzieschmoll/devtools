@@ -1550,7 +1550,7 @@ class PubWarningText extends StatelessWidget {
             .copyWith(color: theme.colorScheme.errorTextColor),
         children: [
           TextSpan(
-            text: 'DevTools version 2.8.0 will be the last version to '
+            text: 'DevTools version 2.9.4 will be the last version to '
                 'be shipped on pub. As of $sdkName\nversion >= '
                 '$minSdkVersion, DevTools should be launched by running '
                 'the ',

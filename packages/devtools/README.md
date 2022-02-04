@@ -1,3 +1,7 @@
+**\[UPDATE\]: This package has been discontinued.** To use DevTools, run `dart devtools` on the command line
+or launch directly from your IDE. See [flutter.dev](https://docs.flutter.dev/development/tools/devtools/overview#how-do-i-install-devtools)
+for more details.
+
 ## What is this?
 
 This is a companion repo to the main Flutter repo. It contains the source code for a suite of

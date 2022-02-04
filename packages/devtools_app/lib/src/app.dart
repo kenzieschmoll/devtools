@@ -66,7 +66,7 @@ bool isExternalBuild = true;
 ///
 /// This flag will be turned on for the final release of DevTools on pub, but
 /// should remain off at HEAD.
-const showPubWarning = false;
+const showPubWarning = true;
 
 /// Top-level configuration for the app.
 @immutable

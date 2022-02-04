@@ -1,3 +1,6 @@
+## 2.9.4
+* Update README.md
+
 ## 2.9.3
 * Update package:vm_service to ^8.1.0 and package:dds to ^2.1.6 [#3545](https://github.com/flutter/devtools/pull/3545)
 * escape (unsafe) text directional Unicode [#3529](https://github.com/flutter/devtools/pull/3529)
