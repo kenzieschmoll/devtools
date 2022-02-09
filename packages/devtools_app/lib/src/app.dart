@@ -34,6 +34,7 @@ import 'memory/memory_screen.dart';
 import 'network/network_controller.dart';
 import 'network/network_screen.dart';
 import 'notifications.dart';
+import 'overview/overview_screen.dart';
 import 'performance/legacy/performance_controller.dart';
 import 'performance/legacy/performance_screen.dart';
 import 'performance/performance_controller.dart';
@@ -651,6 +652,10 @@ class CheckboxSetting extends StatelessWidget {
 List<DevToolsScreen> get defaultScreens {
   final vmDeveloperToolsController = VMDeveloperToolsController();
   return <DevToolsScreen>[
+    DevToolsScreen<OverviewController>(
+      const OverviewScreen(),
+      createController: () => OverviewController(),
+    ),
     DevToolsScreen<InspectorSettingsController>(
       const InspectorScreen(),
       createController: () => InspectorSettingsController(),

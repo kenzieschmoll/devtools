@@ -181,6 +181,7 @@ class _ConnectDialogState extends State<ConnectDialog>
       analytics_constants.landingScreen,
       analytics_constants.connectToApp,
     );
+    connectDialogController.text = 'ws://127.0.0.1:63593/k1CbxL8eE8s=/ws';
     if (connectDialogController.text?.isEmpty ?? true) {
       Notifications.of(context).push('Please enter a VM Service URL.');
       return;

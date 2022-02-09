@@ -123,6 +123,7 @@ class IconLabelButton extends StatelessWidget {
     this.tooltip,
     this.tooltipPadding,
     this.outlined = true,
+    this.invertIconLabelOrder = false,
   })  : assert((icon == null) != (imageIcon == null)),
         super(key: key);
 
@@ -147,6 +148,8 @@ class IconLabelButton extends StatelessWidget {
 
   final bool outlined;
 
+  final bool invertIconLabelOrder;
+
   @override
   Widget build(BuildContext context) {
     final iconLabel = MaterialIconLabel(
@@ -155,6 +158,7 @@ class IconLabelButton extends StatelessWidget {
       imageIcon: imageIcon,
       minScreenWidthForTextBeforeScaling: minScreenWidthForTextBeforeScaling,
       color: color,
+      invertOrder: invertIconLabelOrder,
     );
     if (elevatedButton) {
       return maybeWrapWithTooltip(

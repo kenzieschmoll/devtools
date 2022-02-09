@@ -40,6 +40,7 @@ class MaterialIconLabel extends StatelessWidget {
     this.imageIcon,
     this.color,
     this.minScreenWidthForTextBeforeScaling,
+    this.invertOrder = false,
   }) : assert((iconData == null) != (imageIcon == null));
 
   final IconData iconData;
@@ -47,14 +48,28 @@ class MaterialIconLabel extends StatelessWidget {
   final Color color;
   final String label;
   final double minScreenWidthForTextBeforeScaling;
+  final bool invertOrder;
 
   @override
   Widget build(BuildContext context) {
     // TODO(jacobr): display the label as a tooltip for the icon particularly
     // when the text is not shown.
+    final shouldIncludeText =
+        includeText(context, minScreenWidthForTextBeforeScaling);
+    final labelWidget = Padding(
+      padding: EdgeInsets.only(
+        left: invertOrder ? 0.0 : denseSpacing,
+        right: invertOrder ? denseSpacing : 0.0,
+      ),
+      child: Text(
+        label,
+        style: TextStyle(color: color),
+      ),
+    );
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
+        if (invertOrder && shouldIncludeText) labelWidget,
         iconData != null
             ? Icon(
                 iconData,
@@ -63,7 +78,7 @@ class MaterialIconLabel extends StatelessWidget {
               )
             : imageIcon,
         // TODO(jacobr): animate showing and hiding the text.
-        if (includeText(context, minScreenWidthForTextBeforeScaling))
+        if (!invertOrder && shouldIncludeText)
           Padding(
             padding: const EdgeInsets.only(left: denseSpacing),
             child: Text(
