@@ -2,12 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'package:devtools_app/src/banner_messages.dart';
-import 'package:devtools_app/src/common_widgets.dart';
-import 'package:devtools_app/src/globals.dart';
+// @dart=2.9
+
+import 'package:devtools_app/src/config_specific/ide_theme/ide_theme.dart';
 import 'package:devtools_app/src/profiler/profiler_screen.dart';
-import 'package:devtools_app/src/scaffold.dart';
-import 'package:devtools_app/src/service_manager.dart';
+import 'package:devtools_app/src/shared/banner_messages.dart';
+import 'package:devtools_app/src/shared/common_widgets.dart';
+import 'package:devtools_app/src/shared/globals.dart';
+import 'package:devtools_app/src/shared/scaffold.dart';
+import 'package:devtools_app/src/shared/service_manager.dart';
 import 'package:devtools_test/devtools_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -21,6 +24,7 @@ void main() {
     controller = BannerMessagesController();
     fakeServiceManager = FakeServiceManager();
     setGlobal(ServiceConnectionManager, fakeServiceManager);
+    setGlobal(IdeTheme, IdeTheme());
   });
 
   group('BannerMessages', () {

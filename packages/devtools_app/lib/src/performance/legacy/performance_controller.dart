@@ -6,6 +6,8 @@
 // https://github.com/flutter/flutter/commit/78a96b09d64dc2a520e5b269d5cea1b9dde27d3f
 // hits flutter stable.
 
+// @dart=2.9
+
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -13,21 +15,21 @@ import 'package:pedantic/pedantic.dart';
 import 'package:vm_service/vm_service.dart' as vm_service;
 
 import '../../analytics/constants.dart' as analytics_constants;
-import '../../auto_dispose.dart';
 import '../../config_specific/import_export/import_export.dart';
 import '../../config_specific/logger/allowed_error.dart';
 import '../../config_specific/logger/logger.dart';
-import '../../globals.dart';
 import '../../http/http_service.dart';
+import '../../primitives/auto_dispose.dart';
+import '../../primitives/trace_event.dart';
+import '../../primitives/trees.dart';
+import '../../primitives/utils.dart';
 import '../../profiler/cpu_profile_controller.dart';
 import '../../profiler/cpu_profile_service.dart';
 import '../../profiler/cpu_profile_transformer.dart';
 import '../../profiler/profile_granularity.dart';
-import '../../service_manager.dart';
-import '../../trace_event.dart';
-import '../../trees.dart';
+import '../../shared/globals.dart';
+import '../../shared/service_manager.dart';
 import '../../ui/search.dart';
-import '../../utils.dart';
 import 'performance_model.dart';
 import 'performance_screen.dart';
 import 'timeline_event_processor.dart';

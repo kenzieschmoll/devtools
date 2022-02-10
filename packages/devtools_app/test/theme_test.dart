@@ -2,22 +2,24 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
 
 import 'package:devtools_app/src/config_specific/ide_theme/ide_theme.dart';
-import 'package:devtools_app/src/theme.dart';
+import 'package:devtools_app/src/shared/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('Theme', () {
     ThemeData theme;
+
     test('can be used without override', () {
-      theme = themeFor(isDarkTheme: true, ideTheme: null);
+      theme = themeFor(isDarkTheme: true, ideTheme: IdeTheme());
       expect(theme.brightness, equals(Brightness.dark));
       expect(theme.scaffoldBackgroundColor,
           equals(ThemeData.dark().scaffoldBackgroundColor));
 
-      theme = themeFor(isDarkTheme: false, ideTheme: null);
+      theme = themeFor(isDarkTheme: false, ideTheme: IdeTheme());
       expect(theme.brightness, equals(Brightness.light));
       expect(theme.scaffoldBackgroundColor,
           equals(ThemeData.light().scaffoldBackgroundColor));

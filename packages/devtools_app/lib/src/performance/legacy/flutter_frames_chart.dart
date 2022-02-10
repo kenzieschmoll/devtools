@@ -6,16 +6,18 @@
 // https://github.com/flutter/flutter/commit/78a96b09d64dc2a520e5b269d5cea1b9dde27d3f
 // hits flutter stable.
 
+// @dart=2.9
+
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../auto_dispose_mixin.dart';
-import '../../common_widgets.dart';
-import '../../theme.dart';
+import '../../primitives/auto_dispose_mixin.dart';
+import '../../primitives/utils.dart';
+import '../../shared/common_widgets.dart';
+import '../../shared/theme.dart';
 import '../../ui/colors.dart';
-import '../../utils.dart';
 import 'performance_controller.dart';
 import 'performance_model.dart';
 

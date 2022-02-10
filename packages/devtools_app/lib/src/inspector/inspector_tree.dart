@@ -9,14 +9,17 @@
 ///
 /// This allows tests of the complicated logic in this class to run on the VM
 /// and will help simplify porting this code to work with Hummingbird.
+
+// @dart=2.9
+
 library inspector_tree;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import '../theme.dart';
+import '../shared/theme.dart';
+import '../shared/utils.dart';
 import '../ui/search.dart';
-import '../utils.dart';
 import 'diagnostics_node.dart';
 import 'inspector_service.dart';
 

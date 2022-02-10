@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -9,14 +11,14 @@ import 'package:flutter/foundation.dart';
 import '../../devtools.dart' as devtools show version;
 import '../config_specific/import_export/import_export.dart';
 import '../config_specific/logger/logger.dart';
-import '../core/message_bus.dart';
-import '../framework_controller.dart';
-import '../globals.dart';
-import '../service.dart';
-import '../service_manager.dart';
-import '../survey.dart';
-import '../utils.dart';
-import '../vm_service_wrapper.dart';
+import '../primitives/message_bus.dart';
+import '../primitives/utils.dart';
+import '../shared/framework_controller.dart';
+import '../shared/globals.dart';
+import '../shared/service.dart';
+import '../shared/service_manager.dart';
+import '../shared/survey.dart';
+import '../shared/vm_service_wrapper.dart';
 
 typedef ErrorReporter = void Function(String title, dynamic error);
 

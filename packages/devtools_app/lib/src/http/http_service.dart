@@ -2,8 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import '../globals.dart';
-import '../utils.dart';
+// @dart=2.9
+
+import '../primitives/utils.dart';
+import '../shared/globals.dart';
 
 // ignore: avoid_classes_with_only_static_members
 class HttpService {

@@ -2,13 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file
 
+// @dart=2.9
+
 import 'dart:collection';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
-import '../theme.dart';
+import '../shared/theme.dart';
 import 'span_parser.dart';
 
 class SyntaxHighlighter {

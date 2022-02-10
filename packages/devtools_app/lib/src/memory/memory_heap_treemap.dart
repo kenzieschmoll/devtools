@@ -2,14 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'package:flutter/material.dart' hide TextStyle;
 import 'package:flutter/widgets.dart' hide TextStyle;
 import 'package:provider/provider.dart';
 
-import '../auto_dispose_mixin.dart';
 import '../charts/treemap.dart';
-import '../common_widgets.dart';
-import '../theme.dart';
+import '../primitives/auto_dispose_mixin.dart';
+import '../shared/common_widgets.dart';
+import '../shared/theme.dart';
 import 'memory_controller.dart';
 import 'memory_graph_model.dart';
 

@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
@@ -12,18 +14,18 @@ import 'package:intl/intl.dart';
 import 'package:path/path.dart' as path;
 import 'package:vm_service/vm_service.dart';
 
-import '../auto_dispose.dart';
 import '../config_specific/logger/logger.dart' as logger;
-import '../core/message_bus.dart';
-import '../globals.dart';
 import '../inspector/diagnostics_node.dart';
 import '../inspector/inspector_service.dart';
 import '../inspector/inspector_tree.dart';
 import '../inspector/inspector_tree_controller.dart';
+import '../primitives/auto_dispose.dart';
+import '../primitives/message_bus.dart';
+import '../primitives/utils.dart';
+import '../shared/globals.dart';
+import '../shared/vm_service_wrapper.dart';
 import '../ui/filter.dart';
 import '../ui/search.dart';
-import '../utils.dart';
-import '../vm_service_wrapper.dart';
 import 'logging_screen.dart';
 
 // For performance reasons, we drop old logs in batches, so the log will grow

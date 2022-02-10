@@ -2,15 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'package:devtools_app/src/charts/flame_chart.dart';
-import 'package:devtools_app/src/flutter_widgets/linked_scroll_controller.dart';
 import 'package:devtools_app/src/performance/performance_model.dart';
+import 'package:devtools_app/src/primitives/flutter_widgets/linked_scroll_controller.dart';
+import 'package:devtools_app/src/primitives/utils.dart';
 import 'package:devtools_app/src/profiler/cpu_profile_controller.dart';
 import 'package:devtools_app/src/profiler/cpu_profile_flame_chart.dart';
 import 'package:devtools_app/src/profiler/cpu_profile_model.dart';
 import 'package:devtools_app/src/ui/colors.dart';
 import 'package:devtools_app/src/ui/utils.dart';
-import 'package:devtools_app/src/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';

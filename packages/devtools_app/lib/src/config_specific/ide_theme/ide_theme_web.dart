@@ -2,11 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be found
 // in the LICENSE file.
 
+// @dart=2.9
+
 import 'dart:html';
 
 import 'package:flutter/widgets.dart';
 
-import '../../utils.dart';
+import '../../primitives/utils.dart';
 import '../logger/logger.dart';
 import '../url/url.dart';
 import 'ide_theme.dart';

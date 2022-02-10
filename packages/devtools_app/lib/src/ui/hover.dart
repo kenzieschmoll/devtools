@@ -2,15 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
-import '../eval_on_dart_library.dart';
-import '../theme.dart';
-import '../utils.dart';
+import '../shared/eval_on_dart_library.dart';
+import '../shared/theme.dart';
+import '../shared/utils.dart';
 import 'utils.dart';
 
 /// Regex for valid Dart identifiers.

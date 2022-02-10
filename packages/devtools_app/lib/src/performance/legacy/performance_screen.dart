@@ -6,6 +6,8 @@
 // https://github.com/flutter/flutter/commit/78a96b09d64dc2a520e5b269d5cea1b9dde27d3f
 // hits flutter stable.
 
+// @dart=2.9
+
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -13,22 +15,22 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../analytics/analytics.dart' as ga;
-import '../../auto_dispose_mixin.dart';
-import '../../banner_messages.dart';
-import '../../common_widgets.dart';
 import '../../config_specific/import_export/import_export.dart';
-import '../../connected_app.dart';
-import '../../dialogs.dart';
-import '../../globals.dart';
-import '../../notifications.dart';
-import '../../screen.dart';
-import '../../service_extensions.dart';
-import '../../split.dart';
-import '../../theme.dart';
+import '../../primitives/auto_dispose_mixin.dart';
+import '../../shared/banner_messages.dart';
+import '../../shared/common_widgets.dart';
+import '../../shared/connected_app.dart';
+import '../../shared/dialogs.dart';
+import '../../shared/globals.dart';
+import '../../shared/notifications.dart';
+import '../../shared/screen.dart';
+import '../../shared/service_extensions.dart';
+import '../../shared/split.dart';
+import '../../shared/theme.dart';
+import '../../shared/version.dart';
 import '../../ui/icons.dart';
 import '../../ui/service_extension_widgets.dart';
 import '../../ui/vm_flag_widgets.dart';
-import '../../version.dart';
 import 'event_details.dart';
 import 'flutter_frames_chart.dart';
 import 'performance_controller.dart';

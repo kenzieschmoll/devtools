@@ -2,17 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'dart:io';
 
 import 'package:ansicolor/ansicolor.dart';
+import 'package:devtools_app/devtools_app.dart';
 import 'package:devtools_app/src/debugger/console.dart';
 import 'package:devtools_app/src/debugger/controls.dart';
-import 'package:devtools_app/src/debugger/debugger_controller.dart';
 import 'package:devtools_app/src/debugger/debugger_model.dart';
 import 'package:devtools_app/src/debugger/debugger_screen.dart';
 import 'package:devtools_app/src/debugger/program_explorer_model.dart';
-import 'package:devtools_app/src/globals.dart';
-import 'package:devtools_app/src/service_manager.dart';
 import 'package:devtools_test/devtools_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -33,6 +33,7 @@ void main() {
     when(fakeServiceManager.connectedApp.isProfileBuildNow).thenReturn(false);
     when(fakeServiceManager.connectedApp.isDartWebAppNow).thenReturn(false);
     setGlobal(ServiceConnectionManager, fakeServiceManager);
+    setGlobal(IdeTheme, IdeTheme());
     fakeServiceManager.consoleService.ensureServiceInitialized();
   });
 
@@ -86,32 +87,6 @@ void main() {
 
       // test for stdio output.
       expect(find.selectableText('test stdio'), findsOneWidget);
-    });
-
-    testWidgetsWithWindowSize(
-        'Console area shows processed ansi text', windowSize,
-        (WidgetTester tester) async {
-      serviceManager.consoleService.appendStdio(_ansiCodesOutput());
-
-      await pumpConsole(tester, debuggerController);
-
-      final finder =
-          find.selectableText('Ansi color codes processed for console');
-      expect(finder, findsOneWidget);
-      finder.evaluate().forEach((element) {
-        final selectableText = element.widget as SelectableText;
-        final textSpan = selectableText.textSpan;
-        final secondSpan = textSpan.children[1] as TextSpan;
-        expect(
-          secondSpan.text,
-          'console',
-          reason: 'Text with ansi code should be in separate span',
-        );
-        expect(
-          secondSpan.style.backgroundColor,
-          const Color.fromRGBO(215, 95, 135, 1),
-        );
-      });
     });
 
     group('ConsoleControls', () {

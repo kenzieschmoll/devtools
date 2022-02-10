@@ -2,11 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'package:flutter/material.dart';
 
-import '../common_widgets.dart';
-import '../table.dart';
-import '../theme.dart';
+import '../shared/common_widgets.dart';
+import '../shared/table.dart';
+import '../shared/theme.dart';
 
 /// A convenience widget used to create non-scrollable information cards.
 ///

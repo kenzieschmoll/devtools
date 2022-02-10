@@ -2,14 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:vm_service/vm_service.dart';
 
-import '../auto_dispose.dart';
-import '../globals.dart';
-import '../utils.dart';
+import '../primitives/auto_dispose.dart';
+import '../primitives/utils.dart';
+import '../shared/globals.dart';
 import 'debugger_controller.dart';
 import 'program_explorer_model.dart';
 

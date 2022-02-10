@@ -2,16 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'dart:async';
 import 'dart:core';
 
 import 'package:flutter/foundation.dart';
 import 'package:vm_service/vm_service.dart' hide Error;
 
-import '../auto_dispose.dart';
-import '../connected_app.dart';
-import '../globals.dart';
-import '../vm_service_wrapper.dart';
+import '../primitives/auto_dispose.dart';
+import '../shared/connected_app.dart';
+import '../shared/globals.dart';
+import '../shared/vm_service_wrapper.dart';
 
 class TimelineStreamManager extends Disposer {
   static const dartTimelineStream = 'Dart';

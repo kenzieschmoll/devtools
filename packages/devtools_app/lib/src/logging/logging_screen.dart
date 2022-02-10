@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -9,20 +11,21 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../analytics/analytics.dart' as ga;
-import '../auto_dispose_mixin.dart';
-import '../common_widgets.dart';
-import '../console.dart';
-import '../screen.dart';
-import '../split.dart';
-import '../table.dart';
-import '../table_data.dart';
-import '../theme.dart';
+import '../primitives/auto_dispose_mixin.dart';
+import '../primitives/utils.dart';
+import '../shared/common_widgets.dart';
+import '../shared/console.dart';
+import '../shared/screen.dart';
+import '../shared/split.dart';
+import '../shared/table.dart';
+import '../shared/table_data.dart';
+import '../shared/theme.dart';
+import '../shared/utils.dart';
 import '../ui/colors.dart';
 import '../ui/filter.dart';
 import '../ui/icons.dart';
 import '../ui/search.dart';
 import '../ui/service_extension_widgets.dart';
-import '../utils.dart';
 import 'logging_controller.dart';
 
 final loggingSearchFieldKey = GlobalKey(debugLabel: 'LoggingSearchFieldKey');

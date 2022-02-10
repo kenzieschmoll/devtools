@@ -1,22 +1,25 @@
 // Copyright 2019 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+
+// @dart=2.9
+
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
 
 import '../analytics/constants.dart' as analytics_constants;
-import '../auto_dispose_mixin.dart';
 import '../charts/flame_chart.dart';
-import '../common_widgets.dart';
-import '../dialogs.dart';
-import '../notifications.dart';
-import '../theme.dart';
+import '../primitives/auto_dispose_mixin.dart';
+import '../shared/common_widgets.dart';
+import '../shared/dialogs.dart';
+import '../shared/notifications.dart';
+import '../shared/theme.dart';
+import '../shared/utils.dart';
 import '../ui/colors.dart';
 import '../ui/filter.dart';
 import '../ui/search.dart';
 import '../ui/tab.dart';
-import '../utils.dart';
 import 'cpu_profile_bottom_up.dart';
 import 'cpu_profile_call_tree.dart';
 import 'cpu_profile_controller.dart';

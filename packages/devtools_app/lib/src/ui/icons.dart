@@ -11,13 +11,16 @@
 /// to handle the actual platform specific icon rendering.
 /// The benefit of this approach is that icons can be const objects and tests
 /// of code that uses icons can run on the Dart VM.
+
+// @dart=2.9
+
 library icons;
 
 import 'package:flutter/material.dart';
 
 import '../inspector/layout_explorer/ui/widgets_theme.dart';
-import '../theme.dart';
-import '../utils.dart';
+import '../shared/theme.dart';
+import '../shared/utils.dart';
 
 class CustomIcon extends StatelessWidget {
   const CustomIcon({

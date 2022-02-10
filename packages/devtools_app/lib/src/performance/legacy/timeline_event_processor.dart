@@ -6,13 +6,15 @@
 // https://github.com/flutter/flutter/commit/78a96b09d64dc2a520e5b269d5cea1b9dde27d3f
 // hits flutter stable.
 
+// @dart=2.9
+
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 
 import '../../config_specific/logger/logger.dart';
-import '../../trace_event.dart';
-import '../../utils.dart';
+import '../../primitives/trace_event.dart';
+import '../../primitives/utils.dart';
 //import '../../simple_trace_example.dart';
 import 'performance_controller.dart';
 import 'performance_model.dart';

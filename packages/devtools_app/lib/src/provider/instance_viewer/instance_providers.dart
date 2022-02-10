@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'dart:async';
 
 import 'package:collection/collection.dart';
@@ -10,9 +12,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pedantic/pedantic.dart';
 import 'package:vm_service/vm_service.dart' hide SentinelException;
 
-import '../../eval_on_dart_library.dart';
-import '../../globals.dart';
-import '../../utils.dart';
+import '../../primitives/utils.dart';
+import '../../shared/eval_on_dart_library.dart';
+import '../../shared/globals.dart';
 import '../provider_debounce.dart';
 import 'eval.dart';
 import 'instance_details.dart';

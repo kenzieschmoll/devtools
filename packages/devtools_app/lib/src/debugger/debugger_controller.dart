@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'dart:async';
 
 import 'package:async/async.dart';
@@ -9,15 +11,15 @@ import 'package:flutter/foundation.dart';
 import 'package:pedantic/pedantic.dart';
 import 'package:vm_service/vm_service.dart';
 
-import '../auto_dispose.dart';
 import '../config_specific/logger/logger.dart';
-import '../core/message_bus.dart';
-import '../globals.dart';
-import '../history_manager.dart';
-import '../service_manager.dart';
+import '../primitives/auto_dispose.dart';
+import '../primitives/history_manager.dart';
+import '../primitives/message_bus.dart';
+import '../primitives/utils.dart';
+import '../shared/globals.dart';
+import '../shared/service_manager.dart';
+import '../shared/vm_service_wrapper.dart';
 import '../ui/search.dart';
-import '../utils.dart';
-import '../vm_service_wrapper.dart';
 import 'debugger_model.dart';
 import 'program_explorer_controller.dart';
 import 'syntax_highlighter.dart';
@@ -200,6 +202,12 @@ class DebuggerController extends DisposableController
 
   /// Jump to the given ScriptRef and optional SourcePosition.
   void showScriptLocation(ScriptLocation scriptLocation) {
+    // TODO(elliette): This is here so that when a program is selected in the
+    // program explorer, the file opener will close (if it was open). Instead,
+    // give the program explorer focus so that the focus changes so the file
+    // opener will close automatically when its focus is lost.
+    toggleFileOpenerVisibility(false);
+
     _showScriptLocation(scriptLocation);
 
     // Update the scripts history (and make sure we don't react to the
@@ -213,6 +221,9 @@ class DebuggerController extends DisposableController
   /// history).
   void _showScriptLocation(ScriptLocation scriptLocation) {
     _currentScriptRef.value = scriptLocation?.scriptRef;
+    if (_currentScriptRef.value == null) {
+      log('Trying to show a location with a null script ref', LogLevel.error);
+    }
 
     _parseCurrentScript();
 
@@ -347,6 +358,7 @@ class DebuggerController extends DisposableController
   /// Make the 'Libraries' view on the right-hand side of the screen visible or
   /// hidden.
   void toggleLibrariesVisible() {
+    toggleFileOpenerVisibility(false);
     _librariesVisible.value = !_librariesVisible.value;
   }
 

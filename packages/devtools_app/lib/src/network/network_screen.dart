@@ -2,22 +2,25 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../analytics/analytics.dart' as ga;
 import '../analytics/constants.dart' as analytics_constants;
-import '../auto_dispose_mixin.dart';
-import '../common_widgets.dart';
-import '../screen.dart';
-import '../split.dart';
-import '../table.dart';
-import '../table_data.dart';
-import '../theme.dart';
+import '../primitives/auto_dispose_mixin.dart';
+import '../primitives/utils.dart';
+import '../shared/common_widgets.dart';
+import '../shared/screen.dart';
+import '../shared/split.dart';
+import '../shared/table.dart';
+import '../shared/table_data.dart';
+import '../shared/theme.dart';
+import '../shared/utils.dart';
 import '../ui/filter.dart';
 import '../ui/search.dart';
-import '../utils.dart';
 import 'network_controller.dart';
 import 'network_model.dart';
 import 'network_request_inspector.dart';

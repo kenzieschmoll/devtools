@@ -2,14 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
 
-import '../../globals.dart';
-import '../../storage.dart';
+import '../../primitives/storage.dart';
+import '../../shared/globals.dart';
 import '../logger/logger.dart';
 
 /// Return the url the application is launched from.

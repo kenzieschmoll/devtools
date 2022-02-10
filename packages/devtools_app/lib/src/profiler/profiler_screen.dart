@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -12,15 +14,15 @@ import 'package:vm_service/vm_service.dart' hide Stack;
 import '../analytics/analytics.dart' as ga;
 import '../analytics/analytics_common.dart';
 import '../analytics/constants.dart' as analytics_constants;
-import '../auto_dispose_mixin.dart';
-import '../banner_messages.dart';
-import '../common_widgets.dart';
 import '../config_specific/import_export/import_export.dart';
-import '../globals.dart';
-import '../listenable.dart';
-import '../notifications.dart';
-import '../screen.dart';
-import '../theme.dart';
+import '../primitives/auto_dispose_mixin.dart';
+import '../primitives/listenable.dart';
+import '../shared/banner_messages.dart';
+import '../shared/common_widgets.dart';
+import '../shared/globals.dart';
+import '../shared/notifications.dart';
+import '../shared/screen.dart';
+import '../shared/theme.dart';
 import '../ui/icons.dart';
 import '../ui/vm_flag_widgets.dart';
 import 'cpu_profile_controller.dart';
@@ -170,7 +172,7 @@ class _ProfilerScreenBodyState extends State<ProfilerScreenBody>
         textAlign: TextAlign.center,
         text: TextSpan(
           text: 'No CPU samples recorded.',
-          children: serviceManager.vm.operatingSystem == 'ios'
+          children: serviceManager.vm?.operatingSystem == 'ios'
               ? [
                   const TextSpan(
                     text: '''

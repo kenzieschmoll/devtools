@@ -2,11 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'dart:math';
 
 import 'package:flutter/material.dart';
 
-import '../../../theme.dart';
+import '../../../shared/theme.dart';
 
 const defaultArrowColor = Colors.white;
 const defaultArrowStrokeWidth = 2.0;

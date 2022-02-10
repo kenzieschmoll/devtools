@@ -2,13 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'package:devtools_shared/devtools_shared.dart';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:vm_service/vm_service.dart';
 
 import '../config_specific/logger/logger.dart';
-import '../utils.dart';
+import '../primitives/utils.dart';
 import 'memory_controller.dart';
 
 enum ContinuesState {

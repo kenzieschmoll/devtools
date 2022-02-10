@@ -2,15 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'package:flutter/material.dart';
 import 'package:vm_service/vm_service.dart' hide Stack;
 
-import '../common_widgets.dart';
-import '../flex_split_column.dart';
-import '../globals.dart';
-import '../theme.dart';
-import '../tree.dart';
-import '../utils.dart';
+import '../shared/common_widgets.dart';
+import '../shared/flex_split_column.dart';
+import '../shared/globals.dart';
+import '../shared/theme.dart';
+import '../shared/tree.dart';
+import '../shared/utils.dart';
 import 'debugger_controller.dart';
 import 'debugger_model.dart';
 import 'program_explorer_controller.dart';

@@ -2,15 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../common_widgets.dart';
-import '../console.dart';
-import '../console_service.dart';
-import '../globals.dart';
-import '../theme.dart';
+import '../shared/common_widgets.dart';
+import '../shared/console.dart';
+import '../shared/console_service.dart';
+import '../shared/globals.dart';
+import '../shared/theme.dart';
 import 'debugger_controller.dart';
 import 'evaluate.dart';
 

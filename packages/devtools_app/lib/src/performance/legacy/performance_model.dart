@@ -6,18 +6,20 @@
 // https://github.com/flutter/flutter/commit/78a96b09d64dc2a520e5b269d5cea1b9dde27d3f
 // hits flutter stable.
 
+// @dart=2.9
+
 import 'dart:collection';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 
 import '../../charts/flame_chart.dart';
+import '../../primitives/trace_event.dart';
+import '../../primitives/trees.dart';
+import '../../primitives/utils.dart';
 import '../../profiler/cpu_profile_model.dart';
-import '../../service_manager.dart';
-import '../../trace_event.dart';
-import '../../trees.dart';
+import '../../shared/service_manager.dart';
 import '../../ui/search.dart';
-import '../../utils.dart';
 import '../performance_utils.dart';
 import 'performance_utils.dart' as legacy_utils;
 import 'timeline_event_processor.dart';

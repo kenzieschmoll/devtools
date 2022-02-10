@@ -2,13 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:vm_service/vm_service.dart' hide VmService;
 
-import '../auto_dispose.dart';
-import '../globals.dart';
-import '../vm_service_wrapper.dart';
+import '../primitives/auto_dispose.dart';
+import '../shared/globals.dart';
+import '../shared/vm_service_wrapper.dart';
 
 class VMStatisticsViewController extends DisposableController {
   VMStatisticsViewController() {

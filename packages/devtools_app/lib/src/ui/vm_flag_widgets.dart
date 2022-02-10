@@ -2,17 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:vm_service/vm_service.dart';
 
 import '../analytics/analytics.dart' as ga;
 import '../analytics/constants.dart' as analytics_constants;
-import '../banner_messages.dart';
-import '../common_widgets.dart';
-import '../globals.dart';
 import '../profiler/cpu_profile_service.dart';
 import '../profiler/profile_granularity.dart';
+import '../shared/banner_messages.dart';
+import '../shared/common_widgets.dart';
+import '../shared/globals.dart';
 
 /// DropdownButton that controls the value of the 'profile_period' vm flag.
 ///

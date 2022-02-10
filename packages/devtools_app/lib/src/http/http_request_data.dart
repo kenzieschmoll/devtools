@@ -1,6 +1,9 @@
 // Copyright 2019 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+
+// @dart=2.9
+
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -8,12 +11,12 @@ import 'package:flutter/widgets.dart';
 import 'package:mime/mime.dart';
 import 'package:vm_service/vm_service.dart';
 
-import '../common_widgets.dart';
 import '../config_specific/logger/logger.dart';
-import '../globals.dart';
 import '../network/network_model.dart';
-import '../trace_event.dart';
-import '../utils.dart';
+import '../primitives/trace_event.dart';
+import '../primitives/utils.dart';
+import '../shared/common_widgets.dart';
+import '../shared/globals.dart';
 import 'http.dart';
 
 class TimelineHttpInstantEvent extends HttpInstantEvent {

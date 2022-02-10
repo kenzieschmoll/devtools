@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 library inspector_tree;
 
 import 'dart:async';
@@ -13,18 +15,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pedantic/pedantic.dart';
 
-import '../auto_dispose_mixin.dart';
-import '../collapsible_mixin.dart';
-import '../common_widgets.dart';
 import '../config_specific/logger/logger.dart';
 import '../debugger/debugger_controller.dart';
-import '../error_badge_manager.dart';
-import '../globals.dart';
-import '../theme.dart';
+import '../primitives/auto_dispose_mixin.dart';
+import '../primitives/utils.dart';
+import '../shared/collapsible_mixin.dart';
+import '../shared/common_widgets.dart';
+import '../shared/error_badge_manager.dart';
+import '../shared/globals.dart';
+import '../shared/theme.dart';
 import '../ui/colors.dart';
 import '../ui/search.dart';
 import '../ui/utils.dart';
-import '../utils.dart';
 import 'diagnostics.dart';
 import 'diagnostics_node.dart';
 import 'inspector_breadcrumbs.dart';

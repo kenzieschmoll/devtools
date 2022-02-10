@@ -1,18 +1,21 @@
 // Copyright 2020 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+
+// @dart=2.9
+
 import 'dart:collection';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 
 import '../charts/flame_chart.dart';
+import '../primitives/trace_event.dart';
+import '../primitives/trees.dart';
+import '../primitives/utils.dart';
 import '../profiler/cpu_profile_model.dart';
-import '../service_manager.dart';
-import '../trace_event.dart';
-import '../trees.dart';
+import '../shared/service_manager.dart';
 import '../ui/search.dart';
-import '../utils.dart';
 import 'performance_utils.dart';
 import 'timeline_event_processor.dart';
 

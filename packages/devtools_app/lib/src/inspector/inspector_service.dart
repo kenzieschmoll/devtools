@@ -6,6 +6,9 @@
 //
 // If you add methods to this class you should also add them to
 // InspectorService.java.
+
+// @dart=2.9
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
@@ -14,11 +17,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:vm_service/vm_service.dart';
 
-import '../auto_dispose.dart';
 import '../debugger/debugger_model.dart';
-import '../eval_on_dart_library.dart';
-import '../globals.dart';
-import '../utils.dart';
+import '../primitives/auto_dispose.dart';
+import '../primitives/utils.dart';
+import '../shared/eval_on_dart_library.dart';
+import '../shared/globals.dart';
 import 'diagnostics_node.dart';
 import 'inspector_service_polyfill.dart';
 

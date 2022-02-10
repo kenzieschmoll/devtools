@@ -2,9 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be found
 // in the LICENSE file.
 
+// @dart=2.9
+
 import 'dart:async';
 
-import '../../utils.dart';
+import '../../primitives/utils.dart';
 
 const unsupportedMessage =
     'Unsupported RPC: The DevTools Server is not available on Desktop';

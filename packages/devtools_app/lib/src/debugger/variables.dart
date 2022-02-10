@@ -2,20 +2,22 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'package:flutter/material.dart' hide Stack;
 import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 
-import '../common_widgets.dart';
-import '../globals.dart';
 import '../inspector/diagnostics.dart';
 import '../inspector/inspector_screen.dart';
-import '../listenable.dart';
-import '../notifications.dart';
-import '../routing.dart';
-import '../theme.dart';
-import '../tree.dart';
-import '../utils.dart';
+import '../primitives/listenable.dart';
+import '../primitives/utils.dart';
+import '../shared/common_widgets.dart';
+import '../shared/globals.dart';
+import '../shared/notifications.dart';
+import '../shared/routing.dart';
+import '../shared/theme.dart';
+import '../shared/tree.dart';
 import 'debugger_controller.dart';
 import 'debugger_model.dart';
 

@@ -2,9 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'package:flutter/material.dart';
 
-import '../theme.dart';
+import '../shared/theme.dart';
 
 TextStyle unimportant(ColorScheme colorScheme) => TextStyle(
     color: colorScheme.isLight ? Colors.grey.shade500 : Colors.grey.shade600);

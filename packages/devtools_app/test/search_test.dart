@@ -1,5 +1,11 @@
+// Copyright 2021 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+// @dart=2.9
+
+import 'package:devtools_app/src/primitives/utils.dart';
 import 'package:devtools_app/src/ui/search.dart';
-import 'package:devtools_app/src/utils.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 // TODO(https://github.com/flutter/devtools/issues/3514): increase test coverage

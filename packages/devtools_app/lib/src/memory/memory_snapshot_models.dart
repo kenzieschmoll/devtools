@@ -2,9 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'package:vm_service/vm_service.dart';
 
-import '../trees.dart';
+import '../primitives/trees.dart';
 import 'memory_controller.dart';
 import 'memory_graph_model.dart';
 

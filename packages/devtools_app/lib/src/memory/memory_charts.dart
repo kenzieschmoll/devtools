@@ -2,11 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'package:devtools_shared/devtools_shared.dart';
 import 'package:flutter/material.dart';
 
 import '../charts/chart_trace.dart';
-import '../utils.dart';
+import '../primitives/utils.dart';
 import 'memory_android_chart.dart' as android;
 import 'memory_controller.dart';
 import 'memory_events_pane.dart' as events;

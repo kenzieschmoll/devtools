@@ -2,11 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:vm_service/vm_service.dart';
 
-import '../../eval_on_dart_library.dart';
+import '../../shared/eval_on_dart_library.dart';
 import 'fake_freezed_annotation.dart';
 import 'result.dart';
 

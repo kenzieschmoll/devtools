@@ -2,15 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'dart:math';
 
 import 'package:devtools_shared/devtools_shared.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../table.dart';
-import '../table_data.dart';
-import '../utils.dart';
+import '../shared/table.dart';
+import '../shared/table_data.dart';
+import '../shared/utils.dart';
 import 'memory_controller.dart';
 
 const defaultNumberFieldWidth = 100.0;

@@ -2,13 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../auto_dispose_mixin.dart';
-import '../screen.dart';
-import '../theme.dart';
+import '../primitives/auto_dispose_mixin.dart';
+import '../shared/screen.dart';
+import '../shared/theme.dart';
 import 'isolate_statistics_view.dart';
 import 'vm_developer_tools_controller.dart';
 import 'vm_statistics_view.dart';

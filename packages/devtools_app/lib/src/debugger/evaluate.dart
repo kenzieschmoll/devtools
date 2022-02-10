@@ -2,19 +2,21 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:vm_service/vm_service.dart';
 
-import '../auto_dispose_mixin.dart';
-import '../globals.dart';
-import '../notifications.dart';
-import '../theme.dart';
+import '../primitives/auto_dispose_mixin.dart';
+import '../primitives/utils.dart';
+import '../shared/globals.dart';
+import '../shared/notifications.dart';
+import '../shared/theme.dart';
 import '../ui/search.dart';
 import '../ui/utils.dart';
-import '../utils.dart';
 import 'debugger_controller.dart';
 
 class ExpressionEvalField extends StatefulWidget {

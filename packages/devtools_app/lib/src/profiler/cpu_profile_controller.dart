@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -9,11 +11,11 @@ import 'package:vm_service/vm_service.dart';
 
 import '../analytics/analytics.dart' as ga;
 import '../analytics/constants.dart' as analytics_constants;
-import '../globals.dart';
+import '../primitives/utils.dart';
+import '../shared/globals.dart';
+import '../shared/vm_flags.dart' as vm_flags;
 import '../ui/filter.dart';
 import '../ui/search.dart';
-import '../utils.dart';
-import '../vm_flags.dart' as vm_flags;
 import 'cpu_profile_model.dart';
 import 'cpu_profile_service.dart';
 import 'cpu_profile_transformer.dart';

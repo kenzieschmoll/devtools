@@ -2,15 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'package:flutter/material.dart';
 import 'package:vm_service/vm_service.dart';
 
-import '../split.dart';
-import '../table.dart';
-import '../table_data.dart';
-import '../theme.dart';
-import '../trees.dart';
-import '../utils.dart';
+import '../primitives/trees.dart';
+import '../primitives/utils.dart';
+import '../shared/split.dart';
+import '../shared/table.dart';
+import '../shared/table_data.dart';
+import '../shared/theme.dart';
+import '../shared/utils.dart';
 import 'memory_allocation_table_view.dart';
 import 'memory_controller.dart';
 

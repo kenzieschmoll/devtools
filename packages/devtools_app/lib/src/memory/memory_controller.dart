@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'dart:async';
 
 import 'package:devtools_shared/devtools_shared.dart';
@@ -11,16 +13,17 @@ import 'package:vm_service/vm_service.dart';
 
 import '../analytics/analytics.dart' as ga;
 import '../analytics/constants.dart' as analytics_constants;
-import '../auto_dispose.dart';
 import '../config_specific/file/file.dart';
 import '../config_specific/logger/logger.dart';
-import '../globals.dart';
-import '../service_manager.dart';
-import '../table.dart';
-import '../table_data.dart';
+import '../primitives/auto_dispose.dart';
+import '../primitives/utils.dart';
+import '../shared/globals.dart';
+import '../shared/service_manager.dart';
+import '../shared/table.dart';
+import '../shared/table_data.dart';
+import '../shared/utils.dart';
+import '../shared/version.dart';
 import '../ui/search.dart';
-import '../utils.dart';
-import '../version.dart';
 import 'memory_filter.dart';
 import 'memory_graph_model.dart';
 import 'memory_protocol.dart';

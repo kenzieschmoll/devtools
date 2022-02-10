@@ -2,11 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'package:devtools_app/src/analytics/analytics_controller.dart';
 import 'package:devtools_app/src/analytics/prompt.dart';
-import 'package:devtools_app/src/common_widgets.dart';
-import 'package:devtools_app/src/globals.dart';
-import 'package:devtools_app/src/service_manager.dart';
+import 'package:devtools_app/src/config_specific/ide_theme/ide_theme.dart';
+import 'package:devtools_app/src/shared/common_widgets.dart';
+import 'package:devtools_app/src/shared/globals.dart';
+import 'package:devtools_app/src/shared/service_manager.dart';
 import 'package:devtools_test/devtools_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -30,6 +33,7 @@ void main() {
     setUp(() {
       didCallEnableAnalytics = false;
       setGlobal(ServiceConnectionManager, FakeServiceManager());
+      setGlobal(IdeTheme, IdeTheme());
     });
     group('with analytics enabled', () {
       group('on first run', () {

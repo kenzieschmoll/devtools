@@ -2,15 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'dart:math';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
-import '../auto_dispose_mixin.dart';
 import '../config_specific/logger/logger.dart' as logger;
-import '../theme.dart';
-import '../utils.dart';
+import '../primitives/auto_dispose_mixin.dart';
+import '../primitives/utils.dart';
+import '../shared/theme.dart';
 import 'chart_controller.dart';
 import 'chart_trace.dart';
 

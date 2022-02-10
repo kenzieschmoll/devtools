@@ -2,13 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import '../../../math_utils.dart';
-import '../../../theme.dart';
+import '../../../primitives/math_utils.dart';
+import '../../../shared/theme.dart';
 import '../../diagnostics_node.dart';
 import '../../inspector_controller.dart';
 import '../../inspector_data_models.dart';

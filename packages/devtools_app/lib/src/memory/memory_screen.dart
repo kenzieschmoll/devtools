@@ -2,25 +2,28 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../analytics/analytics.dart' as ga;
 import '../analytics/constants.dart' as analytics_constants;
-import '../auto_dispose_mixin.dart';
-import '../banner_messages.dart';
 import '../charts/chart_controller.dart';
-import '../common_widgets.dart';
 import '../config_specific/logger/logger.dart';
-import '../dialogs.dart';
-import '../globals.dart';
-import '../notifications.dart';
-import '../screen.dart';
-import '../theme.dart';
+import '../primitives/auto_dispose_mixin.dart';
+import '../primitives/utils.dart';
+import '../shared/banner_messages.dart';
+import '../shared/common_widgets.dart';
+import '../shared/dialogs.dart';
+import '../shared/globals.dart';
+import '../shared/notifications.dart';
+import '../shared/screen.dart';
+import '../shared/theme.dart';
+import '../shared/utils.dart';
 import '../ui/icons.dart';
 import '../ui/tab.dart';
-import '../utils.dart';
 import 'memory_android_chart.dart' as android;
 import 'memory_charts.dart';
 import 'memory_controller.dart';

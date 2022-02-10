@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be found
 // in the LICENSE file.
 
+// @dart=2.9
+
 import 'dart:async';
 import 'dart:convert';
 // TODO(jacobr): this should use package:http instead of dart:html.
@@ -10,7 +12,7 @@ import 'dart:html';
 import 'package:devtools_shared/devtools_shared.dart';
 import 'package:flutter/foundation.dart';
 
-import '../../utils.dart';
+import '../../primitives/utils.dart';
 import '../logger/logger.dart';
 
 // Code to check if DevTools server is available, will only be true in release

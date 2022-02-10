@@ -2,15 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:vm_service/vm_service.dart';
 
-import '../auto_dispose.dart';
-import '../globals.dart';
-import '../service_registrations.dart' as registrations;
-import '../version.dart';
+import '../primitives/auto_dispose.dart';
+import '../shared/globals.dart';
+import '../shared/service_registrations.dart' as registrations;
+import '../shared/version.dart';
 
 class InfoController extends DisposableController
     with AutoDisposeControllerMixin {

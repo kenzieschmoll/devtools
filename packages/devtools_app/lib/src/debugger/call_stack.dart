@@ -2,12 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'package:flutter/material.dart' hide Stack;
 import 'package:provider/provider.dart';
 import 'package:vm_service/vm_service.dart';
 
-import '../common_widgets.dart';
-import '../theme.dart';
+import '../shared/common_widgets.dart';
+import '../shared/theme.dart';
 import 'debugger_controller.dart';
 import 'debugger_model.dart';
 

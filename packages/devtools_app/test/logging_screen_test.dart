@@ -2,17 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 @TestOn('vm')
 
 import 'package:ansicolor/ansicolor.dart';
-import 'package:devtools_app/src/common_widgets.dart';
-import 'package:devtools_app/src/globals.dart';
 import 'package:devtools_app/src/logging/logging_controller.dart';
 import 'package:devtools_app/src/logging/logging_screen.dart';
-import 'package:devtools_app/src/service_extensions.dart';
-import 'package:devtools_app/src/service_manager.dart';
+import 'package:devtools_app/src/primitives/utils.dart';
+import 'package:devtools_app/src/shared/common_widgets.dart';
+import 'package:devtools_app/src/shared/globals.dart';
+import 'package:devtools_app/src/shared/service_extensions.dart';
+import 'package:devtools_app/src/shared/service_manager.dart';
 import 'package:devtools_app/src/ui/service_extension_widgets.dart';
-import 'package:devtools_app/src/utils.dart';
 import 'package:devtools_test/devtools_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -266,48 +268,6 @@ void main() {
 
         await tester.pumpAndSettle();
         expect(findJson, findsOneWidget);
-      });
-
-      testWidgetsWithWindowSize('can process Ansi codes', windowSize,
-          (WidgetTester tester) async {
-        await pumpLoggingScreen(tester);
-        await tester.pumpAndSettle();
-        await tester.tap(find.byKey(ValueKey(fakeLogData[5])));
-        await tester.pumpAndSettle();
-
-        // Entry in tree.
-        expect(
-          find.richText('Ansi color codes processed for log 5'),
-          findsOneWidget,
-          reason: 'Processed text without ansi codes should exist in logs and '
-              'details sections.',
-        );
-
-        // Entry in details panel.
-        final finder =
-            find.selectableText('Ansi color codes processed for log 5');
-
-        expect(
-          find.richText('Ansi color codes processed for log 5'),
-          findsOneWidget,
-          reason: 'Processed text without ansi codes should exist in logs and '
-              'details sections.',
-        );
-
-        finder.evaluate().forEach((element) {
-          final richText = element.widget as RichText;
-          final textSpan = richText.text as TextSpan;
-          final secondSpan = textSpan.children[1] as TextSpan;
-          expect(
-            secondSpan.text,
-            'log 5',
-            reason: 'Text with ansi code should be in separate span',
-          );
-          expect(
-            secondSpan.style.backgroundColor,
-            const Color.fromRGBO(215, 95, 135, 1),
-          );
-        });
       });
     });
 

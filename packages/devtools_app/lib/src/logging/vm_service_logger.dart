@@ -2,13 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'dart:async';
 import 'dart:convert';
 
 import 'package:vm_service/vm_service.dart';
 
-import '../core/message_bus.dart';
-import '../globals.dart';
+import '../primitives/message_bus.dart';
+import '../shared/globals.dart';
 
 /// A class which listens for all traffic over the VM service protocol and logs
 /// the traffic to the message bus.

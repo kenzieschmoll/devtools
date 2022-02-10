@@ -2,10 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'package:vm_service/vm_service.dart';
 
-import '../config_specific/logger/logger.dart';
-import '../utils.dart';
+// import '../config_specific/logger/logger.dart';
+import '../primitives/utils.dart';
 import 'memory_controller.dart';
 
 // TODO(terry): Ask Ben, what is a class name of ::?
@@ -437,14 +439,15 @@ class HeapGraphElementLive extends HeapGraphElement {
     if (theClass is HeapGraphClassLive) {
       final HeapGraphClassLive c = theClass;
       for (final field in c.origin.fields) {
-        // TODO(terry): Is index out of range, replace with assert?
         if (field.index < references.length) {
           result.add(MapEntry(field.name, references[field.index]));
         } else {
-          log(
-            'ERROR Field Range: name=${field.name},index=${field.index}',
-            LogLevel.error,
-          );
+          // TODO(polinach): figure out what to do if index is out of range.
+          // See https://github.com/flutter/devtools/issues/3629 for details.
+          // log(
+          //   'ERROR Field Range: name=${field.name},index=${field.index}',
+          //   LogLevel.error,
+          // );
         }
       }
     }

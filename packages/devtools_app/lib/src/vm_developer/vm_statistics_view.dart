@@ -2,13 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'package:flutter/material.dart';
 import 'package:vm_service/vm_service.dart';
 
-import '../common_widgets.dart';
-import '../table.dart';
-import '../table_data.dart';
-import '../utils.dart';
+import '../primitives/utils.dart';
+import '../shared/common_widgets.dart';
+import '../shared/table.dart';
+import '../shared/table_data.dart';
 import 'vm_developer_common_widgets.dart';
 import 'vm_developer_tools_screen.dart';
 import 'vm_service_private_extensions.dart';

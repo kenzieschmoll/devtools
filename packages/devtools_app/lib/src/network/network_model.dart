@@ -1,9 +1,15 @@
+// Copyright 2019 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+// @dart=2.9
+
 import 'package:flutter/material.dart';
 import 'package:vm_service/vm_service.dart';
 
 import '../http/http_request_data.dart';
+import '../primitives/utils.dart';
 import '../ui/search.dart';
-import '../utils.dart';
 
 abstract class NetworkRequest with DataSearchStateMixin {
   NetworkRequest(this._timelineMicrosBase);

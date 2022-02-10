@@ -2,9 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'package:flutter/foundation.dart';
 
-import '../utils.dart';
+import '../primitives/utils.dart';
 import 'performance_model.dart';
 
 // ignore: avoid_classes_with_only_static_members

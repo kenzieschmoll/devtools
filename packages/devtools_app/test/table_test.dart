@@ -1,13 +1,22 @@
-import 'package:devtools_app/src/globals.dart';
-import 'package:devtools_app/src/service_manager.dart';
-import 'package:devtools_app/src/table.dart';
-import 'package:devtools_app/src/table_data.dart';
-import 'package:devtools_app/src/trees.dart';
-import 'package:devtools_app/src/utils.dart';
+// Copyright 2019 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+// @dart=2.9
+
+import 'package:devtools_app/src/primitives/trees.dart';
+import 'package:devtools_app/src/primitives/utils.dart';
+import 'package:devtools_app/src/shared/globals.dart';
+import 'package:devtools_app/src/shared/service_manager.dart';
+import 'package:devtools_app/src/shared/table.dart';
+import 'package:devtools_app/src/shared/table_data.dart';
+import 'package:devtools_app/src/shared/utils.dart';
 import 'package:devtools_test/devtools_test.dart';
 import 'package:flutter/material.dart' hide TableRow;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+export 'package:devtools_app/src/primitives/utils_io.dart';
 
 void main() {
   setUp(() {

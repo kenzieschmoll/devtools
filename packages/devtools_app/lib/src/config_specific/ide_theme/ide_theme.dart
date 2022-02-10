@@ -2,9 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be found
 // in the LICENSE file.
 
+// @dart=2.9
+
 import 'package:flutter/widgets.dart';
 
-import '../../theme.dart';
+import '../../shared/theme.dart';
 
 export 'ide_theme_stub.dart'
     if (dart.library.html) 'ide_theme_web.dart'

@@ -2,14 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:vm_service/vm_service.dart';
 
-import '../auto_dispose_mixin.dart';
+import '../primitives/auto_dispose_mixin.dart';
+import '../primitives/utils.dart';
 import '../ui/search.dart';
-import '../utils.dart';
 import 'debugger_controller.dart';
 import 'debugger_model.dart';
 
@@ -70,7 +72,8 @@ class FileSearchFieldState extends State<FileSearchField>
       keyEventsToPropagate: {LogicalKeyboardKey.escape},
       onSelection: _onSelection,
       onClose: _onClose,
-      label: 'Open',
+      label: 'Open file',
+      onFocusLost: _onClose,
     );
   }
 

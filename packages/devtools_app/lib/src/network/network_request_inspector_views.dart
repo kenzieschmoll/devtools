@@ -2,16 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'package:flutter/material.dart';
 import 'package:image/image.dart' as image;
 
-import '../common_widgets.dart';
 import '../http/http.dart';
 import '../http/http_request_data.dart';
-import '../table.dart';
-import '../theme.dart';
+import '../primitives/utils.dart';
+import '../shared/common_widgets.dart';
+import '../shared/table.dart';
+import '../shared/theme.dart';
 import '../ui/colors.dart';
-import '../utils.dart';
 import 'network_model.dart';
 
 // Approximately double the indent of the expandable tile's title.

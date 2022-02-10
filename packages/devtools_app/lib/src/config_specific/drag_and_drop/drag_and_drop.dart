@@ -2,11 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
-import '../../notifications.dart';
-import '../../utils.dart';
+import '../../primitives/utils.dart';
+import '../../shared/notifications.dart';
 import '_drag_and_drop_stub.dart'
     if (dart.library.html) '_drag_and_drop_web.dart'
     if (dart.library.io) '_drag_and_drop_desktop.dart';

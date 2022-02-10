@@ -2,14 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'package:codicon/codicon.dart';
 import 'package:flutter/material.dart' hide Stack;
 import 'package:provider/provider.dart';
 import 'package:vm_service/vm_service.dart';
 
-import '../auto_dispose_mixin.dart';
-import '../common_widgets.dart';
-import '../theme.dart';
+import '../primitives/auto_dispose_mixin.dart';
+import '../shared/common_widgets.dart';
+import '../shared/theme.dart';
 import '../ui/label.dart';
 import 'debugger_controller.dart';
 

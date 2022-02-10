@@ -2,10 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'package:vm_service/vm_service.dart';
 
-import '../globals.dart';
-import '../trees.dart';
+import '../primitives/trees.dart';
+import '../shared/globals.dart';
 import 'debugger_model.dart';
 import 'program_explorer_controller.dart';
 

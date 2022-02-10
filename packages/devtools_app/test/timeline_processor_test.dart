@@ -2,11 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'package:devtools_app/src/performance/performance_controller.dart';
 import 'package:devtools_app/src/performance/performance_model.dart';
 import 'package:devtools_app/src/performance/timeline_event_processor.dart';
-import 'package:devtools_app/src/trace_event.dart';
-import 'package:devtools_app/src/utils.dart';
+import 'package:devtools_app/src/primitives/trace_event.dart';
+import 'package:devtools_app/src/primitives/utils.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 

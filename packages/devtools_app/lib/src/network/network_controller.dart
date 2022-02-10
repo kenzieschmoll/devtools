@@ -2,18 +2,20 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:vm_service/vm_service.dart';
 
 import '../config_specific/logger/allowed_error.dart';
-import '../globals.dart';
 import '../http/http_request_data.dart';
 import '../http/http_service.dart';
+import '../primitives/utils.dart';
+import '../shared/globals.dart';
 import '../ui/filter.dart';
 import '../ui/search.dart';
-import '../utils.dart';
 import 'network_model.dart';
 import 'network_screen.dart';
 import 'network_service.dart';

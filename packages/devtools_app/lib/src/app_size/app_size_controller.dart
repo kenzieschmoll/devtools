@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:vm_snapshot_analysis/precompiler_trace.dart';
@@ -11,7 +13,7 @@ import 'package:vm_snapshot_analysis/utils.dart';
 import 'package:vm_snapshot_analysis/v8_profile.dart';
 
 import '../charts/treemap.dart';
-import '../utils.dart';
+import '../primitives/utils.dart';
 import 'app_size_screen.dart';
 
 enum DiffTreeType {

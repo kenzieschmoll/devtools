@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.9
+
 @TestOn('vm')
 import 'dart:convert';
 import 'dart:io';
@@ -9,8 +11,8 @@ import 'dart:io';
 import 'package:devtools_app/src/config_specific/ide_theme/ide_theme.dart';
 import 'package:devtools_app/src/debugger/span_parser.dart';
 import 'package:devtools_app/src/debugger/syntax_highlighter.dart';
-import 'package:devtools_app/src/routing.dart';
-import 'package:devtools_app/src/theme.dart';
+import 'package:devtools_app/src/shared/routing.dart';
+import 'package:devtools_app/src/shared/theme.dart';
 import 'package:devtools_test/devtools_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
