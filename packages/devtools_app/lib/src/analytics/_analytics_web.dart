@@ -452,6 +452,34 @@ void select(
   );
 }
 
+void show(
+  String shownTitle,
+  String shownDetail, {
+  int value = 0,
+  ScreenAnalyticsMetrics Function() screenMetricsProvider,
+}) {
+  GTag.event(
+    shownTitle,
+    gtagEventWithScreenMetrics(
+      event_category: analytics_constants.show,
+      event_label: shownDetail,
+      value: value,
+      non_interaction: true,
+      send_to: gaDevToolsPropertyId(),
+      user_app: userAppType,
+      user_build: userBuildType,
+      user_platform: userPlatformType,
+      devtools_platform: devtoolsPlatformType,
+      devtools_chrome: devtoolsChrome,
+      devtools_version: devtoolsVersion,
+      ide_launched: ideLaunched,
+      flutter_client_id: flutterClientId,
+      screenMetrics:
+          screenMetricsProvider != null ? screenMetricsProvider() : null,
+    ),
+  );
+}
+
 String _lastGaError;
 
 void reportError(

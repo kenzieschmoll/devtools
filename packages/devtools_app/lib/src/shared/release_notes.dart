@@ -12,6 +12,8 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:http/http.dart' as http;
 
 import '../../devtools.dart' as devtools;
+import '../analytics/analytics.dart' as ga;
+import '../analytics/constants.dart' as analytics_constants;
 import '../config_specific/launch_url/launch_url.dart';
 import '../config_specific/logger/logger.dart' as logger;
 import '../config_specific/server/server.dart' as server;
@@ -215,7 +217,7 @@ class ReleaseNotesController {
         );
 
         _releaseNotesMarkdown.value = releaseNotesMarkdown;
-        toggleReleaseNotesVisible(true);
+        toggleReleaseNotesVisible(true, version: parsedCurrentVersionStr);
         unawaited(
           server.setLastShownReleaseNotesVersion(parsedCurrentVersionStr),
         );
@@ -233,7 +235,10 @@ class ReleaseNotesController {
     }
   }
 
-  void toggleReleaseNotesVisible(bool visible) {
+  void toggleReleaseNotesVisible(bool visible, {String? version}) {
+    if (visible && version != null) {
+      ga.show(analytics_constants.releaseNotes, version);
+    }
     _releaseNotesVisible.value = visible;
   }
 

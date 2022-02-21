@@ -74,6 +74,13 @@ void select(
   ScreenAnalyticsMetrics Function() screenMetricsProvider,
 }) {}
 
+void show(
+  String shownTitle,
+  String shownDetail, {
+  int value = 0,
+  ScreenAnalyticsMetrics Function() screenMetricsProvider,
+}) {}
+
 void reportError(
   String errorMessage, {
   bool fatal = false,

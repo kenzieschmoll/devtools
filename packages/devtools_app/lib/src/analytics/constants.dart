@@ -16,6 +16,7 @@ import '../profiler/profiler_screen.dart';
 const String screenViewEvent = 'screen'; // Active screen (tab selected).
 const String selectEvent = 'select'; // User selected something.
 const String timingEvent = 'timing'; // Timed operation.
+const String show = 'show'; // Something was shown to the user.
 
 // DevTools GA screenNames:
 // These screen ids must match the `screenId` for each respective subclass of
@@ -33,6 +34,7 @@ const String devToolsMain = 'main';
 const String hotReload = 'hotReload';
 const String hotRestart = 'hotRestart';
 const String appDisconnected = 'appDisconnected';
+const String releaseNotes = 'releaseNotes';
 
 // DevTools UI action selected (clicked).
 
