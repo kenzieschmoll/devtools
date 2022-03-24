@@ -156,7 +156,7 @@ class EvalOnDartLibrary extends DisposableController
         expression,
         scope: scope,
         shouldLogError: shouldLogError,
-      ).then((value) => value!),
+      ),
     );
   }
 

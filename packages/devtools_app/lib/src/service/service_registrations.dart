@@ -2,12 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-<<<<<<< HEAD:packages/devtools_app/lib/src/shared/service_registrations.dart
-// ignore_for_file: import_of_legacy_library_into_null_safe
-
-=======
 import 'package:devtools_shared/devtools_shared.dart';
->>>>>>> 52626f23534b1485b3f20f7806f8f1131c53e45a:packages/devtools_app/lib/src/service/service_registrations.dart
 import 'package:flutter/material.dart';
 
 import '../analytics/constants.dart' as analytics_constants;
@@ -16,23 +11,13 @@ import '../ui/icons.dart';
 
 class RegisteredServiceDescription extends RegisteredService {
   const RegisteredServiceDescription._({
-<<<<<<< HEAD:packages/devtools_app/lib/src/shared/service_registrations.dart
-    required this.service,
-    required this.title,
-=======
     required String service,
     required String title,
->>>>>>> 52626f23534b1485b3f20f7806f8f1131c53e45a:packages/devtools_app/lib/src/service/service_registrations.dart
     this.icon,
     this.gaScreenName,
     this.gaItem,
   }) : super(service: service, title: title);
 
-<<<<<<< HEAD:packages/devtools_app/lib/src/shared/service_registrations.dart
-  final String service;
-  final String title;
-=======
->>>>>>> 52626f23534b1485b3f20f7806f8f1131c53e45a:packages/devtools_app/lib/src/service/service_registrations.dart
   final Widget? icon;
   final String? gaScreenName;
   final String? gaItem;

@@ -168,10 +168,6 @@ class InspectorScreenBodyState extends State<InspectorScreenBody>
         InspectorDetails(
           detailsTree: detailsTree,
           controller: inspectorController,
-<<<<<<< HEAD:packages/devtools_app/lib/src/inspector/inspector_screen.dart
-          actionButtons: _expandCollapseButtons(),
-=======
->>>>>>> 52626f23534b1485b3f20f7806f8f1131c53e45a:packages/devtools_app/lib/src/screens/inspector/inspector_screen.dart
         ),
       ],
     );
@@ -302,47 +298,6 @@ class InspectorScreenBodyState extends State<InspectorScreenBody>
     ];
   }
 
-<<<<<<< HEAD:packages/devtools_app/lib/src/inspector/inspector_screen.dart
-  Widget _expandCollapseButtons() {
-    return Container(
-      alignment: Alignment.centerRight,
-      decoration: BoxDecoration(
-        border: Border(
-          left: defaultBorderSide(Theme.of(context)),
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            child: IconLabelButton(
-              icon: Icons.unfold_more,
-              onPressed: enableButtons ? _onExpandClick : null,
-              label: 'Expand all',
-              minScreenWidthForTextBeforeScaling:
-                  minScreenWidthForTextBeforeScaling,
-              outlined: false,
-            ),
-          ),
-          const SizedBox(width: denseSpacing),
-          SizedBox(
-            child: IconLabelButton(
-              icon: Icons.unfold_less,
-              onPressed: enableButtons ? _onResetClick : null,
-              label: 'Collapse to selected',
-              minScreenWidthForTextBeforeScaling:
-                  minScreenWidthForTextBeforeScaling,
-              outlined: false,
-            ),
-          )
-        ],
-      ),
-    );
-  }
-
-=======
->>>>>>> 52626f23534b1485b3f20f7806f8f1131c53e45a:packages/devtools_app/lib/src/screens/inspector/inspector_screen.dart
   void _refreshInspector() {
     ga.select(analytics_constants.inspector, analytics_constants.refresh);
     blockWhileInProgress(() async {
