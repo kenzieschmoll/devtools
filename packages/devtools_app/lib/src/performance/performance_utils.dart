@@ -73,6 +73,10 @@ class PerformanceUtils {
     // Alphabetize all other buckets.
     return a.compareTo(b);
   }
+
+  static double targetMsPerFrame(double displayRefreshRate) {
+    return 1 / displayRefreshRate * 1000;
+  }
 }
 
 const debugTraceEventDuplicates = false;

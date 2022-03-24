@@ -523,22 +523,21 @@ class FlutterFrame {
   }
 
   bool isUiJanky(double displayRefreshRate) {
-    return buildTime.inMilliseconds > _targetMsPerFrame(displayRefreshRate);
+    return buildTime.inMilliseconds >
+        PerformanceUtils.targetMsPerFrame(displayRefreshRate);
   }
 
   bool isRasterJanky(double displayRefreshRate) {
-    return rasterTime.inMilliseconds > _targetMsPerFrame(displayRefreshRate);
+    return rasterTime.inMilliseconds >
+        PerformanceUtils.targetMsPerFrame(displayRefreshRate);
   }
 
   bool hasShaderJank(double displayRefreshRate) {
-    final quarterFrame = (_targetMsPerFrame(displayRefreshRate) / 4).round();
+    final quarterFrame =
+        (PerformanceUtils.targetMsPerFrame(displayRefreshRate) / 4).round();
     return isRasterJanky(displayRefreshRate) &&
         hasShaderTime &&
         shaderDuration > Duration(milliseconds: quarterFrame);
-  }
-
-  double _targetMsPerFrame(double displayRefreshRate) {
-    return 1 / displayRefreshRate * 1000;
   }
 
   Map<String, dynamic> get json => {

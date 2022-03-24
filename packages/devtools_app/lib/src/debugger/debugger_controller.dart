@@ -4,6 +4,8 @@
 
 // @dart=2.9
 
+// ignore_for_file: avoid_redundant_argument_values
+
 import 'dart:async';
 
 import 'package:async/async.dart';
@@ -45,7 +47,8 @@ class DebuggerController extends DisposableController
       initialize();
     }
     _scriptHistoryListener = () {
-      _showScriptLocation(ScriptLocation(scriptsHistory.current.value));
+      if (scriptsHistory.current.value != null)
+        _showScriptLocation(ScriptLocation(scriptsHistory.current.value));
     };
     scriptsHistory.current.addListener(_scriptHistoryListener);
   }
