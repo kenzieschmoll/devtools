@@ -10,9 +10,9 @@ import 'package:flutter/foundation.dart';
 
 import '../config_specific/import_export/import_export.dart';
 import '../config_specific/logger/logger.dart' as logger;
+import '../service/service_registrations.dart' as registrations;
 import 'eval_on_dart_library.dart';
 import 'globals.dart';
-import 'service_registrations.dart' as registrations;
 import 'title.dart';
 import 'version.dart';
 
@@ -96,7 +96,7 @@ class ConnectedApp {
     }
 
     // If eval works we're not a profile build.
-    final io = EvalOnDartLibrary('dart:io', serviceManager.service);
+    final io = EvalOnDartLibrary('dart:io', serviceManager.service!);
     // Do not log the error if this eval fails - we expect it to fail for a
     // profile build.
     final value = await io.eval(

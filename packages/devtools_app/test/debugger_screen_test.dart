@@ -10,11 +10,11 @@ import 'dart:io';
 
 import 'package:ansicolor/ansicolor.dart';
 import 'package:devtools_app/devtools_app.dart';
-import 'package:devtools_app/src/debugger/console.dart';
-import 'package:devtools_app/src/debugger/controls.dart';
-import 'package:devtools_app/src/debugger/debugger_model.dart';
-import 'package:devtools_app/src/debugger/debugger_screen.dart';
-import 'package:devtools_app/src/debugger/program_explorer_model.dart';
+import 'package:devtools_app/src/screens/debugger/console.dart';
+import 'package:devtools_app/src/screens/debugger/controls.dart';
+import 'package:devtools_app/src/screens/debugger/debugger_model.dart';
+import 'package:devtools_app/src/screens/debugger/debugger_screen.dart';
+import 'package:devtools_app/src/screens/debugger/program_explorer_model.dart';
 import 'package:devtools_test/devtools_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -26,16 +26,19 @@ void main() {
   DebuggerScreen screen;
   FakeServiceManager fakeServiceManager;
   MockDebuggerController debuggerController;
+  MockScriptManager scriptManager;
 
   const windowSize = Size(4000.0, 4000.0);
   const smallWindowSize = Size(1000.0, 1000.0);
 
   setUp(() {
     fakeServiceManager = FakeServiceManager();
+    scriptManager = MockScriptManager();
     when(fakeServiceManager.connectedApp.isProfileBuildNow).thenReturn(false);
     when(fakeServiceManager.connectedApp.isDartWebAppNow).thenReturn(false);
     setGlobal(ServiceConnectionManager, fakeServiceManager);
     setGlobal(IdeTheme, IdeTheme());
+    setGlobal(ScriptManager, scriptManager);
     fakeServiceManager.consoleService.ensureServiceInitialized();
   });
 
@@ -214,7 +217,9 @@ void main() {
         ScriptRef(uri: 'package:/test/script.dart', id: 'test-script')
       ];
 
-      when(debuggerController.sortedScripts).thenReturn(ValueNotifier(scripts));
+      when(debuggerController.programExplorerController.selectedNodeIndex)
+          .thenReturn(ValueNotifier(0));
+      when(scriptManager.sortedScripts).thenReturn(ValueNotifier(scripts));
       when(debuggerController.showFileOpener).thenReturn(ValueNotifier(false));
 
       // File Explorer view is hidden
@@ -230,7 +235,9 @@ void main() {
         ScriptRef(uri: 'package:test/script.dart', id: 'test-script')
       ];
 
-      when(debuggerController.sortedScripts).thenReturn(ValueNotifier(scripts));
+      when(debuggerController.programExplorerController.selectedNodeIndex)
+          .thenReturn(ValueNotifier(0));
+      when(scriptManager.sortedScripts).thenReturn(ValueNotifier(scripts));
       when(debuggerController.programExplorerController.rootObjectNodes)
           .thenReturn(
         ValueNotifier(
@@ -283,7 +290,7 @@ void main() {
       when(debuggerController.breakpointsWithLocation)
           .thenReturn(ValueNotifier(breakpointsWithLocation));
 
-      when(debuggerController.sortedScripts).thenReturn(ValueNotifier([]));
+      when(scriptManager.sortedScripts).thenReturn(ValueNotifier([]));
       when(debuggerController.scriptLocation).thenReturn(ValueNotifier(null));
       when(debuggerController.showFileOpener).thenReturn(ValueNotifier(false));
 

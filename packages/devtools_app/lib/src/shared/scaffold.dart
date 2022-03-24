@@ -4,7 +4,6 @@
 
 // ignore_for_file: import_of_legacy_library_into_null_safe
 
-import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -15,9 +14,9 @@ import '../app.dart';
 import '../config_specific/drag_and_drop/drag_and_drop.dart';
 import '../config_specific/ide_theme/ide_theme.dart';
 import '../config_specific/import_export/import_export.dart';
-import '../debugger/console.dart';
-import '../debugger/debugger_screen.dart';
 import '../primitives/auto_dispose_mixin.dart';
+import '../screens/debugger/console.dart';
+import '../screens/debugger/debugger_screen.dart';
 import 'banner_messages.dart';
 import 'common_widgets.dart';
 import 'framework_controller.dart';
@@ -119,9 +118,6 @@ class DevToolsScaffoldState extends State<DevToolsScaffold>
 
   late ImportController _importController;
 
-  late final StreamSubscription<ConnectVmEvent> _connectVmSubscription;
-  late final StreamSubscription<String> _showPageSubscription;
-
   late String scaffoldTitle;
 
   @override
@@ -132,59 +128,11 @@ class DevToolsScaffoldState extends State<DevToolsScaffold>
 
     _setupTabController();
 
-    _connectVmSubscription =
-        frameworkController.onConnectVmEvent.listen(_connectVm);
-    _showPageSubscription =
-        frameworkController.onShowPageId.listen(_showPageById);
+    autoDisposeStreamSubscription(
+      frameworkController.onShowPageId.listen(_showPageById),
+    );
 
     _initTitle();
-    _maybeShowInternalFlutterWebWarning();
-  }
-
-  bool _internalFlutterWebWarningShown = false;
-
-  void _maybeShowInternalFlutterWebWarning() {
-    if (isExternalBuild) return;
-    if (_internalFlutterWebWarningShown) return;
-
-    serviceManager.onConnectionAvailable?.listen((_) {
-      if (serviceManager.connectedApp!.isFlutterWebAppNow) {
-        _showWarning(const InternalFlutterWebWarningText());
-        _internalFlutterWebWarningShown = true;
-      }
-    });
-  }
-
-  void _showWarning(Widget warningText) {
-    final colorScheme = Theme.of(context).colorScheme;
-    late OverlayEntry _entry;
-    Overlay.of(context)!.insert(
-      _entry = OverlayEntry(
-        maintainState: true,
-        builder: (context) {
-          return Material(
-            color: colorScheme.overlayShadowColor,
-            child: Center(
-              child: Container(
-                padding: const EdgeInsets.all(defaultSpacing),
-                color: colorScheme.overlayBackgroundColor,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    warningText,
-                    const SizedBox(height: defaultSpacing),
-                    ElevatedButton(
-                      child: const Text('Got it'),
-                      onPressed: () => _entry.remove(),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
   }
 
   @override
@@ -216,7 +164,7 @@ class DevToolsScaffoldState extends State<DevToolsScaffold>
     super.didChangeDependencies();
 
     _importController = ImportController(
-      Notifications.of(context),
+      Notifications.of(context)!,
       _pushSnapshotScreenForImport,
     );
     // This needs to be called at the scaffold level because we need an instance
@@ -227,9 +175,6 @@ class DevToolsScaffoldState extends State<DevToolsScaffold>
   @override
   void dispose() {
     _tabController?.dispose();
-    _connectVmSubscription.cancel();
-    _showPageSubscription.cancel();
-
     super.dispose();
   }
 
@@ -291,16 +236,6 @@ class DevToolsScaffoldState extends State<DevToolsScaffold>
     frameworkController.notifyPageChange(
       PageChangeEvent(_currentScreen.screenId, widget.embed),
     );
-  }
-
-  /// Connects to the VM with the given URI. This request usually comes from the
-  /// IDE via the server API to reuse the DevTools window after being disconnected
-  /// (for example if the user stops a debug session then launches a new one).
-  void _connectVm(event) {
-    DevToolsRouterDelegate.of(context).updateArgsIfNotCurrent({
-      'uri': event.serviceProtocolUri.toString(),
-      if (event.notify) 'notify': 'true',
-    });
   }
 
   /// Switch to the given page ID. This request usually comes from the server API

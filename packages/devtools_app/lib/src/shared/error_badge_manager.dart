@@ -10,17 +10,17 @@ import 'package:collection/collection.dart' show IterableExtension;
 import 'package:flutter/foundation.dart';
 import 'package:vm_service/vm_service.dart';
 
-import '../inspector/diagnostics_node.dart';
-import '../inspector/inspector_screen.dart';
-import '../logging/logging_screen.dart';
-import '../network/network_screen.dart';
-import '../performance/performance_screen.dart';
 import '../primitives/auto_dispose.dart';
 import '../primitives/listenable.dart';
 import '../primitives/utils.dart';
+import '../screens/inspector/diagnostics_node.dart';
+import '../screens/inspector/inspector_screen.dart';
+import '../screens/logging/logging_screen.dart';
+import '../screens/network/network_screen.dart';
+import '../screens/performance/performance_screen.dart';
+import '../service/service_extensions.dart' as extensions;
+import '../service/vm_service_wrapper.dart';
 import 'globals.dart';
-import 'service_extensions.dart' as extensions;
-import 'vm_service_wrapper.dart';
 
 class ErrorBadgeManager extends DisposableController
     with AutoDisposeControllerMixin {
@@ -37,7 +37,7 @@ class ErrorBadgeManager extends DisposableController
 
   void vmServiceOpened(VmServiceWrapper service) {
     // Ensure structured errors are enabled.
-    serviceManager.serviceExtensionManager!.setServiceExtensionState(
+    serviceManager.serviceExtensionManager.setServiceExtensionState(
       extensions.structuredErrors.extension,
       enabled: true,
       value: true,
@@ -70,14 +70,14 @@ class ErrorBadgeManager extends DisposableController
     final node =
         RemoteDiagnosticsNode(error.extensionData!.data, null, false, null);
 
-    final errorSummaryNode = node.inlineProperties
-        ?.firstWhereOrNull((p) => p.type == 'ErrorSummary');
+    final errorSummaryNode =
+        node.inlineProperties.firstWhereOrNull((p) => p.type == 'ErrorSummary');
     final errorMessage = errorSummaryNode?.description;
     if (errorMessage == null) {
       return null;
     }
 
-    final devToolsUrlNode = node.inlineProperties?.firstWhereOrNull(
+    final devToolsUrlNode = node.inlineProperties.firstWhereOrNull(
       (p) =>
           p.type == 'DevToolsDeepLinkProperty' &&
           p.getStringMember('value') != null,

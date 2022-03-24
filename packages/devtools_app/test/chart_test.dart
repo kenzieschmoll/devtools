@@ -2,15 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart=2.9
+// ignore_for_file: import_of_legacy_library_into_null_safe
 
 import 'package:devtools_app/src/charts/chart.dart';
 import 'package:devtools_app/src/charts/chart_controller.dart';
 import 'package:devtools_app/src/charts/chart_trace.dart';
-import 'package:devtools_app/src/memory/memory_charts.dart';
+import 'package:devtools_app/src/config_specific/ide_theme/ide_theme.dart';
 import 'package:devtools_app/src/primitives/utils.dart';
+import 'package:devtools_app/src/screens/memory/memory_charts.dart';
+import 'package:devtools_app/src/service/service_manager.dart';
 import 'package:devtools_app/src/shared/globals.dart';
-import 'package:devtools_app/src/shared/service_manager.dart';
 import 'package:devtools_shared/devtools_shared.dart';
 import 'package:devtools_test/devtools_test.dart';
 import 'package:flutter/material.dart';
@@ -23,17 +24,22 @@ void main() {
 
   setUp(() {
     setGlobal(ServiceConnectionManager, FakeServiceManager());
+    setGlobal(IdeTheme, IdeTheme());
   });
 
   group(
     'Chart Timeseries',
     () {
-      MemoryJson memoryJson;
+      late MemoryJson memoryJson;
+      bool memoryJasonInitialized = false;
 
       void loadData() {
         // Load canned data testHeapSampleData.
-        memoryJson ??=
-            SamplesMemoryJson.decode(argJsonString: testHeapSampleData);
+        if (!memoryJasonInitialized) {
+          memoryJson =
+              SamplesMemoryJson.decode(argJsonString: testHeapSampleData);
+          memoryJasonInitialized = true;
+        }
 
         expect(memoryJson.data.length, equals(104));
       }
@@ -48,10 +54,10 @@ void main() {
       final _rawCapacity = <Data>[];
       final _rawRSS = <Data>[];
 
-      int externalTraceIndex;
-      int usedTraceIndex;
-      int capacityTraceIndex;
-      int rssTraceIndex;
+      late int externalTraceIndex;
+      late int usedTraceIndex;
+      late int capacityTraceIndex;
+      late int rssTraceIndex;
 
       void setupTraces(ChartController controller) {
         // External Heap
@@ -69,7 +75,7 @@ void main() {
         usedTraceIndex = controller.createTrace(
           ChartType.line,
           PaintCharacteristics(
-            color: Colors.blue[200],
+            color: Colors.blue[200]!,
             symbol: ChartSymbol.disc,
             diameter: 1.5,
           ),
@@ -80,7 +86,7 @@ void main() {
         capacityTraceIndex = controller.createTrace(
           ChartType.line,
           PaintCharacteristics(
-            color: Colors.grey[400],
+            color: Colors.grey[400]!,
             diameter: 0.0,
             symbol: ChartSymbol.dashedLine,
           ),
@@ -192,7 +198,7 @@ void main() {
         expect(find.byWidget(theChart), findsOneWidget);
 
         // Validate the X axis before data added.
-        expect(controller.visibleTicks, equals(215));
+        expect(controller.visibleXAxisTicks, equals(215));
         expect(controller.xCanvasChart, equals(50.0));
         expect(controller.xPaddingRight, equals(0.0));
         expect(controller.displayXLabels, true);
@@ -262,7 +268,7 @@ void main() {
           await tester.pumpAndSettle(const Duration(seconds: 2));
 
           // Validate the X axis after data added to all traces.
-          expect(controller.visibleTicks, equals(215));
+          expect(controller.visibleXAxisTicks, equals(215));
           expect(controller.xCanvasChart, equals(50.0));
           expect(controller.xPaddingRight, equals(0.0));
           expect(controller.displayXLabels, true);
@@ -345,7 +351,7 @@ void main() {
         await tester.pumpAndSettle(const Duration(seconds: 2));
 
         // Validate the X axis after data added to all traces.
-        expect(controller.visibleTicks, equals(104));
+        expect(controller.visibleXAxisTicks, equals(104));
         expect(controller.xCanvasChart, equals(50.0));
         expect(controller.xPaddingRight, equals(0.0));
         expect(controller.displayXLabels, true);
@@ -384,7 +390,7 @@ void main() {
         await tester.pumpAndSettle(const Duration(seconds: 2));
 
         // Validate the X axis after data added to all traces.
-        expect(controller.visibleTicks, equals(1704));
+        expect(controller.visibleXAxisTicks, equals(1704));
         expect(controller.xCanvasChart, equals(50.0));
         expect(controller.xPaddingRight, equals(0.6880000000001019));
         expect(controller.displayXLabels, true);
@@ -412,12 +418,12 @@ void main() {
       final _rawSnapshotEvents = <Data>[];
       final _rawAutoSnapshotEvents = <Data>[];
 
-      int snapshotTraceIndex;
-      int autoSnapshotTraceIndex;
-      int manualGCTraceIndex;
-      int monitorTraceIndex;
-      int monitorResetTraceIndex;
-      int gcTraceIndex;
+      late int snapshotTraceIndex;
+      late int autoSnapshotTraceIndex;
+      late int manualGCTraceIndex;
+      late int monitorTraceIndex;
+      late int monitorResetTraceIndex;
+      late int gcTraceIndex;
 
       void setupFixedTraces(ChartController controller) {
         // Snapshot
@@ -475,7 +481,7 @@ void main() {
         monitorResetTraceIndex = controller.createTrace(
           ChartType.symbol,
           PaintCharacteristics.concentric(
-            color: Colors.grey[600],
+            color: Colors.grey[600]!,
             strokeWidth: 4,
             diameter: 6,
             fixedMinY: 0.4,
@@ -574,7 +580,7 @@ void main() {
         loadData();
 
         // Validate the X axis before any data.
-        expect(controller.visibleTicks, equals(215));
+        expect(controller.visibleXAxisTicks, equals(215));
         expect(controller.xCanvasChart, equals(50.0));
         expect(controller.xPaddingRight, equals(0.0));
         expect(controller.displayXLabels, true);
@@ -614,7 +620,7 @@ void main() {
           await tester.pumpAndSettle(const Duration(seconds: 2));
 
           // Validate the X axis after data added to all traces.
-          expect(controller.visibleTicks, equals(215));
+          expect(controller.visibleXAxisTicks, equals(215));
           expect(controller.xCanvasChart, equals(50.0));
           expect(controller.xPaddingRight, equals(0.0));
           expect(controller.displayXLabels, true);
@@ -723,7 +729,7 @@ void main() {
         await tester.pumpAndSettle(const Duration(seconds: 2));
 
         // Validate the X axis after data added to all traces.
-        expect(controller.visibleTicks, equals(104));
+        expect(controller.visibleXAxisTicks, equals(104));
         expect(controller.xCanvasChart, equals(50.0));
         expect(controller.xPaddingRight, equals(0.0));
         expect(controller.displayXLabels, true);
@@ -775,7 +781,7 @@ void main() {
         await tester.pumpAndSettle(const Duration(seconds: 2));
 
         // Validate the X axis after data added to all traces.
-        expect(controller.visibleTicks, equals(1704));
+        expect(controller.visibleXAxisTicks, equals(1704));
         expect(controller.xCanvasChart, equals(50.0));
         expect(controller.xPaddingRight, equals(0.6880000000001019));
         expect(controller.displayXLabels, true);

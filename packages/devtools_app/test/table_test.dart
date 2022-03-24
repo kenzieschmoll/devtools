@@ -2,12 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart=2.9
+// ignore_for_file: avoid_redundant_argument_values, import_of_legacy_library_into_null_safe
 
+import 'package:devtools_app/src/config_specific/ide_theme/ide_theme.dart';
 import 'package:devtools_app/src/primitives/trees.dart';
 import 'package:devtools_app/src/primitives/utils.dart';
+import 'package:devtools_app/src/service/service_manager.dart';
 import 'package:devtools_app/src/shared/globals.dart';
-import 'package:devtools_app/src/shared/service_manager.dart';
 import 'package:devtools_app/src/shared/table.dart';
 import 'package:devtools_app/src/shared/table_data.dart';
 import 'package:devtools_app/src/shared/utils.dart';
@@ -16,16 +17,15 @@ import 'package:flutter/material.dart' hide TableRow;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-export 'package:devtools_app/src/primitives/utils_io.dart';
-
 void main() {
   setUp(() {
     setGlobal(ServiceConnectionManager, FakeServiceManager());
+    setGlobal(IdeTheme, IdeTheme());
   });
 
   group('FlatTable view', () {
-    List<TestData> flatData;
-    ColumnData<TestData> flatNameColumn;
+    late List<TestData> flatData;
+    late ColumnData<TestData> flatNameColumn;
 
     setUp(() {
       flatNameColumn = _FlatNameColumn();
@@ -454,7 +454,7 @@ void main() {
     });
 
     testWidgets('can select an item', (WidgetTester tester) async {
-      TestData selected;
+      TestData? selected;
       final testData = TestData('empty', 0);
       const key = Key('empty');
       final table = FlatTable<TestData>(
@@ -472,41 +472,12 @@ void main() {
       await tester.tap(find.byKey(key));
       expect(selected, testData);
     });
-
-    test('fails with no data', () {
-      expect(
-        () {
-          FlatTable<TestData>(
-            columns: [flatNameColumn],
-            data: null,
-            keyFactory: (d) => Key(d.name),
-            onItemSelected: noop,
-            sortColumn: flatNameColumn,
-            sortDirection: SortDirection.ascending,
-          );
-        },
-        throwsAssertionError,
-      );
-    });
-
-    test('fails when a TreeNode cannot provide a key', () {
-      expect(() {
-        FlatTable<TestData>(
-          columns: [flatNameColumn],
-          data: flatData,
-          keyFactory: null,
-          onItemSelected: noop,
-          sortColumn: flatNameColumn,
-          sortDirection: SortDirection.ascending,
-        );
-      }, throwsAssertionError);
-    });
   });
 
   group('TreeTable view', () {
-    TestData tree1;
-    TestData tree2;
-    TreeColumnData<TestData> treeColumn;
+    late TestData tree1;
+    late TestData tree2;
+    late TreeColumnData<TestData> treeColumn;
 
     setUp(() {
       treeColumn = _NameColumn();
@@ -787,8 +758,8 @@ void main() {
     });
 
     group('keyboard navigation', () {
-      TestData data;
-      TreeTable<TestData> table;
+      late TestData data;
+      late TreeTable<TestData> table;
 
       setUp(() {
         data = TestData('Foo', 0);
@@ -817,7 +788,7 @@ void main() {
         await tester.pumpAndSettle();
 
         final TreeTableState state = tester.state(find.byWidget(table));
-        state.focusNode.requestFocus();
+        state.focusNode!.requestFocus();
         await tester.pumpAndSettle();
 
         expect(state.selectionNotifier.value.node, equals(null));
@@ -840,7 +811,7 @@ void main() {
         await tester.pumpAndSettle();
 
         final TreeTableState state = tester.state(find.byWidget(table));
-        state.focusNode.requestFocus();
+        state.focusNode!.requestFocus();
         await tester.pumpAndSettle();
 
         // left arrow on collapsed node with no parent should succeed but have
@@ -849,7 +820,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(state.selectionNotifier.value.node, equals(data.root));
-        expect(state.selectionNotifier.value.node.isExpanded, isFalse);
+        expect(state.selectionNotifier.value.node!.isExpanded, isFalse);
 
         // Expand root and navigate down twice
         await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
@@ -867,7 +838,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(state.selectionNotifier.value.node, equals(data.root));
-        expect(state.selectionNotifier.value.node.isExpanded, isTrue);
+        expect(state.selectionNotifier.value.node!.isExpanded, isTrue);
       });
     });
 
@@ -925,12 +896,12 @@ void main() {
       final TableRow snapRow = tester.widget(snapFinder);
       TableRow crackleRow = tester.widget(crackleFinder);
 
-      expect(fooRow.backgroundColor.value, equals(color1Value));
-      expect(barRow.backgroundColor.value, equals(color2Value));
-      expect(bazRow.backgroundColor.value, equals(color1Value));
-      expect(quxRow.backgroundColor.value, equals(color2Value));
-      expect(snapRow.backgroundColor.value, equals(color1Value));
-      expect(crackleRow.backgroundColor.value, equals(color2Value));
+      expect(fooRow.backgroundColor!.value, equals(color1Value));
+      expect(barRow.backgroundColor!.value, equals(color2Value));
+      expect(bazRow.backgroundColor!.value, equals(color1Value));
+      expect(quxRow.backgroundColor!.value, equals(color2Value));
+      expect(snapRow.backgroundColor!.value, equals(color1Value));
+      expect(crackleRow.backgroundColor!.value, equals(color2Value));
 
       await tester.tap(barFinder);
       await tester.pumpAndSettle();
@@ -944,55 +915,15 @@ void main() {
       barRow = tester.widget(barFinder);
       crackleRow = tester.widget(crackleFinder);
 
-      expect(fooRow.backgroundColor.value, equals(color1Value));
+      expect(fooRow.backgroundColor!.value, equals(color1Value));
       // [barRow] has the rowSelected color after being tapped.
-      expect(barRow.backgroundColor.value, equals(rowSelectedColorValue));
+      expect(barRow.backgroundColor!.value, equals(rowSelectedColorValue));
       // [crackleRow] has a different background color after collapsing previous
       // row (Bar).
-      expect(crackleRow.backgroundColor.value, equals(color1Value));
+      expect(crackleRow.backgroundColor!.value, equals(color1Value));
     });
 
-    test('fails with no data', () {
-      expect(
-        () {
-          TreeTable<TestData>(
-            columns: [treeColumn],
-            dataRoots: null,
-            treeColumn: treeColumn,
-            keyFactory: (d) => Key(d.name),
-            sortColumn: treeColumn,
-            sortDirection: SortDirection.ascending,
-          );
-        },
-        throwsAssertionError,
-      );
-    });
-
-    test('fails when a TreeNode cannot provide a key', () {
-      expect(() {
-        TreeTable<TestData>(
-          columns: [treeColumn],
-          dataRoots: [tree1],
-          treeColumn: treeColumn,
-          keyFactory: null,
-          sortColumn: treeColumn,
-          sortDirection: SortDirection.ascending,
-        );
-      }, throwsAssertionError);
-    });
-
-    test('fails when there is no TreeColumn', () {
-      expect(() {
-        TreeTable<TestData>(
-          columns: [treeColumn],
-          dataRoots: [tree1],
-          treeColumn: null,
-          keyFactory: (d) => Key(d.name),
-          sortColumn: treeColumn,
-          sortDirection: SortDirection.ascending,
-        );
-      }, throwsAssertionError);
-
+    test('fails when TreeColumn is not in column list', () {
       expect(() {
         TreeTable<TestData>(
           columns: const [],

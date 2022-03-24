@@ -2,17 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart=2.9
+// ignore_for_file: import_of_legacy_library_into_null_safe
 
-import 'package:devtools_app/src/debugger/debugger_controller.dart';
-import 'package:devtools_app/src/debugger/evaluate.dart';
+import 'dart:async';
+
 import 'package:devtools_app/src/primitives/utils.dart';
+import 'package:devtools_app/src/screens/debugger/debugger_controller.dart';
+import 'package:devtools_app/src/screens/debugger/evaluate.dart';
 import 'package:devtools_app/src/shared/eval_on_dart_library.dart';
 import 'package:devtools_app/src/shared/globals.dart';
 import 'package:devtools_app/src/ui/search.dart';
 import 'package:devtools_test/devtools_test.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pedantic/pedantic.dart';
 
 import 'test_infra/flutter_test_driver.dart';
 import 'test_infra/flutter_test_environment.dart';
@@ -22,15 +23,15 @@ void main() {
     const FlutterRunConfiguration(withDebugger: true),
   );
 
-  Disposable isAlive;
-  DebuggerController debuggerController;
-  EvalOnDartLibrary eval;
+  late Disposable isAlive;
+  late DebuggerController debuggerController;
+  late EvalOnDartLibrary eval;
   setUp(() async {
     isAlive = Disposable();
     await env.setupEnvironment();
     debuggerController = TestDebuggerController();
     eval = EvalOnDartLibrary(
-        'package:flutter_app/src/autocomplete.dart', serviceManager.service,
+        'package:flutter_app/src/autocomplete.dart', serviceManager.service!,
         disableBreakpoints: false);
   });
 
@@ -122,8 +123,8 @@ void main() {
           expect(
             await autoCompleteResultsFor(
               EditingParts(
-                activeWord: '',
                 leftSide: 'FooClass.',
+                activeWord: '',
                 rightSide: '',
               ),
               debuggerController,
@@ -282,8 +283,8 @@ void main() {
           expect(
             await autoCompleteResultsFor(
               EditingParts(
-                activeWord: '',
                 leftSide: '7.',
+                activeWord: '',
                 rightSide: '',
               ),
               debuggerController,

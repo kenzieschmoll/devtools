@@ -2,15 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart=2.9
+// ignore_for_file: avoid_redundant_argument_values, import_of_legacy_library_into_null_safe
 
 import 'package:devtools_app/src/charts/flame_chart.dart';
-import 'package:devtools_app/src/performance/performance_model.dart';
+import 'package:devtools_app/src/config_specific/ide_theme/ide_theme.dart';
 import 'package:devtools_app/src/primitives/flutter_widgets/linked_scroll_controller.dart';
 import 'package:devtools_app/src/primitives/utils.dart';
-import 'package:devtools_app/src/profiler/cpu_profile_controller.dart';
-import 'package:devtools_app/src/profiler/cpu_profile_flame_chart.dart';
-import 'package:devtools_app/src/profiler/cpu_profile_model.dart';
+import 'package:devtools_app/src/screens/performance/performance_model.dart';
+import 'package:devtools_app/src/screens/profiler/cpu_profile_controller.dart';
+import 'package:devtools_app/src/screens/profiler/cpu_profile_flame_chart.dart';
+import 'package:devtools_app/src/screens/profiler/cpu_profile_model.dart';
+import 'package:devtools_app/src/shared/globals.dart';
 import 'package:devtools_app/src/ui/colors.dart';
 import 'package:devtools_app/src/ui/utils.dart';
 import 'package:flutter/material.dart';
@@ -23,6 +25,85 @@ import 'test_data/performance_test_data.dart';
 void main() {
   const defaultZoom = 1.0;
 
+  setGlobal(IdeTheme, IdeTheme());
+
+  const narrowNodeKey = Key('narrow node');
+  final narrowNode = FlameChartNode<TimelineEvent>(
+    key: narrowNodeKey,
+    text: 'Narrow test node',
+    rect: Rect.fromLTWH(23.0, 0.0, 21.9, rowHeight),
+    colorPair: ThemedColorPair.from(
+      const ColorPair(background: Colors.blue, foreground: Colors.white),
+    ),
+    data: goldenAsyncTimelineEvent,
+    onSelected: (_) {},
+  )..sectionIndex = 0;
+
+  const Key testNodeKey = Key('test node');
+  final testNode = FlameChartNode<TimelineEvent>(
+    key: testNodeKey,
+    text: 'Test node 1',
+    // 30.0 is the minimum node width for text.
+    rect: Rect.fromLTWH(70.0, 0.0, 30.0, rowHeight),
+    colorPair: ThemedColorPair.from(
+      const ColorPair(background: Colors.blue, foreground: Colors.white),
+    ),
+    data: goldenAsyncTimelineEvent,
+    onSelected: (_) {},
+  )..sectionIndex = 0;
+
+  final testNode2 = FlameChartNode<TimelineEvent>(
+    key: narrowNodeKey,
+    text: 'Test node 2',
+    rect: Rect.fromLTWH(120.0, 0.0, 50.0, rowHeight),
+    colorPair: ThemedColorPair.from(
+      const ColorPair(background: Colors.blue, foreground: Colors.white),
+    ),
+    data: goldenAsyncTimelineEvent,
+    onSelected: (_) {},
+  )..sectionIndex = 0;
+
+  final testNode3 = FlameChartNode<TimelineEvent>(
+    key: narrowNodeKey,
+    text: 'Test node 3',
+    rect: Rect.fromLTWH(180.0, 0.0, 50.0, rowHeight),
+    colorPair: ThemedColorPair.from(
+      const ColorPair(background: Colors.blue, foreground: Colors.white),
+    ),
+    data: goldenAsyncTimelineEvent,
+    onSelected: (_) {},
+  )..sectionIndex = 0;
+
+  final testNode4 = FlameChartNode<TimelineEvent>(
+    key: narrowNodeKey,
+    text: 'Test node 4',
+    rect: Rect.fromLTWH(240.0, 0.0, 300.0, rowHeight),
+    colorPair: ThemedColorPair.from(
+      const ColorPair(background: Colors.blue, foreground: Colors.white),
+    ),
+    data: goldenAsyncTimelineEvent,
+    onSelected: (_) {},
+  )..sectionIndex = 0;
+
+  final testNodes = [
+    testNode,
+    testNode2,
+    testNode3,
+    testNode4,
+  ];
+
+  const noWidthNodeKey = Key('no-width node');
+  final negativeWidthNode = FlameChartNode<TimelineEvent>(
+    key: noWidthNodeKey,
+    text: 'No-width node',
+    rect: Rect.fromLTWH(1.0, 0.0, -0.1, rowHeight),
+    colorPair: ThemedColorPair.from(
+      const ColorPair(background: Colors.blue, foreground: Colors.white),
+    ),
+    data: goldenAsyncTimelineEvent,
+    onSelected: (_) {},
+  )..sectionIndex = 0;
+
   group('FlameChart', () {
     // Use an instance of [CpuProfileFlameChart] because the data is simple to
     // stub and [FlameChart] is an abstract class.
@@ -32,7 +113,7 @@ void main() {
       controller: controller,
       width: 1000.0,
       height: 1000.0,
-      selectionNotifier: ValueNotifier<CpuStackFrame>(null),
+      selectionNotifier: ValueNotifier<CpuStackFrame?>(null),
       searchMatchesNotifier: controller.searchMatches,
       activeSearchMatchNotifier: controller.activeSearchMatch,
       onDataSelected: (_) {},
@@ -159,14 +240,14 @@ void main() {
   });
 
   group('ScrollingFlameChartRow', () {
-    ScrollingFlameChartRow currentRow;
+    late ScrollingFlameChartRow currentRow;
     final linkedScrollControllerGroup = LinkedScrollControllerGroup();
     final testRow = ScrollingFlameChartRow<TimelineEvent>(
       linkedScrollControllerGroup: linkedScrollControllerGroup,
       nodes: testNodes,
       width: 680.0, // 680.0 fits all test nodes and sideInsets of 70.0.
       startInset: sideInset,
-      selectionNotifier: ValueNotifier<TimelineEvent>(null),
+      selectionNotifier: ValueNotifier<TimelineEvent?>(null),
       searchMatchesNotifier: null,
       activeSearchMatchNotifier: null,
       onTapUp: () {},
@@ -179,7 +260,7 @@ void main() {
       // 1080.0 fits all test nodes at zoom level 2.0 and sideInsets of 70.0.
       width: 1080.0,
       startInset: sideInset,
-      selectionNotifier: ValueNotifier<TimelineEvent>(null),
+      selectionNotifier: ValueNotifier<TimelineEvent?>(null),
       searchMatchesNotifier: null,
       activeSearchMatchNotifier: null,
       onTapUp: () {},
@@ -207,7 +288,7 @@ void main() {
 
     Future<ScrollingFlameChartRowState> pumpRowAndGetState(
       WidgetTester tester, {
-      ScrollingFlameChartRow row,
+      ScrollingFlameChartRow? row,
     }) async {
       row ??= testRow;
       await pumpScrollingFlameChartRow(tester, row);
@@ -230,7 +311,7 @@ void main() {
         nodes: const [],
         width: 500.0, // 500.0 is arbitrary.
         startInset: sideInset,
-        selectionNotifier: ValueNotifier<CpuStackFrame>(null),
+        selectionNotifier: ValueNotifier<CpuStackFrame?>(null),
         searchMatchesNotifier: null,
         activeSearchMatchNotifier: null,
         backgroundColor: Colors.transparent,
@@ -289,9 +370,9 @@ void main() {
 
     Future<void> pumpFlameChartNode(
       WidgetTester tester, {
-      @required bool selected,
-      @required bool hovered,
-      FlameChartNode node,
+      required bool selected,
+      required bool hovered,
+      FlameChartNode? node,
       double zoom = defaultZoom,
     }) async {
       node ??= testNode;
@@ -299,7 +380,7 @@ void main() {
         Builder(
           builder: (context) => Directionality(
             textDirection: TextDirection.ltr,
-            child: node.buildWidget(
+            child: node!.buildWidget(
               selected: selected,
               searchMatch: false,
               activeSearchMatch: false,
@@ -314,8 +395,8 @@ void main() {
 
     Future<void> pumpFlameChartNodeWithOverlay(
       WidgetTester tester, {
-      @required bool selected,
-      @required bool hovered,
+      required bool selected,
+      required bool hovered,
     }) async {
       final _selected = selected;
       final _hovered = hovered;
@@ -351,7 +432,7 @@ void main() {
 
         expect(textFinder, findsOneWidget);
         final Text textWidget = tester.widget(textFinder);
-        expect(textWidget.style.color, equals(Colors.black));
+        expect(textWidget.style!.color, equals(Colors.black));
       },
     );
 
@@ -366,7 +447,7 @@ void main() {
 
         expect(textFinder, findsOneWidget);
         final Text textWidget = tester.widget(textFinder);
-        expect(textWidget.style.color, equals(Colors.white));
+        expect(textWidget.style!.color, equals(Colors.white));
       },
     );
 
@@ -434,7 +515,7 @@ void main() {
       );
       expect(nodeFinder, findsOneWidget);
       Container nodeWidget = tester.widget(nodeFinder);
-      expect(nodeWidget.constraints.maxWidth, equals(60.0));
+      expect(nodeWidget.constraints!.maxWidth, equals(60.0));
 
       await pumpFlameChartNode(
         tester,
@@ -444,7 +525,7 @@ void main() {
       );
       expect(nodeFinder, findsOneWidget);
       nodeWidget = tester.widget(nodeFinder);
-      expect(nodeWidget.constraints.maxWidth, equals(75.0));
+      expect(nodeWidget.constraints!.maxWidth, equals(75.0));
     });
   });
 
@@ -560,80 +641,3 @@ void main() {
     });
   });
 }
-
-const narrowNodeKey = Key('narrow node');
-final narrowNode = FlameChartNode<TimelineEvent>(
-  key: narrowNodeKey,
-  text: 'Narrow test node',
-  rect: Rect.fromLTWH(23.0, 0.0, 21.9, rowHeight),
-  colorPair: ThemedColorPair.from(
-    const ColorPair(background: Colors.blue, foreground: Colors.white),
-  ),
-  data: goldenAsyncTimelineEvent,
-  onSelected: (_) {},
-)..sectionIndex = 0;
-
-const Key testNodeKey = Key('test node');
-final testNode = FlameChartNode<TimelineEvent>(
-  key: testNodeKey,
-  text: 'Test node 1',
-  // 30.0 is the minimum node width for text.
-  rect: Rect.fromLTWH(70.0, 0.0, 30.0, rowHeight),
-  colorPair: ThemedColorPair.from(
-    const ColorPair(background: Colors.blue, foreground: Colors.white),
-  ),
-  data: goldenAsyncTimelineEvent,
-  onSelected: (_) {},
-)..sectionIndex = 0;
-
-final testNode2 = FlameChartNode<TimelineEvent>(
-  key: narrowNodeKey,
-  text: 'Test node 2',
-  rect: Rect.fromLTWH(120.0, 0.0, 50.0, rowHeight),
-  colorPair: ThemedColorPair.from(
-    const ColorPair(background: Colors.blue, foreground: Colors.white),
-  ),
-  data: goldenAsyncTimelineEvent,
-  onSelected: (_) {},
-)..sectionIndex = 0;
-
-final testNode3 = FlameChartNode<TimelineEvent>(
-  key: narrowNodeKey,
-  text: 'Test node 3',
-  rect: Rect.fromLTWH(180.0, 0.0, 50.0, rowHeight),
-  colorPair: ThemedColorPair.from(
-    const ColorPair(background: Colors.blue, foreground: Colors.white),
-  ),
-  data: goldenAsyncTimelineEvent,
-  onSelected: (_) {},
-)..sectionIndex = 0;
-
-final testNode4 = FlameChartNode<TimelineEvent>(
-  key: narrowNodeKey,
-  text: 'Test node 4',
-  rect: Rect.fromLTWH(240.0, 0.0, 300.0, rowHeight),
-  colorPair: ThemedColorPair.from(
-    const ColorPair(background: Colors.blue, foreground: Colors.white),
-  ),
-  data: goldenAsyncTimelineEvent,
-  onSelected: (_) {},
-)..sectionIndex = 0;
-
-final testNodes = [
-  testNode,
-  testNode2,
-  testNode3,
-  testNode4,
-];
-
-const noWidthNodeKey = Key('no-width node');
-final negativeWidthNode = FlameChartNode<TimelineEvent>(
-  key: noWidthNodeKey,
-  text: 'No-width node',
-  rect: Rect.fromLTWH(1.0, 0.0, -0.1, rowHeight),
-  colorPair: ThemedColorPair.from(
-    const ColorPair(background: Colors.blue, foreground: Colors.white),
-  ),
-  data: goldenAsyncTimelineEvent,
-  onSelected: (_) {},
-)..sectionIndex = 0;

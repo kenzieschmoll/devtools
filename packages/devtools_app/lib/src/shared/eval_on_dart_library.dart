@@ -13,10 +13,10 @@ import 'package:flutter/foundation.dart';
 import 'package:vm_service/vm_service.dart';
 
 import '../config_specific/logger/logger.dart';
-import '../inspector/inspector_service.dart';
 import '../primitives/auto_dispose.dart';
+import '../screens/inspector/inspector_service.dart';
+import '../service/vm_service_wrapper.dart';
 import 'globals.dart';
-import 'vm_service_wrapper.dart';
 
 class Disposable {
   bool disposed = false;
@@ -107,14 +107,14 @@ class EvalOnDartLibrary extends DisposableController
     }
 
     try {
-      final Isolate isolate =
+      final Isolate? isolate =
           await serviceManager.isolateManager.getIsolateCached(isolateRef);
       if (_currentRequestId != requestId) {
         // The initialize request is obsolete.
         return;
       }
       _isolate = isolate;
-      for (LibraryRef library in isolate.libraries!) {
+      for (LibraryRef library in isolate?.libraries ?? []) {
         if (libraryName == library.uri) {
           assert(!_libraryRef.isCompleted);
           _libraryRef.complete(library);
@@ -131,7 +131,7 @@ class EvalOnDartLibrary extends DisposableController
   Future<InstanceRef?> eval(
     String expression, {
     required Disposable? isAlive,
-    Map<String, String?>? scope,
+    Map<String, String>? scope,
     bool shouldLogError = true,
   }) async {
     if ((scope?.isNotEmpty ?? false) &&
@@ -150,7 +150,7 @@ class EvalOnDartLibrary extends DisposableController
         shouldLogError: shouldLogError,
       );
     }
-    return await addRequest(
+    return await addRequest<InstanceRef?>(
       isAlive,
       () => _eval(
         expression,
@@ -163,7 +163,7 @@ class EvalOnDartLibrary extends DisposableController
   Future<InstanceRef?> invoke(
     InstanceRef instanceRef,
     String name,
-    List<String?> argRefs, {
+    List<String> argRefs, {
     required Disposable? isAlive,
     bool shouldLogError = true,
   }) {
@@ -193,7 +193,7 @@ class EvalOnDartLibrary extends DisposableController
 
   Future<InstanceRef?> _eval(
     String expression, {
-    required Map<String, String?>? scope,
+    required Map<String, String>? scope,
     bool shouldLogError = true,
   }) async {
     if (_disposed) return null;
@@ -225,7 +225,7 @@ class EvalOnDartLibrary extends DisposableController
   Future<InstanceRef?> _invoke(
     InstanceRef instanceRef,
     String name,
-    List<String?> argRefs, {
+    List<String> argRefs, {
     bool shouldLogError = true,
   }) async {
     if (_disposed) return null;
@@ -298,7 +298,7 @@ class EvalOnDartLibrary extends DisposableController
     final hash = await (evalInstance(
       'instance.hashCode',
       isAlive: isAlive,
-      scope: {'instance': instance.id},
+      scope: {'instance': instance.id!},
     ) as FutureOr<Instance>);
 
     return int.parse(hash.valueAsString!);
@@ -308,7 +308,7 @@ class EvalOnDartLibrary extends DisposableController
   Future<Instance?> evalInstance(
     String expression, {
     required Disposable? isAlive,
-    Map<String, String?>? scope,
+    Map<String, String>? scope,
   }) async {
     return getInstance(
       // This is safe to do because `safeEval` will throw instead of returning `null`
@@ -352,7 +352,7 @@ class EvalOnDartLibrary extends DisposableController
   Future<InstanceRef?> asyncEval(
     String expression, {
     required Disposable? isAlive,
-    Map<String, String?>? scope,
+    Map<String, String>? scope,
   }) async {
     final futureId = _nextAsyncEvalId++;
 
@@ -383,7 +383,7 @@ class EvalOnDartLibrary extends DisposableController
       // the "reader" is not GCed
       'widgetInspectorService.toId(<dynamic>[], "$readerGroup")',
       isAlive: isAlive,
-      scope: {'widgetInspectorService': widgetInspectorServiceRef.id},
+      scope: {'widgetInspectorService': widgetInspectorServiceRef.id!},
     ).then((ref) => ref.valueAsString!);
 
     await safeEval(
@@ -403,8 +403,8 @@ class EvalOnDartLibrary extends DisposableController
       isAlive: isAlive,
       scope: {
         ...?scope,
-        'postEvent': postEventRef.id,
-        'widgetInspectorService': widgetInspectorServiceRef.id,
+        'postEvent': postEventRef.id!,
+        'widgetInspectorService': widgetInspectorServiceRef.id!,
       },
     );
 
@@ -417,7 +417,7 @@ class EvalOnDartLibrary extends DisposableController
       '  return result;'
       '}()',
       isAlive: isAlive,
-      scope: {'widgetInspectorService': widgetInspectorServiceRef.id},
+      scope: {'widgetInspectorService': widgetInspectorServiceRef.id!},
     ) as FutureOr<Instance>);
 
     assert(resultRef.length == 1 || resultRef.length == 2);
@@ -439,7 +439,7 @@ class EvalOnDartLibrary extends DisposableController
   Future<InstanceRef> safeEval(
     String expression, {
     required Disposable? isAlive,
-    Map<String, String?>? scope,
+    Map<String, String>? scope,
   }) async {
     Object? result;
 
@@ -519,7 +519,7 @@ class EvalOnDartLibrary extends DisposableController
   /// for the Inspector so that it does not overload the service with stale requests.
   /// Stale requests will be generated if the user is quickly navigating through the
   /// UI to view specific details subtrees.
-  Future<T?> addRequest<T>(Disposable? isAlive, Future<T> request()) async {
+  Future<T?> addRequest<T>(Disposable? isAlive, Future<T?> request()) async {
     if (isAlive != null && isAlive.disposed) return null;
 
     if (!oneRequestAtATime) {
@@ -534,7 +534,7 @@ class EvalOnDartLibrary extends DisposableController
         return;
       }
       try {
-        final T value = await request();
+        final value = await request();
         if (!_disposed && value is! Sentinel) {
           response.complete(value);
         } else {
@@ -590,8 +590,8 @@ class EvalOnDartLibrary extends DisposableController
     });
   }
 
-  Future<String?> retrieveFullValueAsString(InstanceRef? stringRef) {
-    return service.retrieveFullStringValue(_isolateRef!.id, stringRef);
+  Future<String?> retrieveFullValueAsString(InstanceRef stringRef) {
+    return service.retrieveFullStringValue(_isolateRef!.id!, stringRef);
   }
 }
 

@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// ignore_for_file: import_of_legacy_library_into_null_safe
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -21,9 +23,9 @@ import 'package:vm_snapshot_analysis/treemap.dart';
 ///
 /// Tests that `listener` has actually been invoked.
 Future<void> addListenerScope({
-  @required dynamic listenable,
-  @required Function listener,
-  @required Function callback,
+  required dynamic listenable,
+  required Function listener,
+  required Function callback,
 }) async {
   bool listenerCalled = false;
   final listenerWrapped = () {
@@ -94,23 +96,15 @@ TreemapNode generateTree(Map<String, dynamic> treeJson) {
     ..addAllChildren(treemapNodeChildren);
 }
 
-Future delay() {
-  return Future.delayed(const Duration(milliseconds: 500));
-}
-
-Future shortDelay() {
-  return Future.delayed(const Duration(milliseconds: 100));
-}
-
 Finder findSubstring(Widget widget, String text) {
   return find.byWidgetPredicate((widget) {
     if (widget is Text) {
-      if (widget.data != null) return widget.data.contains(text);
-      return widget.textSpan.toPlainText().contains(text);
+      if (widget.data != null) return widget.data!.contains(text);
+      return widget.textSpan!.toPlainText().contains(text);
     } else if (widget is RichText) {
       return widget.text.toPlainText().contains(text);
     } else if (widget is SelectableText) {
-      if (widget.data != null) return widget.data.contains(text);
+      if (widget.data != null) return widget.data!.contains(text);
     }
     return false;
   });
@@ -139,7 +133,7 @@ extension SelectableTextChecking on CommonFinders {
     return find.byWidgetPredicate((widget) =>
         widget is SelectableText &&
         ((widget.data?.contains(text) ?? false) ||
-            (widget.textSpan?.toPlainText()?.contains(text) ?? false)));
+            (widget.textSpan?.toPlainText().contains(text) ?? false)));
   }
 }
 
@@ -166,7 +160,7 @@ void _mockFlutterAssets() {
   if (!Platform.environment.containsKey('UNIT_TEST_ASSETS')) {
     return;
   }
-  final String assetFolderPath = Platform.environment['UNIT_TEST_ASSETS'];
+  final String? assetFolderPath = Platform.environment['UNIT_TEST_ASSETS'];
   assert(Platform.environment['APP_NAME'] != null);
   final String prefix = 'packages/${Platform.environment['APP_NAME']}/';
 
@@ -176,10 +170,10 @@ void _mockFlutterAssets() {
       .setMockMethodCallHandler((MethodCall methodCall) async {});
 
   ServicesBinding.instance.defaultBinaryMessenger
-      .setMockMessageHandler('flutter/assets', (ByteData message) async {
+      .setMockMessageHandler('flutter/assets', (ByteData? message) async {
     assert(message != null);
-    String key = utf8.decode(message.buffer.asUint8List());
-    File asset = File(path.join(assetFolderPath, key));
+    String key = utf8.decode(message!.buffer.asUint8List());
+    File asset = File(path.join(assetFolderPath!, key));
 
     if (!asset.existsSync()) {
       // For tests in package, it will load assets with its own package prefix.
@@ -280,24 +274,4 @@ void verifyIsSearchMatchForTreeData<T extends TreeDataSearchStateMixin<T>>(
       },
     );
   }
-}
-
-Future<void> waitFor(
-  Future<bool> condition(), {
-  // TODO(kenz): shorten this as long as it doesn't cause flakes.
-  Duration timeout = const Duration(seconds: 10),
-  String timeoutMessage = 'condition not satisfied',
-  Duration delay = const Duration(milliseconds: 100),
-}) async {
-  final DateTime end = DateTime.now().add(timeout);
-
-  while (!end.isBefore(DateTime.now())) {
-    if (await condition()) {
-      return;
-    }
-
-    await Future.delayed(delay);
-  }
-
-  throw timeoutMessage;
 }

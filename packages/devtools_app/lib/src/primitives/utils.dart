@@ -424,7 +424,7 @@ extension JsonMap on Map<String, Object?> {
   String prettyPrint() => const JsonEncoder.withIndent('  ').convert(this);
 }
 
-typedef RateLimiterCallback = Future<Object> Function();
+typedef RateLimiterCallback = Future<void> Function();
 
 /// Rate limiter that ensures a [callback] is run no more  than the
 /// specified rate and that at most one async [callback] is running at a time.
@@ -943,7 +943,7 @@ extension LogicalKeySetExtension on LogicalKeySet {
 }
 
 // Method to convert degrees to radians
-num degToRad(num deg) => deg * (pi / 180.0);
+double degToRad(num deg) => deg * (pi / 180.0);
 
 typedef DevToolsJsonFileHandler = void Function(DevToolsJsonFile file);
 
@@ -1054,6 +1054,15 @@ extension ListExtension<T> on List<T> {
     }
     return whereList;
   }
+
+  bool containsWhere(bool test(T element)) {
+    for (var e in this) {
+      if (test(e)) {
+        return true;
+      }
+    }
+    return false;
+  }
 }
 
 Map<String, String> devToolsQueryParams(String url) {
@@ -1123,9 +1132,10 @@ double safePositiveDouble(double value) {
 /// the user's locale). Tests will then pass when run in any timezone. All
 /// formatted timestamps are displayed using the UTC locale.
 String prettyTimestamp(
-  int timestamp, {
+  int? timestamp, {
   bool isUtc = false,
 }) {
+  if (timestamp == null) return '';
   final timestampDT = DateTime.fromMillisecondsSinceEpoch(
     timestamp,
     isUtc: isUtc,

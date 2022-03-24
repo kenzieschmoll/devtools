@@ -6,13 +6,13 @@
 
 import 'dart:async';
 
+import 'package:devtools_shared/devtools_shared.dart';
 import 'package:flutter/material.dart';
 
 import '../analytics/analytics.dart' as ga;
 import '../analytics/constants.dart' as analytics_constants;
 import '../framework/framework_core.dart';
 import '../primitives/auto_dispose_mixin.dart';
-import '../primitives/url_utils.dart';
 import '../primitives/utils.dart';
 import 'common_widgets.dart';
 import 'globals.dart';
@@ -68,6 +68,10 @@ class _InitializerState extends State<Initializer>
   void initState() {
     super.initState();
 
+    autoDisposeStreamSubscription(
+      frameworkController.onConnectVmEvent.listen(_connectVm),
+    );
+
     // If we become disconnected by means other than a manual disconnect action,
     // attempt to reconnect.
     addAutoDisposeListener(serviceManager.connectedState, () {
@@ -100,6 +104,16 @@ class _InitializerState extends State<Initializer>
     }
   }
 
+  /// Connects to the VM with the given URI. This request usually comes from the
+  /// IDE via the server API to reuse the DevTools window after being disconnected
+  /// (for example if the user stops a debug session then launches a new one).
+  void _connectVm(event) {
+    DevToolsRouterDelegate.of(context).updateArgsIfNotCurrent({
+      'uri': event.serviceProtocolUri.toString(),
+      if (event.notify) 'notify': 'true',
+    });
+  }
+
   Future<void> _attemptUrlConnection() async {
     if (widget.url == null) {
       _handleNoConnection();
@@ -121,7 +135,7 @@ class _InitializerState extends State<Initializer>
 
   /// Shows a "disconnected" overlay if the [service.serviceManager] is not currently connected.
   void _handleNoConnection() {
-    WidgetsBinding.instance!.scheduleFrameCallback((_) {
+    WidgetsBinding.instance.scheduleFrameCallback((_) {
       if (!_checkLoaded() &&
           ModalRoute.of(context)!.isCurrent &&
           currentDisconnectedOverlay == null) {

@@ -2,25 +2,22 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart=2.9
-
-import 'package:devtools_test/devtools_test.dart';
+import 'package:devtools_shared/devtools_test_utils.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../test_infra/cli_test_driver.dart';
 import 'integration.dart';
 
 void debuggingTests() {
-  CliAppFixture appFixture;
-  BrowserTabInstance tabInstance;
+  late CliAppFixture appFixture;
+  late BrowserTabInstance tabInstance;
 
   setUp(() async {
     tabInstance = await browserManager.createNewTab();
   });
 
   tearDown(() async {
-    await tabInstance?.close();
-    await appFixture?.teardown();
+    await tabInstance.close();
+    await appFixture.teardown();
   });
 
   test('lists scripts', () async {
@@ -31,7 +28,7 @@ void debuggingTests() {
     await tools.start(appFixture);
     await tools.switchPage('debugger');
 
-    final String currentPageId = await tools.currentPageId();
+    final String? currentPageId = await tools.currentPageId();
     expect(currentPageId, 'debugger');
 
     final DebuggingManager debuggingManager = DebuggingManager(tools);
@@ -59,7 +56,7 @@ void debuggingTests() {
     await tools.start(appFixture);
     await tools.switchPage('debugger');
 
-    final String currentPageId = await tools.currentPageId();
+    final String? currentPageId = await tools.currentPageId();
     expect(currentPageId, 'debugger');
 
     final DebuggingManager debuggingManager = DebuggingManager(tools);
@@ -127,7 +124,7 @@ void debuggingTests() {
     await tools.start(appFixture);
     await tools.switchPage('debugger');
 
-    final String currentPageId = await tools.currentPageId();
+    final String? currentPageId = await tools.currentPageId();
     expect(currentPageId, 'debugger');
 
     final DebuggingManager debuggingManager = DebuggingManager(tools);
@@ -205,7 +202,7 @@ void debuggingTests() {
     await tools.start(appFixture);
     await tools.switchPage('debugger');
 
-    final String currentPageId = await tools.currentPageId();
+    final String? currentPageId = await tools.currentPageId();
     expect(currentPageId, 'debugger');
 
     final DebuggingManager debuggingManager = DebuggingManager(tools);
@@ -264,7 +261,8 @@ void debuggingTests() {
 
     // Wait until there is enough console output.
     await waitFor(() async =>
-        (await debuggingManager.getConsoleContents()).split('\n').length >= 13);
+        (await debuggingManager.getConsoleContents())!.split('\n').length >=
+        13);
     // Verify the console contents.
     expect(
       await debuggingManager.getConsoleContents(),
@@ -294,7 +292,7 @@ void debuggingTests() {
     await tools.start(appFixture);
     await tools.switchPage('debugger');
 
-    final String currentPageId = await tools.currentPageId();
+    final String? currentPageId = await tools.currentPageId();
     expect(currentPageId, 'debugger');
 
     final DebuggingManager debuggingManager = DebuggingManager(tools);
@@ -336,10 +334,10 @@ class DebuggingManager {
     await tools.tabInstance.send('debugger.step');
   }
 
-  Future<String> getLocation() async {
+  Future<String?> getLocation() async {
     final AppResponse response =
         await tools.tabInstance.send('debugger.getLocation');
-    return response.result as String;
+    return response.result as String?;
   }
 
   Future<List<String>> getVariables() async {
@@ -349,16 +347,16 @@ class DebuggingManager {
     return result.cast<String>();
   }
 
-  Future<String> getState() async {
+  Future<String?> getState() async {
     final AppResponse response =
         await tools.tabInstance.send('debugger.getState');
-    return response.result as String;
+    return response.result as String?;
   }
 
-  Future<String> getConsoleContents() async {
+  Future<String?> getConsoleContents() async {
     final AppResponse response =
         await tools.tabInstance.send('debugger.getConsoleContents');
-    return response.result as String;
+    return response.result as String?;
   }
 
   Future<void> clearBreakpoints() async {

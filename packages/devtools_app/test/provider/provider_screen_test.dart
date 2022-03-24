@@ -2,17 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart=2.9
+// ignore_for_file: import_of_legacy_library_into_null_safe
 
-import 'package:devtools_app/src/provider/instance_viewer/instance_details.dart';
-import 'package:devtools_app/src/provider/instance_viewer/instance_providers.dart';
-import 'package:devtools_app/src/provider/provider_list.dart';
-import 'package:devtools_app/src/provider/provider_nodes.dart';
-import 'package:devtools_app/src/provider/provider_screen.dart';
+import 'package:devtools_app/src/screens/provider/instance_viewer/instance_details.dart';
+import 'package:devtools_app/src/screens/provider/instance_viewer/instance_providers.dart';
+import 'package:devtools_app/src/screens/provider/provider_list.dart';
+import 'package:devtools_app/src/screens/provider/provider_nodes.dart';
+import 'package:devtools_app/src/screens/provider/provider_screen.dart';
+import 'package:devtools_app/src/service/service_manager.dart';
 @TestOn('vm')
 import 'package:devtools_app/src/shared/banner_messages.dart';
 import 'package:devtools_app/src/shared/globals.dart';
-import 'package:devtools_app/src/shared/service_manager.dart';
 import 'package:devtools_test/devtools_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,8 +22,8 @@ void main() {
   // Set a wide enough screen width that we do not run into overflow.
   const windowSize = Size(2225.0, 1000.0);
 
-  Widget providerScreen;
-  BannerMessagesController bannerMessagesController;
+  late Widget providerScreen;
+  late BannerMessagesController bannerMessagesController;
 
   setUpAll(() => loadFonts());
 

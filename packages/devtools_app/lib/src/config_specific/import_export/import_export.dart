@@ -2,16 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart=2.9
+// ignore_for_file: import_of_legacy_library_into_null_safe
 
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
 import '../../../devtools.dart';
-import '../../performance/performance_model.dart';
-import '../../performance/performance_screen.dart';
 import '../../primitives/utils.dart';
+import '../../screens/performance/performance_model.dart';
+import '../../screens/performance/performance_screen.dart';
 import '../../shared/connected_app.dart';
 import '../../shared/globals.dart';
 import '../../shared/notifications.dart';
@@ -53,17 +53,18 @@ class ImportController {
 
   final NotificationService _notifications;
 
-  DateTime previousImportTime;
+  DateTime? previousImportTime;
 
   // TODO(kenz): improve error handling here or in snapshot_screen.dart.
   void importData(DevToolsJsonFile jsonFile) {
-    final json = jsonFile.data;
+    final _json = jsonFile.data;
 
     // Do not allow two different imports within 500 ms of each other. This is a
     // workaround for the fact that we get two drop events for the same file.
     final now = DateTime.now();
     if (previousImportTime != null &&
-        (now.millisecondsSinceEpoch - previousImportTime.millisecondsSinceEpoch)
+        (now.millisecondsSinceEpoch -
+                    previousImportTime!.millisecondsSinceEpoch)
                 .abs() <
             repeatImportTimeBufferMs) {
       return;
@@ -71,13 +72,13 @@ class ImportController {
     previousImportTime = now;
 
     final isDevToolsSnapshot =
-        json is Map<String, dynamic> && json[devToolsSnapshotKey] == true;
+        _json is Map<String, dynamic> && _json[devToolsSnapshotKey] == true;
     if (!isDevToolsSnapshot) {
       _notifications.push(nonDevToolsFileMessage);
       return;
     }
 
-    final devToolsSnapshot = json as Map<String, dynamic>;
+    final devToolsSnapshot = _json;
     // TODO(kenz): support imports for more than one screen at a time.
     final activeScreenId = devToolsSnapshot[activeScreenIdKey];
     offlineController
@@ -114,14 +115,14 @@ abstract class ExportController {
       activeScreenIdKey: activeScreenId,
       devToolsVersionKey: version,
       connectedAppKey: {
-        isFlutterAppKey: serviceManager.connectedApp.isFlutterAppNow,
-        isProfileBuildKey: serviceManager.connectedApp.isProfileBuildNow,
-        isDartWebAppKey: serviceManager.connectedApp.isDartWebAppNow,
-        isRunningOnDartVMKey: serviceManager.connectedApp.isRunningOnDartVM,
+        isFlutterAppKey: serviceManager.connectedApp!.isFlutterAppNow,
+        isProfileBuildKey: serviceManager.connectedApp!.isProfileBuildNow,
+        isDartWebAppKey: serviceManager.connectedApp!.isDartWebAppNow,
+        isRunningOnDartVMKey: serviceManager.connectedApp!.isRunningOnDartVM,
       },
-      if (serviceManager.connectedApp.flutterVersionNow != null)
+      if (serviceManager.connectedApp!.flutterVersionNow != null)
         flutterVersionKey:
-            serviceManager.connectedApp.flutterVersionNow.version,
+            serviceManager.connectedApp!.flutterVersionNow!.version,
     };
     // This is a workaround to guarantee that DevTools exports are compatible
     // with other trace viewers (catapult, perfetto, chrome://tracing), which
@@ -145,7 +146,7 @@ class OfflineModeController {
 
   /// Stores the [ConnectedApp] instance temporarily while switching between
   /// offline and online modes.
-  ConnectedApp _previousConnectedApp;
+  ConnectedApp? _previousConnectedApp;
 
   bool shouldLoadOfflineData(String screenId) {
     return _offlineMode.value &&

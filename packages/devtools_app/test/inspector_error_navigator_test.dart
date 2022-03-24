@@ -2,14 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart=2.9
+// ignore_for_file: import_of_legacy_library_into_null_safe
 
 import 'dart:collection';
 
-import 'package:devtools_app/src/inspector/inspector_screen.dart';
+import 'package:devtools_app/src/config_specific/ide_theme/ide_theme.dart';
+import 'package:devtools_app/src/screens/inspector/inspector_screen.dart';
+import 'package:devtools_app/src/service/service_manager.dart';
 import 'package:devtools_app/src/shared/error_badge_manager.dart';
 import 'package:devtools_app/src/shared/globals.dart';
-import 'package:devtools_app/src/shared/service_manager.dart';
 import 'package:devtools_test/devtools_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,15 +18,16 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   setUp(() {
     setGlobal(ServiceConnectionManager, FakeServiceManager());
+    setGlobal(IdeTheme, IdeTheme());
   });
 
   group('Inspector Error Navigator', () {
     Future<void> testNavigate(
       WidgetTester tester, {
-      IconData tapIcon,
-      int errorCount,
-      int startIndex,
-      int expectedIndex,
+      required IconData tapIcon,
+      required int errorCount,
+      int? startIndex,
+      int? expectedIndex,
     }) async {
       var index = startIndex;
       final navigator = ErrorNavigator(

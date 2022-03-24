@@ -7,13 +7,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:vm_service/vm_service.dart';
 
-import '../debugger/debugger_model.dart';
-import '../inspector/diagnostics_node.dart';
-import '../inspector/inspector_service.dart';
 import '../primitives/auto_dispose.dart';
 import '../primitives/utils.dart';
+import '../screens/debugger/debugger_model.dart';
+import '../screens/inspector/diagnostics_node.dart';
+import '../screens/inspector/inspector_service.dart';
+import '../service/vm_service_wrapper.dart';
 import 'globals.dart';
-import 'vm_service_wrapper.dart';
 
 /// A line in the console.
 ///
@@ -100,14 +100,14 @@ class ConsoleService extends Disposer {
   final _stdio = ListValueNotifier<ConsoleLine>([]);
   bool _stdioTrailingNewline = false;
 
-  ObjectGroupBase? get objectGroup {
-    final inspectorService = serviceManager.inspectorService;
+  ObjectGroupBase get objectGroup {
+    final inspectorService = serviceManager.inspectorService!;
     if (_objectGroup?.inspectorService == inspectorService) {
-      return _objectGroup;
+      return _objectGroup!;
     }
     _objectGroup?.dispose();
     _objectGroup = inspectorService.createObjectGroup('console');
-    return _objectGroup;
+    return _objectGroup!;
   }
 
   ObjectGroupBase? _objectGroup;
@@ -231,7 +231,7 @@ class ConsoleService extends Disposer {
   void _handleExtensionEvent(Event e) async {
     if (e.extensionKind == 'Flutter.Error' ||
         e.extensionKind == 'Flutter.Print') {
-      if (serviceManager.connectedApp.isProfileBuildNow != true) {
+      if (serviceManager.connectedApp?.isProfileBuildNow != true) {
         // The app isn't a debug build.
         return;
       }
@@ -245,7 +245,7 @@ class ConsoleService extends Disposer {
           false,
           null,
         ),
-        isolateRef: objectGroup!.inspectorService.isolateRef,
+        isolateRef: objectGroup.inspectorService.isolateRef,
         expandAll: true,
       );
     }
@@ -261,8 +261,7 @@ class ConsoleService extends Disposer {
     // sorting.
     if (event.kind == EventKind.kInspect) {
       final inspector = objectGroup;
-      if (inspector != null &&
-          event.isolate == inspector.inspectorService.isolateRef) {
+      if (event.isolate == inspector.inspectorService.isolateRef) {
         try {
           if (await inspector.isInspectable(
             GenericInstanceRef(

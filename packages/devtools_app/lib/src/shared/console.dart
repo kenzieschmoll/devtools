@@ -8,10 +8,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../debugger/debugger_controller.dart';
-import '../debugger/variables.dart';
 import '../primitives/auto_dispose_mixin.dart';
 import '../primitives/utils.dart';
+import '../screens/debugger/debugger_controller.dart';
+import '../screens/debugger/variables.dart';
 import 'common_widgets.dart';
 import 'console_service.dart';
 import 'theme.dart';
@@ -207,7 +207,7 @@ class _ConsoleOutputState extends State<_ConsoleOutput>
 
     if (_scrollToBottom) {
       _scrollToBottom = false;
-      WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
+      WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
         if (_scroll.hasClients) {
           _scroll.autoScrollToBottom();
         } else {
@@ -220,7 +220,7 @@ class _ConsoleOutputState extends State<_ConsoleOutput>
     }
     return Scrollbar(
       controller: _scroll,
-      isAlwaysShown: true,
+      thumbVisibility: true,
       key: _scrollBarKey,
       child: ListView.separated(
         padding: const EdgeInsets.all(denseSpacing),

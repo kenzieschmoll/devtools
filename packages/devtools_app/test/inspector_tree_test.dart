@@ -2,14 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart=2.9
+// ignore_for_file: import_of_legacy_library_into_null_safe
 
-import 'package:devtools_app/src/inspector/inspector_breadcrumbs.dart';
-import 'package:devtools_app/src/inspector/inspector_service.dart';
-import 'package:devtools_app/src/inspector/inspector_tree.dart';
-import 'package:devtools_app/src/inspector/inspector_tree_controller.dart';
+import 'package:devtools_app/src/config_specific/ide_theme/ide_theme.dart';
+import 'package:devtools_app/src/screens/inspector/inspector_breadcrumbs.dart';
+import 'package:devtools_app/src/screens/inspector/inspector_service.dart';
+import 'package:devtools_app/src/screens/inspector/inspector_tree.dart';
+import 'package:devtools_app/src/screens/inspector/inspector_tree_controller.dart';
+import 'package:devtools_app/src/service/service_manager.dart';
 import 'package:devtools_app/src/shared/globals.dart';
-import 'package:devtools_app/src/shared/service_manager.dart';
+import 'package:devtools_app/src/shared/preferences.dart';
 import 'package:devtools_test/devtools_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart' hide Fake;
@@ -26,7 +28,9 @@ void main() {
     when(fakeServiceManager.connectedApp.isProfileBuildNow).thenReturn(false);
 
     setGlobal(ServiceConnectionManager, fakeServiceManager);
-    mockIsFlutterApp(serviceManager.connectedApp);
+    setGlobal(IdeTheme, IdeTheme());
+    setGlobal(PreferencesController, PreferencesController());
+    mockIsFlutterApp(serviceManager.connectedApp as MockConnectedApp);
   });
 
   group('InspectorTreeController', () {
@@ -59,7 +63,7 @@ void main() {
         inspectorTreeController: InspectorTreeController(),
       )));
 
-      expect(controller.getRow(const Offset(0, -20)).index, 0);
+      expect(controller.getRow(const Offset(0, -20))!.index, 0);
       expect(controller.getRowOffset(-1), equals(0));
       expect(controller.getRow(const Offset(0, 0.0)), isNotNull);
       expect(controller.getRowOffset(0), equals(0));

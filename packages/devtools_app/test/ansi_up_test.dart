@@ -2,19 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart=2.9
+// ignore_for_file: import_of_legacy_library_into_null_safe
 
 @TestOn('browser')
 
 import 'package:ansi_up/ansi_up.dart';
 import 'package:ansicolor/ansicolor.dart';
-import 'package:devtools_app/src/debugger/console.dart';
-import 'package:devtools_app/src/debugger/debugger_controller.dart';
-import 'package:devtools_app/src/logging/logging_controller.dart';
-import 'package:devtools_app/src/logging/logging_screen.dart';
 import 'package:devtools_app/src/primitives/utils.dart';
+import 'package:devtools_app/src/screens/debugger/console.dart';
+import 'package:devtools_app/src/screens/debugger/debugger_controller.dart';
+import 'package:devtools_app/src/screens/logging/logging_controller.dart';
+import 'package:devtools_app/src/screens/logging/logging_screen.dart';
+import 'package:devtools_app/src/service/service_manager.dart';
 import 'package:devtools_app/src/shared/globals.dart';
-import 'package:devtools_app/src/shared/service_manager.dart';
 import 'package:devtools_test/devtools_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -104,8 +104,8 @@ void main() {
   });
 
   group('Logging Screen', () {
-    MockLoggingController mockLoggingController;
-    FakeServiceManager fakeServiceManager;
+    late MockLoggingController mockLoggingController;
+    late FakeServiceManager fakeServiceManager;
     const windowSize = Size(1000.0, 1000.0);
 
     const totalLogs = 10;
@@ -122,9 +122,9 @@ void main() {
     }
 
     LogData _generate(int i) {
-      String details = 'log event $i';
+      String? details = 'log event $i';
       String kind = 'kind $i';
-      String computedDetails;
+      String? computedDetails;
       switch (i) {
         case 9:
           computedDetails = jsonOutput;
@@ -145,8 +145,8 @@ void main() {
 
       final detailsComputer = computedDetails == null
           ? null
-          : () =>
-              Future.delayed(const Duration(seconds: 1), () => computedDetails);
+          : () => Future.delayed(
+              const Duration(seconds: 1), () => computedDetails!);
       return LogData(kind, details, i, detailsComputer: detailsComputer);
     }
 
@@ -178,8 +178,11 @@ void main() {
       when(fakeServiceManager.connectedApp.isFlutterWebAppNow)
           .thenReturn(false);
       when(fakeServiceManager.connectedApp.isProfileBuildNow).thenReturn(false);
-      when(fakeServiceManager.errorBadgeManager.errorCountNotifier(any))
-          .thenReturn(ValueNotifier<int>(0));
+      // TODO(polinach): when we start supporting browser tests, uncomment
+      // and fix the mock configuration.
+      // See https://github.com/flutter/devtools/issues/3616.
+      // when(fakeServiceManager.errorBadgeManager.errorCountNotifier(any))
+      //     .thenReturn(ValueNotifier<int>(0));
       setGlobal(ServiceConnectionManager, fakeServiceManager);
       when(mockLoggingController.data).thenReturn(fakeLogData);
       when(mockLoggingController.filteredData)
@@ -215,14 +218,14 @@ void main() {
       finder.evaluate().forEach((element) {
         final richText = element.widget as RichText;
         final textSpan = richText.text as TextSpan;
-        final secondSpan = textSpan.children[1] as TextSpan;
+        final secondSpan = textSpan.children![1] as TextSpan;
         expect(
           secondSpan.text,
           'log 5',
           reason: 'Text with ansi code should be in separate span',
         );
         expect(
-          secondSpan.style.backgroundColor,
+          secondSpan.style!.backgroundColor,
           const Color.fromRGBO(215, 95, 135, 1),
         );
       });
@@ -230,8 +233,8 @@ void main() {
   });
 
   group('Debugger Screen', () {
-    FakeServiceManager fakeServiceManager;
-    MockDebuggerController debuggerController;
+    late FakeServiceManager fakeServiceManager;
+    late MockDebuggerController debuggerController;
 
     const windowSize = Size(4000.0, 4000.0);
 
@@ -267,8 +270,11 @@ void main() {
       setGlobal(ServiceConnectionManager, fakeServiceManager);
       fakeServiceManager.consoleService.ensureServiceInitialized();
 
-      when(fakeServiceManager.errorBadgeManager.errorCountNotifier(any))
-          .thenReturn(ValueNotifier<int>(0));
+      // TODO(polinach): when we start supporting browser tests, uncomment
+      // and fix the mock configuration.
+      // See https://github.com/flutter/devtools/issues/3616.
+      // when(fakeServiceManager.errorBadgeManager.errorCountNotifier(any))
+      //     .thenReturn(ValueNotifier<int>(0));
 
       debuggerController = MockDebuggerController.withDefaults();
     });
@@ -285,15 +291,15 @@ void main() {
       expect(finder, findsOneWidget);
       finder.evaluate().forEach((element) {
         final selectableText = element.widget as SelectableText;
-        final textSpan = selectableText.textSpan;
-        final secondSpan = textSpan.children[1] as TextSpan;
+        final textSpan = selectableText.textSpan!;
+        final secondSpan = textSpan.children![1] as TextSpan;
         expect(
           secondSpan.text,
           'console',
           reason: 'Text with ansi code should be in separate span',
         );
         expect(
-          secondSpan.style.backgroundColor,
+          secondSpan.style!.backgroundColor,
           const Color.fromRGBO(215, 95, 135, 1),
         );
       });

@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be found
 // in the LICENSE file.
 
-// @dart=2.9
-
 import 'package:flutter/widgets.dart';
 
 import '../../shared/theme.dart';
@@ -17,15 +15,14 @@ class IdeTheme {
   IdeTheme({
     this.backgroundColor,
     this.foregroundColor,
-    this.fontSize,
-    this.embed,
+    this.fontSize = unscaledDefaultFontSize,
+    this.embed = false,
   });
 
-  final Color backgroundColor;
-  final Color foregroundColor;
+  final Color? backgroundColor;
+  final Color? foregroundColor;
   final double fontSize;
   final bool embed;
 
-  double get fontSizeFactor =>
-      fontSize != null ? fontSize / unscaledDefaultFontSize : 1.0;
+  double get fontSizeFactor => fontSize / unscaledDefaultFontSize;
 }

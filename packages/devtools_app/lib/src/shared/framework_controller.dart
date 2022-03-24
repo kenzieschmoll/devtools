@@ -38,7 +38,11 @@ class FrameworkController {
   /// Notify the controller of a connect to VM event.
   void notifyConnectToVmEvent(Uri serviceProtocolUri, {bool notify = false}) {
     _connectVmController.add(
-        ConnectVmEvent(serviceProtocolUri: serviceProtocolUri, notify: notify));
+      ConnectVmEvent(
+        serviceProtocolUri: serviceProtocolUri,
+        notify: notify,
+      ),
+    );
   }
 
   /// Notifies when DevTools connects to a device.
@@ -62,7 +66,7 @@ class FrameworkController {
     serviceManager.connectedState.addListener(() {
       final connectionState = serviceManager.connectedState.value;
       if (connectionState.connected) {
-        _connectedController.add(serviceManager.service!.connectedUri!);
+        _connectedController.add(serviceManager.service!.connectedUri);
       } else {
         _disconnectedController.add(null);
       }

@@ -2,18 +2,20 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart=2.9
+// ignore_for_file: import_of_legacy_library_into_null_safe
 
 @TestOn('vm')
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:devtools_app/src/config_specific/ide_theme/ide_theme.dart';
-import 'package:devtools_app/src/debugger/span_parser.dart';
-import 'package:devtools_app/src/debugger/syntax_highlighter.dart';
+import 'package:devtools_app/src/screens/debugger/span_parser.dart';
+import 'package:devtools_app/src/screens/debugger/syntax_highlighter.dart';
+import 'package:devtools_app/src/shared/globals.dart';
 import 'package:devtools_app/src/shared/routing.dart';
 import 'package:devtools_app/src/shared/theme.dart';
 import 'package:devtools_test/devtools_test.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -128,16 +130,17 @@ const variableReferenceInString = '''
 ''';
 
 void main() {
-  Grammar grammar;
+  late Grammar grammar;
   setUp(() async {
     final grammarFile = File('assets/dart_syntax.json');
     expect(grammarFile.existsSync(), true);
 
     final grammarJson = json.decode(await grammarFile.readAsString());
     grammar = Grammar.fromJson(grammarJson);
+    setGlobal(IdeTheme, IdeTheme());
   });
 
-  Color defaultTextColor(_) => const TextStyle().color;
+  Color? defaultTextColor(_) => const TextStyle().color;
   Color commentSyntaxColor(ColorScheme scheme) => scheme.commentSyntaxColor;
   Color controlFlowSyntaxColor(ColorScheme scheme) =>
       scheme.controlFlowSyntaxColor;
@@ -154,7 +157,7 @@ void main() {
     BuildContext context,
     TextSpan span,
     String expectedText,
-    Color Function(ColorScheme) expectedColor,
+    Color? Function(ColorScheme) expectedColor,
   ) {
     expect(span.text, expectedText);
     expect(
@@ -165,7 +168,7 @@ void main() {
     );
   }
 
-  void runTestsWithTheme({@required bool useDarkTheme}) {
+  void runTestsWithTheme({required bool useDarkTheme}) {
     group(
       'Syntax Highlighting (${useDarkTheme ? 'Dark' : 'Light'} Theme)',
       () {
@@ -177,7 +180,8 @@ void main() {
               isDarkTheme: useDarkTheme,
               ideTheme: getIdeTheme(),
             ),
-            routerDelegate: DevToolsRouterDelegate(null),
+            routerDelegate: DevToolsRouterDelegate(
+                (a, b, c) => const CupertinoPage(child: SizedBox.shrink())),
             routeInformationParser: DevToolsRouteInformationParser(),
             builder: (context, _) {
               callback(context);
@@ -198,67 +202,67 @@ void main() {
               buildSyntaxHighlightingTestContext(
                 (context) {
                   final highlighted = highlighter.highlight(context);
-                  final children = highlighted.children;
+                  final children = highlighted.children!;
 
                   spanTester(
                     context,
-                    children[0],
+                    children[0] as TextSpan,
                     'Future',
                     declarationSyntaxColor,
                   );
 
                   spanTester(
                     context,
-                    children[1],
+                    children[1] as TextSpan,
                     '<',
                     defaultTextColor,
                   );
 
                   spanTester(
                     context,
-                    children[2],
+                    children[2] as TextSpan,
                     'void',
                     modifierSyntaxColor,
                   );
 
                   spanTester(
                     context,
-                    children[3],
+                    children[3] as TextSpan,
                     '>',
                     defaultTextColor,
                   );
 
                   spanTester(
                     context,
-                    children[4],
+                    children[4] as TextSpan,
                     ' ',
                     defaultTextColor,
                   );
 
                   spanTester(
                     context,
-                    children[5],
+                    children[5] as TextSpan,
                     'main',
                     functionSyntaxColor,
                   );
 
                   spanTester(
                     context,
-                    children[6],
+                    children[6] as TextSpan,
                     '() ',
                     defaultTextColor,
                   );
 
                   spanTester(
                     context,
-                    children[7],
+                    children[7] as TextSpan,
                     'async',
                     controlFlowSyntaxColor,
                   );
 
                   spanTester(
                     context,
-                    children[8],
+                    children[8] as TextSpan,
                     ' {',
                     defaultTextColor,
                   );
@@ -267,42 +271,42 @@ void main() {
 
                   spanTester(
                     context,
-                    children[10],
+                    children[10] as TextSpan,
                     '  ',
                     defaultTextColor,
                   );
 
                   spanTester(
                     context,
-                    children[11],
+                    children[11] as TextSpan,
                     'print',
                     functionSyntaxColor,
                   );
 
                   spanTester(
                     context,
-                    children[12],
+                    children[12] as TextSpan,
                     '(',
                     defaultTextColor,
                   );
 
                   spanTester(
                     context,
-                    children[13],
+                    children[13] as TextSpan,
                     "'hello world!'",
                     stringSyntaxColor,
                   );
 
                   spanTester(
                     context,
-                    children[14],
+                    children[14] as TextSpan,
                     ')',
                     defaultTextColor,
                   );
 
                   spanTester(
                     context,
-                    children[15],
+                    children[15] as TextSpan,
                     ';',
                     defaultTextColor,
                   );
@@ -311,7 +315,7 @@ void main() {
 
                   spanTester(
                     context,
-                    children[17],
+                    children[17] as TextSpan,
                     '}',
                     defaultTextColor,
                   );
@@ -337,11 +341,11 @@ void main() {
               buildSyntaxHighlightingTestContext(
                 (context) {
                   final highlighted = highlighter.highlight(context);
-                  final children = highlighted.children;
+                  final children = highlighted.children!;
 
                   spanTester(
                     context,
-                    children[0],
+                    children[0] as TextSpan,
                     '/**',
                     commentSyntaxColor,
                   );
@@ -350,7 +354,7 @@ void main() {
 
                   spanTester(
                     context,
-                    children[2],
+                    children[2] as TextSpan,
                     ' * Multiline',
                     commentSyntaxColor,
                   );
@@ -362,7 +366,7 @@ void main() {
 
                   spanTester(
                     context,
-                    children[4],
+                    children[4] as TextSpan,
                     ' */',
                     commentSyntaxColor,
                   );
@@ -384,18 +388,18 @@ void main() {
               buildSyntaxHighlightingTestContext(
                 (context) {
                   final highlighted = highlighter.highlight(context);
-                  final children = highlighted.children;
+                  final children = highlighted.children!;
 
                   spanTester(
                     context,
-                    children[0],
+                    children[0] as TextSpan,
                     '/// This is a code reference for ',
                     commentSyntaxColor,
                   );
 
                   spanTester(
                     context,
-                    children[1],
+                    children[1] as TextSpan,
                     '[Foo]',
                     variableSyntaxColor,
                   );
@@ -419,39 +423,39 @@ void main() {
               buildSyntaxHighlightingTestContext(
                 (context) {
                   final highlighted = highlighter.highlight(context);
-                  final children = highlighted.children;
+                  final children = highlighted.children!;
 
                   spanTester(
                     context,
-                    children[0],
+                    children[0] as TextSpan,
                     "'\$",
                     stringSyntaxColor,
                   );
 
                   spanTester(
                     context,
-                    children[1],
+                    children[1] as TextSpan,
                     'i',
                     variableSyntaxColor,
                   );
 
                   spanTester(
                     context,
-                    children[2],
+                    children[2] as TextSpan,
                     ': \${',
                     stringSyntaxColor,
                   );
 
                   spanTester(
                     context,
-                    children[3],
+                    children[3] as TextSpan,
                     'foo[i] == bar[i]',
                     variableSyntaxColor,
                   );
 
                   spanTester(
                     context,
-                    children[4],
+                    children[4] as TextSpan,
                     '}\'',
                     stringSyntaxColor,
                   );
@@ -479,7 +483,7 @@ void main() {
                   (context) {
                     final highlighted = highlighter.highlight(context);
                     expect(
-                      highlighted.children.first.style,
+                      highlighted.children!.first.style,
                       TextStyle(
                         color: colorCallback(Theme.of(context).colorScheme),
                       ),

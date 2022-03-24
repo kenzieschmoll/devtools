@@ -2,9 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart=2.9
+// ignore_for_file: import_of_legacy_library_into_null_safe
 
-import 'package:devtools_app/src/debugger/file_search.dart';
+import 'package:devtools_app/src/config_specific/ide_theme/ide_theme.dart';
+import 'package:devtools_app/src/screens/debugger/file_search.dart';
+import 'package:devtools_app/src/scripts/script_manager.dart';
+import 'package:devtools_app/src/shared/globals.dart';
 import 'package:devtools_app/src/ui/search.dart';
 import 'package:devtools_test/devtools_test.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +16,7 @@ import 'package:mockito/mockito.dart';
 
 void main() {
   final debuggerController = MockDebuggerController.withDefaults();
+  final scriptManager = MockScriptManager();
 
   Widget buildFileSearch() {
     return MaterialApp(
@@ -28,8 +32,51 @@ void main() {
 
   group('File search', () {
     setUp(() {
-      when(debuggerController.sortedScripts)
+      when(scriptManager.sortedScripts)
           .thenReturn(ValueNotifier(mockScriptRefs));
+      setGlobal(IdeTheme, IdeTheme());
+      setGlobal(ScriptManager, scriptManager);
+    });
+
+    testWidgetsWithWindowSize(
+        'Selecting search sets current file', const Size(1000.0, 4000.0),
+        (WidgetTester tester) async {
+      await tester.pumpWidget(buildFileSearch());
+      final FileSearchFieldState state =
+          tester.state(find.byType(FileSearchField));
+      final autoCompleteController = state.autoCompleteController;
+
+      autoCompleteController.search = 'cat';
+
+      await tester.pumpAndSettle();
+
+      expect(
+        getAutoCompleteMatch(
+          autoCompleteController.searchAutoComplete.value,
+        ),
+        equals(
+          [
+            // Exact file name matches:
+            'zoo:animals/insects/CATerpillar.dart',
+            // Exact full path matches:
+            'zoo:animals/CATs/meow.dart',
+            'zoo:animals/CATs/purr.dart',
+            'kitchen:food/CATering/party.dart',
+            // Fuzzy matches:
+            'zoo:animals/insects/CicAda.darT',
+            'kitchen:food/milk/CArTon.dart',
+            'travel:adventure/CAve_Tours_europe.dart'
+          ],
+        ),
+      );
+
+      final tileFinder = find.byType(AutoCompleteTile);
+      expect(tileFinder, findsNWidgets(7));
+
+      await tester.tap(tileFinder.at(3));
+
+      expect(autoCompleteController.search,
+          equals('kitchen:food/catering/party.dart'));
     });
 
     testWidgetsWithWindowSize(
@@ -385,7 +432,7 @@ List<String> getAutoCompleteMatch(List<AutoCompleteMatch> matches) {
         (match) => match.transformAutoCompleteMatch<String>(
           transformMatchedSegment: (segment) => segment.toUpperCase(),
           transformUnmatchedSegment: (segment) => segment.toLowerCase(),
-          combineSegments: (segments) => segments.join(''),
+          combineSegments: (segments) => segments.join(),
         ),
       )
       .toList();

@@ -1610,7 +1610,8 @@ class CopyToClipboardControl extends StatelessWidget {
       tooltip: tooltip,
       onPressed: dataProvider == null
           ? null
-          : () => copyToClipboard(dataProvider!(), successMessage, context),
+          : () =>
+              copyToClipboard(dataProvider!() ?? '', successMessage, context),
       key: buttonKey,
     );
   }
@@ -1776,39 +1777,6 @@ class PubWarningText extends StatelessWidget {
             text: '\ncommand.',
             style: theme.subtleTextStyle,
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class InternalFlutterWebWarningText extends StatelessWidget {
-  const InternalFlutterWebWarningText({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return RichText(
-      text: TextSpan(
-        children: [
-          TextSpan(
-              text:
-                  'Warning: Flutter DevTools is currently not supported for Flutter Web apps.\n\n',
-              style: theme.subtleTextStyle
-                  .copyWith(color: theme.colorScheme.errorTextColor)),
-          TextSpan(
-              text: 'Some debugging features might not work as expected.\n',
-              style: theme.subtleTextStyle),
-          TextSpan(text: 'See ', style: theme.subtleTextStyle),
-          LinkTextSpan(
-            link: const Link(
-              display: 'b/204213138',
-              url: 'https://b.corp.google.com/issues/204213138',
-            ),
-            context: context,
-            style: theme.linkTextStyle,
-          ),
-          TextSpan(text: ' for details.', style: theme.subtleTextStyle),
         ],
       ),
     );

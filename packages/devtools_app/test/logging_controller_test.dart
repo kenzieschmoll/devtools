@@ -2,21 +2,23 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart=2.9
+// ignore_for_file: import_of_legacy_library_into_null_safe
 
 @TestOn('vm')
 import 'dart:convert';
 
-import 'package:devtools_app/src/logging/logging_controller.dart';
+import 'package:devtools_app/src/primitives/message_bus.dart';
+import 'package:devtools_app/src/screens/logging/logging_controller.dart';
+import 'package:devtools_app/src/service/service_manager.dart';
 import 'package:devtools_app/src/shared/globals.dart';
-import 'package:devtools_app/src/shared/service_manager.dart';
 import 'package:devtools_app/src/ui/filter.dart';
 import 'package:devtools_test/devtools_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('LoggingController', () {
-    LoggingController controller;
+    late LoggingController controller;
+    setGlobal(MessageBus, MessageBus());
 
     void addStdoutData(String message) {
       controller.log(LogData(
@@ -187,9 +189,9 @@ void main() {
           '  "otherValue": "value2"\n'
           '}';
 
-      expect(json.prettyPrinted, prettyJson);
-      expect(nonJson.prettyPrinted, 'Not json');
-      expect(nullDetails.prettyPrinted, null);
+      expect(json.prettyPrinted(), prettyJson);
+      expect(nonJson.prettyPrinted(), 'Not json');
+      expect(nullDetails.prettyPrinted(), null);
     });
   });
 }

@@ -2,11 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart=2.9
+// ignore_for_file: import_of_legacy_library_into_null_safe
 
-import 'package:devtools_app/src/performance/timeline_streams.dart';
+import 'package:devtools_app/src/screens/performance/timeline_streams.dart';
 @TestOn('vm')
 import 'package:devtools_app/src/shared/globals.dart';
+import 'package:devtools_shared/devtools_test_utils.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'test_infra/flutter_test_driver.dart' show FlutterRunConfiguration;
@@ -25,6 +26,10 @@ void main() async {
     test('timeline streams initialized on vm service opened', () async {
       await env.setupEnvironment();
 
+      // Await a short delay to make sure the timelineStreamManager is done
+      // initializing.
+      await delay();
+
       expect(serviceManager.service, equals(env.service));
       expect(serviceManager.timelineStreamManager, isNotNull);
       expect(serviceManager.timelineStreamManager.basicStreams, isNotEmpty);
@@ -41,7 +46,7 @@ void main() async {
       expect(initialStreams.map((stream) => stream.name).toList(),
           equals(['Dart', 'Embedder', 'GC']));
 
-      await serviceManager.service.setVMTimelineFlags([
+      await serviceManager.service!.setVMTimelineFlags([
         TimelineStreamManager.apiTimelineStream,
         TimelineStreamManager.compilerTimelineStream,
         TimelineStreamManager.isolateTimelineStream,

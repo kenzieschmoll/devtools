@@ -4,53 +4,54 @@
 
 // @dart=2.9
 
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:pedantic/pedantic.dart';
 import 'package:provider/provider.dart';
 
 import '../devtools.dart' as devtools;
 import 'analytics/analytics.dart' as ga;
 import 'analytics/analytics_controller.dart';
 import 'analytics/constants.dart' as analytics_constants;
-import 'app_size/app_size_controller.dart';
-import 'app_size/app_size_screen.dart';
 import 'config_specific/launch_url/launch_url.dart';
 import 'config_specific/server/server.dart';
-import 'debugger/debugger_controller.dart';
-import 'debugger/debugger_screen.dart';
 import 'example/conditional_screen.dart';
 import 'framework/framework_core.dart';
-import 'inspector/inspector_controller.dart';
-import 'inspector/inspector_screen.dart';
-import 'logging/logging_controller.dart';
-import 'logging/logging_screen.dart';
-import 'memory/memory_controller.dart';
-import 'memory/memory_screen.dart';
-import 'network/network_controller.dart';
-import 'network/network_screen.dart';
-import 'overview/overview_screen.dart';
-import 'performance/performance_controller.dart';
-import 'performance/performance_screen.dart';
 import 'primitives/auto_dispose_mixin.dart';
-import 'profiler/profiler_screen.dart';
-import 'profiler/profiler_screen_controller.dart';
-import 'provider/provider_screen.dart';
+import 'screens/app_size/app_size_controller.dart';
+import 'screens/app_size/app_size_screen.dart';
+import 'screens/debugger/debugger_controller.dart';
+import 'screens/debugger/debugger_screen.dart';
+import 'screens/inspector/inspector_controller.dart';
+import 'screens/inspector/inspector_screen.dart';
+import 'screens/logging/logging_controller.dart';
+import 'screens/logging/logging_screen.dart';
+import 'screens/memory/memory_controller.dart';
+import 'screens/memory/memory_screen.dart';
+import 'screens/network/network_controller.dart';
+import 'screens/network/network_screen.dart';
+import 'screens/overview/overview_screen.dart';
+import 'screens/performance/performance_controller.dart';
+import 'screens/performance/performance_screen.dart';
+import 'screens/profiler/profiler_screen.dart';
+import 'screens/profiler/profiler_screen_controller.dart';
+import 'screens/provider/provider_screen.dart';
+import 'screens/vm_developer/vm_developer_tools_controller.dart';
+import 'screens/vm_developer/vm_developer_tools_screen.dart';
 import 'shared/common_widgets.dart';
 import 'shared/dialogs.dart';
 import 'shared/globals.dart';
 import 'shared/initializer.dart';
 import 'shared/landing_screen.dart';
 import 'shared/notifications.dart';
-import 'shared/release_notes.dart';
+import 'shared/release_notes/release_notes.dart';
 import 'shared/routing.dart';
 import 'shared/scaffold.dart';
 import 'shared/screen.dart';
 import 'shared/snapshot_screen.dart';
 import 'shared/theme.dart';
 import 'ui/service_extension_widgets.dart';
-import 'vm_developer/vm_developer_tools_controller.dart';
-import 'vm_developer/vm_developer_tools_screen.dart';
 
 // Assign to true to use a sample implementation of a conditional screen.
 // WARNING: Do not check in this file if debugEnableSampleScreen is true.

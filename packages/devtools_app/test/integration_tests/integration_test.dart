@@ -2,14 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart=2.9
-
 @TestOn('vm')
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
-import '../test_utils/file_utils.dart';
 import 'app.dart';
 import 'debugger.dart';
 import 'integration.dart';
@@ -21,7 +18,6 @@ void main() {
     // ignore: dead_code
     if (false) {
       setUpAll(() async {
-        compensateForFlutterTestDirectoryBug();
         final bool testInReleaseMode =
             Platform.environment['WEBDEV_RELEASE'] == 'true';
 
@@ -31,8 +27,8 @@ void main() {
       });
 
       tearDownAll(() async {
-        await browserManager?.teardown();
-        await webBuildFixture?.teardown();
+        await browserManager.teardown();
+        await webBuildFixture.teardown();
       });
 
       group('app', appTests, skip: true);

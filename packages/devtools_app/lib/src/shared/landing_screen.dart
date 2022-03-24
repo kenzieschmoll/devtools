@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// ignore_for_file: import_of_legacy_library_into_null_safe
+
+import 'package:devtools_shared/devtools_shared.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -10,9 +13,6 @@ import '../analytics/constants.dart' as analytics_constants;
 import '../config_specific/import_export/import_export.dart';
 import '../framework/framework_core.dart';
 import '../primitives/blocking_action_mixin.dart';
-import '../primitives/url_utils.dart';
-// ignore_for_file: import_of_legacy_library_into_null_safe
-
 import '../primitives/utils.dart';
 import '../ui/label.dart';
 import 'common_widgets.dart';
@@ -206,7 +206,7 @@ class _ConnectDialogState extends State<ConnectDialog>
       },
     );
     if (connected) {
-      final connectedUri = serviceManager.service!.connectedUri!;
+      final connectedUri = serviceManager.service!.connectedUri;
       routerDelegate.updateArgsIfNotCurrent({'uri': '$connectedUri'});
       final shortUri = connectedUri.replace(path: '');
       notifications.push('Successfully connected to $shortUri.');

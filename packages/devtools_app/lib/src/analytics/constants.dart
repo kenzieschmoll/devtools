@@ -4,14 +4,14 @@
 
 // Type of events (event_category):
 
-// @dart=2.9
+// ignore_for_file: import_of_legacy_library_into_null_safe
 
-import '../inspector/inspector_screen.dart';
-import '../logging/logging_screen.dart';
-import '../memory/memory_screen.dart';
-import '../network/network_screen.dart';
-import '../performance/performance_screen.dart';
-import '../profiler/profiler_screen.dart';
+import '../screens/inspector/inspector_screen.dart';
+import '../screens/logging/logging_screen.dart';
+import '../screens/memory/memory_screen.dart';
+import '../screens/network/network_screen.dart';
+import '../screens/performance/performance_screen.dart';
+import '../screens/profiler/profiler_screen.dart';
 
 const String screenViewEvent = 'screen'; // Active screen (tab selected).
 const String selectEvent = 'select'; // User selected something.
@@ -52,6 +52,7 @@ const String togglePlatform = 'togglePlatform';
 const String selectWidgetMode = 'selectWidgetMode';
 const String enableOnDeviceInspector = 'enableOnDeviceInspector';
 const String showOnDeviceInspector = 'showInspector';
+const String treeNodeSelection = 'treeNodeSelection';
 
 // Performance UX actions:
 const refreshTimelineEvents = 'refreshTimelineEvents';

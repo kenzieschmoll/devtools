@@ -2,14 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart=2.9
+// ignore_for_file: import_of_legacy_library_into_null_safe
 
+import 'package:devtools_app/src/config_specific/ide_theme/ide_theme.dart';
 import 'package:devtools_app/src/primitives/message_bus.dart';
 import 'package:devtools_app/src/primitives/utils.dart';
+import 'package:devtools_app/src/service/service_extension_manager.dart';
+import 'package:devtools_app/src/service/service_extensions.dart';
+import 'package:devtools_app/src/service/service_manager.dart';
+import 'package:devtools_app/src/service/service_registrations.dart';
 import 'package:devtools_app/src/shared/globals.dart';
-import 'package:devtools_app/src/shared/service_extensions.dart';
-import 'package:devtools_app/src/shared/service_manager.dart';
-import 'package:devtools_app/src/shared/service_registrations.dart';
 import 'package:devtools_app/src/ui/service_extension_widgets.dart';
 import 'package:devtools_test/devtools_test.dart';
 import 'package:flutter/foundation.dart';
@@ -18,7 +20,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 
 void main() {
-  MockServiceManager mockServiceManager;
+  late MockServiceManager mockServiceManager;
 
   setUp(() {
     mockServiceManager = MockServiceManager();
@@ -36,6 +38,7 @@ void main() {
         reloads++;
         return Future<void>.value();
       });
+      setGlobal(IdeTheme, IdeTheme());
     });
 
     testWidgetsWithContext('performs a hot reload when pressed',
@@ -122,8 +125,8 @@ void main() {
   });
 
   group('Structured Errors toggle', () {
-    ValueListenable<ServiceExtensionState> serviceState;
-    ServiceExtensionState mostRecentState;
+    late ValueListenable<ServiceExtensionState> serviceState;
+    late ServiceExtensionState mostRecentState;
     final serviceStateListener = () {
       mostRecentState = serviceState.value;
     };
@@ -200,4 +203,4 @@ void registerServiceExtension(
   });
 }
 
-Switch get toggle => find.byType(Switch).evaluate().first.widget;
+Switch get toggle => find.byType(Switch).evaluate().first.widget as Switch;

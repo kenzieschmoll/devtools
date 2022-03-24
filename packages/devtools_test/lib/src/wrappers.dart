@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// ignore_for_file: import_of_legacy_library_into_null_safe
+
 import 'package:devtools_app/devtools_app.dart';
 
 import 'package:flutter/material.dart';
@@ -42,7 +44,7 @@ Widget wrap(Widget widget) {
 
 Widget wrapWithAnalytics(
   Widget widget, {
-  AnalyticsController controller,
+  AnalyticsController? controller,
 }) {
   controller ??= AnalyticsController(enabled: false, firstRun: false);
   return Provider<AnalyticsController>.value(
@@ -53,15 +55,15 @@ Widget wrapWithAnalytics(
 
 Widget wrapWithControllers(
   Widget widget, {
-  LoggingController logging,
-  MemoryController memory,
-  PerformanceController performance,
-  ProfilerScreenController profiler,
-  DebuggerController debugger,
-  NetworkController network,
-  BannerMessagesController bannerMessages,
-  AppSizeController appSize,
-  AnalyticsController analytics,
+  LoggingController? logging,
+  MemoryController? memory,
+  PerformanceController? performance,
+  ProfilerScreenController? profiler,
+  DebuggerController? debugger,
+  NetworkController? network,
+  BannerMessagesController? bannerMessages,
+  AppSizeController? appSize,
+  AnalyticsController? analytics,
 }) {
   final _providers = [
     Provider<BannerMessagesController>.value(
@@ -142,8 +144,7 @@ void testWidgetsWithWindowSize(
 }
 
 Future<void> _setWindowSize(Size windowSize) async {
-  final TestWidgetsFlutterBinding binding =
-      TestWidgetsFlutterBinding.ensureInitialized();
+  final binding = TestWidgetsFlutterBinding.ensureInitialized();
   await binding.setSurfaceSize(windowSize);
   binding.window.physicalSizeTestValue = windowSize;
   binding.window.devicePixelRatioTestValue = 1.0;

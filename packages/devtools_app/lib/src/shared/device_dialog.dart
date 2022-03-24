@@ -4,8 +4,9 @@
 
 // ignore_for_file: import_of_legacy_library_into_null_safe
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:pedantic/pedantic.dart';
 import 'package:vm_service/vm_service.dart';
 
 import '../info/info_controller.dart';
@@ -61,7 +62,7 @@ class DeviceDialog extends StatelessWidget {
         'Framework / Engine': '${flutterVersion!.frameworkRevision} / '
             '${flutterVersion!.engineRevision}',
       },
-      if (serviceManager.service!.connectedUri != null)
+      if (serviceManager.service != null)
         'VM Service Connection':
             serviceManager.service!.connectedUri.toString(),
     };

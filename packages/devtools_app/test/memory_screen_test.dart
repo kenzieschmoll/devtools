@@ -4,15 +4,16 @@
 
 // @dart=2.9
 
+import 'package:devtools_app/src/config_specific/ide_theme/ide_theme.dart';
 import 'package:devtools_app/src/config_specific/import_export/import_export.dart';
-import 'package:devtools_app/src/memory/memory_controller.dart';
-import 'package:devtools_app/src/memory/memory_events_pane.dart';
-import 'package:devtools_app/src/memory/memory_heap_tree_view.dart';
-import 'package:devtools_app/src/memory/memory_screen.dart';
-import 'package:devtools_app/src/memory/memory_vm_chart.dart';
+import 'package:devtools_app/src/screens/memory/memory_controller.dart';
+import 'package:devtools_app/src/screens/memory/memory_events_pane.dart';
+import 'package:devtools_app/src/screens/memory/memory_heap_tree_view.dart';
+import 'package:devtools_app/src/screens/memory/memory_screen.dart';
+import 'package:devtools_app/src/screens/memory/memory_vm_chart.dart';
+import 'package:devtools_app/src/service/service_manager.dart';
 import 'package:devtools_app/src/shared/common_widgets.dart';
 import 'package:devtools_app/src/shared/globals.dart';
-import 'package:devtools_app/src/shared/service_manager.dart';
 import 'package:devtools_app/src/ui/search.dart';
 import 'package:devtools_shared/devtools_shared.dart';
 import 'package:devtools_test/devtools_test.dart';
@@ -119,6 +120,7 @@ void main() {
       when(fakeServiceManager.errorBadgeManager.errorCountNotifier(any))
           .thenReturn(ValueNotifier<int>(0));
       setGlobal(ServiceConnectionManager, fakeServiceManager);
+      setGlobal(IdeTheme, IdeTheme());
       screen = const MemoryScreen();
 
       expect(MemoryScreen.isDebugging, isFalse);
@@ -623,7 +625,7 @@ void main() {
         await simulateKeyDownEvent(downArrow
             ? LogicalKeyboardKey.arrowDown
             : LogicalKeyboardKey.arrowUp);
-        expect(controller.currentDefaultIndex, hilightedIndex);
+        expect(controller.currentHoveredIndex.value, hilightedIndex);
       }
 
       Future<void> downArrow(int hilightedIndex) async {
@@ -659,7 +661,7 @@ void main() {
       // Check that up arrow circles around to bottom item in drop-down list.
       await upArrow(autoCompletes.indexOf('IClass'));
       expect(
-        controller.currentDefaultIndex,
+        controller.currentHoveredIndex.value,
         autoCompletes.indexOf('IClass'),
       ); // IClass hilighted.
       await simulateKeyDownEvent(LogicalKeyboardKey.enter);
@@ -688,7 +690,7 @@ void main() {
       autoCompletesDisplayed = controller.searchAutoComplete.value;
       expect(autoCompletesDisplayed, hasLength(1));
       expect(autoCompletesDisplayed.single, 'ZClass');
-      expect(controller.currentDefaultIndex, 0); // ZClass hilighted.
+      expect(controller.currentHoveredIndex.value, 0); // ZClass hilighted.
       await simulateKeyDownEvent(LogicalKeyboardKey.enter);
 
       choosenAutoComplete =
@@ -711,7 +713,7 @@ void main() {
       expect(autoCompletesDisplayed.join(','), autoCompletes4AsString);
 
       expect(
-        controller.currentDefaultIndex,
+        controller.currentHoveredIndex.value,
         autoCompletes5.indexOf('AnotherClass'),
       ); // AnotherClass hilighted.
 

@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart=2.9
+// ignore_for_file: import_of_legacy_library_into_null_safe
 
 import 'dart:convert';
 
-import 'package:devtools_app/src/inspector/diagnostics_node.dart';
-import 'package:devtools_app/src/inspector/inspector_tree.dart';
-import 'package:devtools_app/src/inspector/layout_explorer/flex/flex.dart';
+import 'package:devtools_app/src/screens/inspector/diagnostics_node.dart';
+import 'package:devtools_app/src/screens/inspector/inspector_tree.dart';
+import 'package:devtools_app/src/screens/inspector/layout_explorer/flex/flex.dart';
 import 'package:devtools_test/devtools_test.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -241,7 +241,7 @@ void main() {
     await tester.runAsync(() async {
       await tester.pumpWidget(w);
       for (var element in find.byType(Image).evaluate()) {
-        final Image widget = element.widget;
+        final Image widget = element.widget as Image;
         final ImageProvider image = widget.image;
         await precacheImage(image, element);
         await tester.pumpAndSettle();

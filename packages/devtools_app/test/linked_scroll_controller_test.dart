@@ -2,12 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart=2.9
+import 'dart:async';
 
 import 'package:devtools_app/src/primitives/flutter_widgets/linked_scroll_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pedantic/pedantic.dart';
 
 // This file was originally forked from package:flutter_widgets. Note that the
 // source may diverge over time.
@@ -306,7 +305,7 @@ class TestEmptyGroup extends StatefulWidget {
 }
 
 class TestEmptyGroupState extends State<TestEmptyGroup> {
-  LinkedScrollControllerGroup _controllers;
+  late LinkedScrollControllerGroup _controllers;
 
   @override
   void initState() {
@@ -326,9 +325,9 @@ class Test extends StatefulWidget {
 }
 
 class TestState extends State<Test> {
-  LinkedScrollControllerGroup _controllers;
-  ScrollController _letters;
-  ScrollController _numbers;
+  late LinkedScrollControllerGroup _controllers;
+  late ScrollController _letters;
+  late ScrollController _numbers;
 
   @override
   void initState() {

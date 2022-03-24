@@ -2,13 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart=2.9
+// ignore_for_file: import_of_legacy_library_into_null_safe
 
 import 'dart:io';
 
 import 'package:devtools_app/src/charts/treemap.dart';
+import 'package:devtools_app/src/config_specific/ide_theme/ide_theme.dart';
+import 'package:devtools_app/src/service/service_manager.dart';
 import 'package:devtools_app/src/shared/globals.dart';
-import 'package:devtools_app/src/shared/service_manager.dart';
 import 'package:devtools_test/devtools_test.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -20,9 +21,9 @@ import 'test_data/app_size_test_data/sizes.dart';
 import 'test_data/app_size_test_data/small_sizes.dart';
 
 void main() {
-  TreemapNode root;
+  TreemapNode? root;
 
-  void changeRoot(TreemapNode newRoot) {
+  void changeRoot(TreemapNode? newRoot) {
     root = newRoot;
   }
 
@@ -48,6 +49,7 @@ void main() {
 
   setUp(() {
     setGlobal(ServiceConnectionManager, FakeServiceManager());
+    setGlobal(IdeTheme, IdeTheme());
   });
 
   group('TreemapNode', () {

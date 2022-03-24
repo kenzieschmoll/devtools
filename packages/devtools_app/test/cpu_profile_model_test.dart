@@ -2,10 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart=2.9
+// ignore_for_file: avoid_redundant_argument_values
 
 import 'package:devtools_app/src/primitives/utils.dart';
-import 'package:devtools_app/src/profiler/cpu_profile_model.dart';
+import 'package:devtools_app/src/screens/profiler/cpu_profile_model.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'test_data/cpu_profile_test_data.dart';
@@ -24,11 +24,11 @@ void main() {
       expect(cpuProfileData.profileMetaData.sampleCount, equals(8));
       expect(cpuProfileData.profileMetaData.samplePeriod, equals(50));
       expect(
-        cpuProfileData.profileMetaData.time.start.inMicroseconds,
+        cpuProfileData.profileMetaData.time!.start!.inMicroseconds,
         equals(47377796685),
       );
       expect(
-        cpuProfileData.profileMetaData.time.end.inMicroseconds,
+        cpuProfileData.profileMetaData.time!.end!.inMicroseconds,
         equals(47377799685),
       );
     });
@@ -107,7 +107,8 @@ void main() {
           verboseName: 'all',
           category: 'Dart',
           rawUrl: '',
-          parentId: null,
+          sourceLine: null,
+          parentId: '',
           profileMetaData: profileMetaData,
         ).isNative,
         isFalse,
@@ -215,5 +216,6 @@ void main() {
   test('matches', () {
     expect(stackFrameC.matches(stackFrameC2), isTrue);
     expect(stackFrameC.matches(stackFrameG), isFalse);
+    expect(stackFrameC.matches(stackFrameC4), isFalse);
   });
 }
