@@ -14,12 +14,15 @@ import 'src/config_specific/ide_theme/ide_theme.dart';
 import 'src/extension_points/extensions_base.dart';
 import 'src/extension_points/extensions_external.dart';
 import 'src/screens/debugger/syntax_highlighter.dart';
+import 'src/screens/performance/perfetto/perfetto.dart';
 import 'src/screens/provider/riverpod_error_logger_observer.dart';
 import 'src/shared/app_error_handling.dart';
 import 'src/shared/globals.dart';
 import 'src/shared/preferences.dart';
 
 void main() async {
+  registerWebViewWebImplementation();
+
   // Initialize the framework before we do anything else, otherwise the
   // StorageController won't be initialized and preferences won't be loaded.
   await initializeFramework();

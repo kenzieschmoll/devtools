@@ -27,6 +27,7 @@ import '../../ui/service_extension_widgets.dart';
 import '../../ui/vm_flag_widgets.dart';
 import 'event_details.dart';
 import 'flutter_frames_chart.dart';
+import 'perfetto/perfetto.dart';
 import 'performance_controller.dart';
 import 'performance_model.dart';
 import 'timeline_flame_chart.dart';
@@ -163,22 +164,23 @@ class PerformanceScreenBodyState extends State<PerformanceScreenBody>
             },
           ),
         Expanded(
-          child: Split(
-            axis: Axis.vertical,
-            initialFractions: const [0.7, 0.3],
-            children: [
-              TimelineAnalysisContainer(
-                processing: processing,
-                processingProgress: processingProgress,
-              ),
-              ValueListenableBuilder<TimelineEvent?>(
-                valueListenable: _controller.selectedTimelineEvent,
-                builder: (context, selectedEvent, _) {
-                  return EventDetails(selectedEvent);
-                },
-              ),
-            ],
-          ),
+          child: EmbeddedPerfetto(),
+          // child: Split(
+          //   axis: Axis.vertical,
+          //   initialFractions: const [0.7, 0.3],
+          //   children: [
+          //     TimelineAnalysisContainer(
+          //       processing: processing,
+          //       processingProgress: processingProgress,
+          //     ),
+          //     ValueListenableBuilder<TimelineEvent?>(
+          //       valueListenable: _controller.selectedTimelineEvent,
+          //       builder: (context, selectedEvent, _) {
+          //         return EventDetails(selectedEvent);
+          //       },
+          //     ),
+          //   ],
+          // ),
         ),
       ],
     );
