@@ -2,11 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// ignore_for_file: import_of_legacy_library_into_null_safe
-
 import 'dart:async';
 import 'dart:core';
 
+import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:vm_service/vm_service.dart' hide Error;
 
@@ -22,6 +21,7 @@ import '../shared/error_badge_manager.dart';
 import '../shared/globals.dart';
 import '../shared/title.dart';
 import 'isolate_manager.dart';
+import 'resolved_uri_manager.dart';
 import 'service_extension_manager.dart';
 import 'service_registrations.dart' as registrations;
 import 'vm_flags.dart';
@@ -79,6 +79,8 @@ class ServiceConnectionManager {
 
   final consoleService = ConsoleService();
 
+  final resolvedUriManager = ResolvedUriManager();
+
   InspectorServiceBase? get inspectorService => _inspectorService;
   InspectorServiceBase? _inspectorService;
 
@@ -95,7 +97,9 @@ class ServiceConnectionManager {
   VM? vm;
   String? sdkVersion;
 
-  bool get hasConnection => service != null && connectedApp != null;
+  bool get hasService => service != null;
+
+  bool get hasConnection => hasService && connectedApp != null;
 
   bool get connectedAppInitialized =>
       hasConnection && connectedApp!.connectedAppInitialized;
@@ -178,6 +182,7 @@ class ServiceConnectionManager {
     isolateManager.vmServiceOpened(service);
     consoleService.vmServiceOpened(service);
     serviceExtensionManager.vmServiceOpened(service, connectedApp!);
+    resolvedUriManager.vmServiceOpened();
     await vmFlagManager.vmServiceOpened(service);
     await timelineStreamManager.vmServiceOpened(service, connectedApp!);
     // This needs to be called last in the above group of `vmServiceOpened`
@@ -329,6 +334,7 @@ class ServiceConnectionManager {
     vmFlagManager.vmServiceClosed();
     timelineStreamManager.vmServiceClosed();
     serviceExtensionManager.vmServiceClosed();
+    resolvedUriManager.vmServiceClosed();
 
     serviceTrafficLogger?.dispose();
 
@@ -417,9 +423,8 @@ class ServiceConnectionManager {
         flutterViewListResponse.json!['views'].cast<Map<String, dynamic>>();
 
     // Each isolate should only have one FlutterView.
-    final flutterView = views.firstWhere(
+    final flutterView = views.firstWhereOrNull(
       (view) => view['type'] == 'FlutterView',
-      orElse: () => null,
     );
 
     if (flutterView == null) {
@@ -447,6 +452,21 @@ class ServiceConnectionManager {
 
     return await _callServiceExtensionOnMainIsolate(
       registrations.flutterEngineEstimateRasterCache,
+      args: {
+        'viewId': viewId,
+      },
+    );
+  }
+
+  Future<Response?> get renderFrameWithRasterStats async {
+    if (connectedApp == null || !await connectedApp!.isFlutterApp) {
+      return null;
+    }
+
+    final viewId = await flutterViewId;
+
+    return await _callServiceExtensionOnMainIsolate(
+      registrations.renderFrameWithRasterStats,
       args: {
         'viewId': viewId,
       },

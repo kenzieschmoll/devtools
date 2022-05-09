@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// ignore_for_file: import_of_legacy_library_into_null_safe
-
 library inspector_tree;
 
 import 'dart:async';
@@ -987,6 +985,10 @@ class _InspectorTreeState extends State<InspectorTree>
 
     if (!firstInspectorTreeLoadCompleted && widget.isSummaryTree) {
       ga.timeEnd(InspectorScreen.id, analytics_constants.pageReady);
+      serviceManager.sendDwdsEvent(
+        screen: InspectorScreen.id,
+        action: analytics_constants.pageReady,
+      );
       firstInspectorTreeLoadCompleted = true;
     }
     return LayoutBuilder(

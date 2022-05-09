@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// ignore_for_file: import_of_legacy_library_into_null_safe
-
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -67,7 +65,7 @@ class DevToolsScaffold extends StatefulWidget {
   /// The size that all actions on this widget are expected to have.
   static double get actionWidgetSize => scaleByFontFactor(48.0);
 
-  /// The border around the content in the DevTools UI.
+  /// The padding around the content in the DevTools UI.
   EdgeInsets get appPadding => EdgeInsets.fromLTRB(
         horizontalPadding.left,
         isEmbedded() ? 2.0 : defaultSpacing,
@@ -217,20 +215,26 @@ class DevToolsScaffoldState extends State<DevToolsScaffold>
         // Clear error count when navigating to a screen.
         serviceManager.errorBadgeManager.clearErrors(screen.screenId);
 
-        // If the tab index is 0 and the current route has no page ID (eg. we're
-        // at the URL /?uri= with no page ID), those are equivalent pages but
-        // navigateIfNotCurrent does not know that and will try to navigate, so
-        // skip that here.
-        final routerDelegate = DevToolsRouterDelegate.of(context);
-        if (_tabController!.index == 0 &&
-            (routerDelegate.currentConfiguration!.page.isEmpty)) {
-          return;
-        }
-
         // Update routing with the change.
+        final routerDelegate = DevToolsRouterDelegate.of(context);
         routerDelegate.navigateIfNotCurrent(screen.screenId);
       }
     });
+
+    // If we had no explicit page, we want to write one into the URL but
+    // without triggering a navigation. Since we can't nagivate during a build
+    // we have to wrap this in `Future.microtask`.
+    if (widget.page == null && _currentScreen is! SimpleScreen) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final routerDelegate = DevToolsRouterDelegate.of(context);
+        Router.neglect(context, () {
+          routerDelegate.navigateIfNotCurrent(
+            _currentScreen.screenId,
+            routerDelegate.currentConfiguration?.args,
+          );
+        });
+      });
+    }
 
     // Broadcast the initial page.
     frameworkController.notifyPageChange(
@@ -354,7 +358,10 @@ class DevToolsScaffoldState extends State<DevToolsScaffold>
                           initialFractions: const [0.8, 0.2],
                         )
                       : content,
-                  bottomNavigationBar: widget.embed ? null : _buildStatusLine(),
+                  bottomNavigationBar: StatusLine(
+                    currentScreen: _currentScreen,
+                    isEmbedded: widget.embed,
+                  ),
                 ),
               ),
             ),
@@ -441,30 +448,6 @@ class DevToolsScaffoldState extends State<DevToolsScaffold>
       child: Hero(
         tag: _appBarTag,
         child: appBar,
-      ),
-    );
-  }
-
-  Widget _buildStatusLine() {
-    final appPadding = widget.appPadding;
-
-    return Container(
-      height: scaleByFontFactor(24.0) +
-          widget.appPadding.top +
-          widget.appPadding.bottom,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const PaddedDivider(padding: EdgeInsets.zero),
-          Padding(
-            padding: EdgeInsets.only(
-              left: appPadding.left,
-              right: appPadding.right,
-              bottom: appPadding.bottom,
-            ),
-            child: StatusLine(_currentScreen),
-          ),
-        ],
       ),
     );
   }

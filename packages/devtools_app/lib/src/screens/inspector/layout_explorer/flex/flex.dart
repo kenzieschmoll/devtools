@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// ignore_for_file: import_of_legacy_library_into_null_safe
-
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
@@ -663,6 +661,12 @@ class FlexChildVisualizer extends StatelessWidget {
   }
 
   Widget _buildContent(ColorScheme colorScheme) {
+    // TODO(https://github.com/flutter/devtools/issues/4058) allow more dynamic
+    // flex factor input
+    final currentFlexFactor = properties.flexFactor?.toInt() ?? 0;
+    final currentMaxFlexFactor =
+        math.max(currentFlexFactor, maximumFlexFactorOptions);
+
     return Container(
       margin: const EdgeInsets.only(
         top: margin,
@@ -672,7 +676,7 @@ class FlexChildVisualizer extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Flexible(
-            child: _buildFlexFactorChangerDropdown(maximumFlexFactorOptions),
+            child: _buildFlexFactorChangerDropdown(currentMaxFlexFactor),
           ),
           if (!properties.hasFlexFactor)
             Text(

@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// ignore_for_file: import_of_legacy_library_into_null_safe
-
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
@@ -240,12 +238,14 @@ class ClearButton extends IconLabelButton {
     Key? key,
     double? minScreenWidthForTextBeforeScaling,
     String tooltip = 'Clear',
+    bool outlined = true,
     required VoidCallback? onPressed,
   }) : super(
           key: key,
           icon: Icons.block,
           label: 'Clear',
           tooltip: tooltip,
+          outlined: outlined,
           minScreenWidthForTextBeforeScaling:
               minScreenWidthForTextBeforeScaling,
           onPressed: onPressed,
@@ -660,7 +660,7 @@ class DevToolsTooltip extends StatelessWidget {
   Widget build(BuildContext context) {
     TextStyle? style = textStyle;
     if (richMessage == null) {
-      style = TextStyle(
+      style ??= TextStyle(
         color: Theme.of(context).colorScheme.tooltipTextColor,
         fontSize: defaultFontSize,
       );
@@ -773,9 +773,7 @@ class AreaPaneHeader extends StatelessWidget implements PreferredSizeWidget {
     this.needsTopBorder = true,
     this.needsBottomBorder = true,
     this.needsLeftBorder = false,
-    this.leftActions = const [],
-    this.scrollableCenterActions = const [],
-    this.rightActions = const [],
+    this.actions = const [],
     this.leftPadding = defaultSpacing,
     this.rightPadding = densePadding,
     this.tall = false,
@@ -786,9 +784,7 @@ class AreaPaneHeader extends StatelessWidget implements PreferredSizeWidget {
   final bool needsTopBorder;
   final bool needsBottomBorder;
   final bool needsLeftBorder;
-  final List<Widget> leftActions;
-  final List<Widget> rightActions;
-  final List<Widget> scrollableCenterActions;
+  final List<Widget> actions;
   final double leftPadding;
   final double rightPadding;
   final bool tall;
@@ -812,41 +808,19 @@ class AreaPaneHeader extends StatelessWidget implements PreferredSizeWidget {
         alignment: Alignment.centerLeft,
         child: Row(
           children: [
-            DefaultTextStyle(
-              maxLines: maxLines,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.subtitle2!,
-              child: title,
+            Expanded(
+              child: DefaultTextStyle(
+                maxLines: maxLines,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.subtitle2!,
+                child: title,
+              ),
             ),
-            ..._buildActions(),
+            ...actions,
           ],
         ),
       ),
     );
-  }
-
-  List<Widget> _buildActions() {
-    return [
-      if (scrollableCenterActions.isEmpty)
-        Expanded(
-          child: Row(
-            children: leftActions,
-          ),
-        ),
-      if (scrollableCenterActions.isNotEmpty) ...[
-        ...leftActions,
-        Expanded(
-          // TODO(kenz): make this look more scrollable when there are too many
-          // actions. Either with a faded overlay over the end of the list or
-          // with a scrollbar.
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            children: scrollableCenterActions,
-          ),
-        )
-      ],
-      ...rightActions,
-    ];
   }
 
   @override
@@ -1661,6 +1635,7 @@ class NotifierCheckbox extends StatelessWidget {
       valueListenable: notifier,
       builder: (context, bool? value, _) {
         return Checkbox(
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           value: value,
           onChanged: enabled ? _updateValue : null,
         );
@@ -1678,6 +1653,8 @@ class CheckboxSetting extends StatelessWidget {
     this.tooltip,
     this.onChanged,
     this.enabled = true,
+    this.gaScreenName,
+    this.gaItem,
   }) : super(key: key);
 
   final ValueNotifier<bool?> notifier;
@@ -1692,6 +1669,10 @@ class CheckboxSetting extends StatelessWidget {
 
   /// Whether this checkbox setting should be enabled for interaction.
   final bool enabled;
+
+  final String? gaScreenName;
+
+  final String? gaItem;
 
   @override
   Widget build(BuildContext context) {
@@ -1727,7 +1708,17 @@ class CheckboxSetting extends StatelessWidget {
       children: [
         NotifierCheckbox(
           notifier: notifier,
-          onChanged: onChanged,
+          onChanged: (bool? value) {
+            final gaScreenName = this.gaScreenName;
+            final gaItem = this.gaItem;
+            if (gaScreenName != null && gaItem != null) {
+              ga.select(gaScreenName, gaItem);
+            }
+            final onChanged = this.onChanged;
+            if (onChanged != null) {
+              onChanged(value);
+            }
+          },
           enabled: enabled,
         ),
         Flexible(

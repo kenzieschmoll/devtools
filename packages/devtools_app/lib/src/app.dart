@@ -2,19 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart=2.9
-
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../devtools.dart' as devtools;
 import 'analytics/analytics.dart' as ga;
 import 'analytics/analytics_controller.dart';
 import 'analytics/constants.dart' as analytics_constants;
-import 'config_specific/launch_url/launch_url.dart';
 import 'config_specific/server/server.dart';
 import 'example/conditional_screen.dart';
 import 'framework/framework_core.dart';
@@ -38,6 +34,7 @@ import 'screens/profiler/profiler_screen_controller.dart';
 import 'screens/provider/provider_screen.dart';
 import 'screens/vm_developer/vm_developer_tools_controller.dart';
 import 'screens/vm_developer/vm_developer_tools_screen.dart';
+import 'shared/about_dialog.dart';
 import 'shared/common_widgets.dart';
 import 'shared/dialogs.dart';
 import 'shared/globals.dart';
@@ -45,6 +42,7 @@ import 'shared/initializer.dart';
 import 'shared/landing_screen.dart';
 import 'shared/notifications.dart';
 import 'shared/release_notes/release_notes.dart';
+import 'shared/report_feedback_button.dart';
 import 'shared/routing.dart';
 import 'shared/scaffold.dart';
 import 'shared/screen.dart';
@@ -87,15 +85,15 @@ class DevToolsAppState extends State<DevToolsApp> with AutoDisposeMixin {
   List<Screen> get _screens => widget.screens.map((s) => s.screen).toList();
 
   bool get isDarkThemeEnabled => _isDarkThemeEnabled;
-  bool _isDarkThemeEnabled;
+  bool _isDarkThemeEnabled = true;
 
   bool get vmDeveloperModeEnabled => _vmDeveloperModeEnabled;
-  bool _vmDeveloperModeEnabled;
+  bool _vmDeveloperModeEnabled = false;
 
   bool get denseModeEnabled => _denseModeEnabled;
-  bool _denseModeEnabled;
+  bool _denseModeEnabled = false;
 
-  ReleaseNotesController releaseNotesController;
+  late ReleaseNotesController releaseNotesController;
 
   @override
   void initState() {
@@ -140,10 +138,10 @@ class DevToolsAppState extends State<DevToolsApp> with AutoDisposeMixin {
   }
 
   /// Gets the page for a given page/path and args.
-  Page _getPage(BuildContext context, String page, Map<String, String> args) {
+  Page _getPage(BuildContext context, String? page, Map<String, String?> args) {
     // Provide the appropriate page route.
     if (pages.containsKey(page)) {
-      Widget widget = pages[page](
+      Widget widget = pages[page!]!(
         context,
         page,
         args,
@@ -151,7 +149,7 @@ class DevToolsAppState extends State<DevToolsApp> with AutoDisposeMixin {
       assert(
         () {
           widget = _AlternateCheckedModeBanner(
-            builder: (context) => pages[page](
+            builder: (context) => pages[page]!(
               context,
               page,
               args,
@@ -175,8 +173,8 @@ class DevToolsAppState extends State<DevToolsApp> with AutoDisposeMixin {
 
   Widget _buildTabbedPage(
     BuildContext context,
-    String page,
-    Map<String, String> params,
+    String? page,
+    Map<String, String?> params,
   ) {
     final vmServiceUri = params['uri'];
 
@@ -215,7 +213,7 @@ class DevToolsAppState extends State<DevToolsApp> with AutoDisposeMixin {
                 .where((p) => embed && page != null ? p.screenId == page : true)
                 .where((p) => !hide.contains(p.screenId))
                 .toList();
-            if (tabs.isEmpty) return child;
+            if (tabs.isEmpty) return child ?? const SizedBox.shrink();
             return _providedControllers(
               child: DevToolsScaffold(
                 embed: embed,
@@ -224,7 +222,7 @@ class DevToolsAppState extends State<DevToolsApp> with AutoDisposeMixin {
                 tabs: tabs,
                 actions: [
                   // TODO(https://github.com/flutter/devtools/issues/1941)
-                  if (serviceManager.connectedApp.isFlutterAppNow) ...[
+                  if (serviceManager.connectedApp!.isFlutterAppNow!) ...[
                     HotReloadButton(),
                     HotRestartButton(),
                   ],
@@ -282,7 +280,7 @@ class DevToolsAppState extends State<DevToolsApp> with AutoDisposeMixin {
     };
   }
 
-  Map<String, UrlParametersBuilder> _routes;
+  Map<String, UrlParametersBuilder>? _routes;
 
   void _clearCachedRoutes() {
     _routes = null;
@@ -290,7 +288,7 @@ class DevToolsAppState extends State<DevToolsApp> with AutoDisposeMixin {
 
   List<Screen> _visibleScreens() => _screens.where(shouldShowScreen).toList();
 
-  Widget _providedControllers({@required Widget child, bool offline = false}) {
+  Widget _providedControllers({required Widget child, bool offline = false}) {
     final _providers = widget.screens
         .where(
           (s) => s.providesController && (offline ? s.supportsOffline : true),
@@ -313,15 +311,17 @@ class DevToolsAppState extends State<DevToolsApp> with AutoDisposeMixin {
         ideTheme: ideTheme,
         theme: Theme.of(context),
       ),
-      builder: (context, child) => Provider<AnalyticsController>.value(
-        value: widget.analyticsController,
-        child: Notifications(
-          child: ReleaseNotesViewer(
-            releaseNotesController: releaseNotesController,
-            child: child,
+      builder: (context, child) {
+        return Provider<AnalyticsController>.value(
+          value: widget.analyticsController,
+          child: Notifications(
+            child: ReleaseNotesViewer(
+              releaseNotesController: releaseNotesController,
+              child: child,
+            ),
           ),
-        ),
-      ),
+        );
+      },
       routerDelegate: DevToolsRouterDelegate(_getPage),
       routeInformationParser: DevToolsRouteInformationParser(),
       // Disable default scrollbar behavior on web to fix duplicate scrollbars
@@ -355,7 +355,7 @@ class DevToolsScreen<C> {
   ///
   /// If [createController] and [controller] are both null, [screen] will be
   /// responsible for creating and maintaining its own controller.
-  final C Function() createController;
+  final C Function()? createController;
 
   /// A provided controller for this screen, if non-null.
   ///
@@ -365,7 +365,7 @@ class DevToolsScreen<C> {
   ///
   /// If [createController] and [controller] are both null, [screen] will be
   /// responsible for creating and maintaining its own controller.
-  final C controller;
+  final C? controller;
 
   /// Returns true if a controller was provided for [screen]. If false,
   /// [screen] is responsible for creating and maintaining its own controller.
@@ -381,10 +381,11 @@ class DevToolsScreen<C> {
       (createController != null && controller == null) ||
           (createController == null && controller != null),
     );
-    if (controller != null) {
-      return Provider<C>.value(value: controller);
+    final controllerLocal = controller;
+    if (controllerLocal != null) {
+      return Provider<C>.value(value: controllerLocal);
     }
-    return Provider<C>(create: (_) => createController());
+    return Provider<C>(create: (_) => createController!());
   }
 }
 
@@ -392,8 +393,8 @@ class DevToolsScreen<C> {
 /// args.
 typedef UrlParametersBuilder = Widget Function(
   BuildContext,
-  String,
-  Map<String, String>,
+  String?,
+  Map<String, String?>,
 );
 
 /// Displays the checked mode banner in the bottom end corner instead of the
@@ -402,7 +403,8 @@ typedef UrlParametersBuilder = Widget Function(
 /// This avoids issues with widgets in the appbar being hidden by the banner
 /// in a web or desktop app.
 class _AlternateCheckedModeBanner extends StatelessWidget {
-  const _AlternateCheckedModeBanner({Key key, this.builder}) : super(key: key);
+  const _AlternateCheckedModeBanner({Key? key, required this.builder})
+      : super(key: key);
   final WidgetBuilder builder;
 
   @override
@@ -413,34 +415,6 @@ class _AlternateCheckedModeBanner extends StatelessWidget {
       location: BannerLocation.topStart,
       child: Builder(
         builder: builder,
-      ),
-    );
-  }
-}
-
-class OpenAboutAction extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return DevToolsTooltip(
-      message: 'About DevTools',
-      child: InkWell(
-        onTap: () async {
-          unawaited(
-            showDialog(
-              context: context,
-              builder: (context) => DevToolsAboutDialog(),
-            ),
-          );
-        },
-        child: Container(
-          width: DevToolsScaffold.actionWidgetSize,
-          height: DevToolsScaffold.actionWidgetSize,
-          alignment: Alignment.center,
-          child: Icon(
-            Icons.help_outline,
-            size: actionsIconSize,
-          ),
-        ),
       ),
     );
   }
@@ -469,84 +443,6 @@ class OpenSettingsAction extends StatelessWidget {
             size: actionsIconSize,
           ),
         ),
-      ),
-    );
-  }
-}
-
-class ReportFeedbackButton extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return DevToolsTooltip(
-      message: 'Report feedback',
-      child: InkWell(
-        onTap: () async {
-          ga.select(
-            analytics_constants.devToolsMain,
-            analytics_constants.feedbackButton,
-          );
-          await launchUrl(
-            devToolsExtensionPoints.issueTrackerLink().url,
-            context,
-          );
-        },
-        child: Container(
-          width: DevToolsScaffold.actionWidgetSize,
-          height: DevToolsScaffold.actionWidgetSize,
-          alignment: Alignment.center,
-          child: Icon(
-            Icons.bug_report,
-            size: actionsIconSize,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class DevToolsAboutDialog extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return DevToolsDialog(
-      title: dialogTitleText(theme, 'About DevTools'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _aboutDevTools(context),
-          const SizedBox(height: defaultSpacing),
-          ...dialogSubHeader(theme, 'Feedback'),
-          Wrap(
-            children: [
-              const Text('Encountered an issue? Let us know at '),
-              _createFeedbackLink(context),
-              const Text('.')
-            ],
-          ),
-        ],
-      ),
-      actions: [
-        DialogCloseButton(),
-      ],
-    );
-  }
-
-  Widget _aboutDevTools(BuildContext context) {
-    return const SelectableText('DevTools version ${devtools.version}');
-  }
-
-  Widget _createFeedbackLink(BuildContext context) {
-    return RichText(
-      text: LinkTextSpan(
-        link: devToolsExtensionPoints.issueTrackerLink(),
-        context: context,
-        onTap: () {
-          ga.select(
-            analytics_constants.devToolsMain,
-            analytics_constants.feedbackLink,
-          );
-        },
       ),
     );
   }
@@ -599,11 +495,11 @@ class SettingsDialog extends StatelessWidget {
 
 class CheckboxSetting extends StatelessWidget {
   const CheckboxSetting({
-    Key key,
-    @required this.label,
-    @required this.listenable,
-    @required this.toggle,
-    @required this.gaItem,
+    Key? key,
+    required this.label,
+    required this.listenable,
+    required this.toggle,
+    required this.gaItem,
   }) : super(key: key);
 
   final Text label;
@@ -632,12 +528,12 @@ class CheckboxSetting extends StatelessWidget {
     );
   }
 
-  void toggleSetting(bool newValue) {
+  void toggleSetting(bool? newValue) {
     ga.select(
       analytics_constants.settingsDialog,
-      '$gaItem-${newValue ? 'enabled' : 'disabled'}',
+      '$gaItem-${newValue == true ? 'enabled' : 'disabled'}',
     );
-    toggle(newValue);
+    toggle(newValue == true);
   }
 }
 
