@@ -2,7 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:html' as html;
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 const _debugUseLocalPerfetto = true;
@@ -19,11 +21,12 @@ class PerfettoController {
   String get perfettoUrl =>
       _debugUseLocalPerfetto ? _perfettoUrlLocal : _perfettoUrl;
 
-  html.IFrameElement get perfettoIFrame => _perfettoIFrame;
-
   late final html.IFrameElement _perfettoIFrame;
 
+  late final Completer<void> _perfettoReady;
+
   void init() {
+    _perfettoReady = Completer();
     _perfettoIFrame = html.IFrameElement()
       ..src = perfettoUrl
       ..allow = 'usb';
@@ -34,8 +37,61 @@ class PerfettoController {
 
     // ignore: undefined_prefixed_name
     ui.platformViewRegistry.registerViewFactory(
-      'embedded-perfetto',
+      viewId,
       (int viewId) => _perfettoIFrame,
     );
+
+    html.window.addEventListener('message', _handleMessage);
+  }
+
+  void dispose() {
+    html.window.removeEventListener('message', _handleMessage);
+  }
+
+  void _postMessage(dynamic message) {
+    _perfettoIFrame.contentWindow!.postMessage(
+      message,
+      perfettoUrl,
+    );
+  }
+
+  void _handleMessage(html.Event e) {
+    if (e is html.MessageEvent) {
+      if (e.data == 'PONG' && !_perfettoReady.isCompleted) {
+        _perfettoReady.complete();
+      }
+    }
+  }
+
+  Future<void> loadTrace() async {
+    await pingUntilReady();
+
+    const testUrl =
+        'https://storage.googleapis.com/perfetto-misc/example_android_trace_15s';
+    final request = html.HttpRequest()
+      ..open('GET', testUrl, async: true)
+      ..responseType = 'arraybuffer';
+    request.send();
+    await request.onLoad.first;
+    final arrayBuffer = (request.response as ByteBuffer).asUint8List();
+
+    _postMessage({
+      'perfetto': {
+        'buffer': arrayBuffer,
+        'title': 'My Loaded Trace',
+        'url': '$perfettoUrl#reopen=$testUrl',
+      }
+    });
+  }
+
+  Future<void> pingUntilReady() async {
+    while (!_perfettoReady.isCompleted) {
+      await Future.delayed(const Duration(microseconds: 100), () async {
+        // Once the Perfetto UI is ready, Perfetto will receive this 'PING'
+        // message and return a 'PONG' message, handled in [_handleMessage]
+        // below.
+        _postMessage('PING');
+      });
+    }
   }
 }

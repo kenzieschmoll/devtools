@@ -2,10 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:async';
-import 'dart:html' as html;
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 
 import '../../../shared/theme.dart';
@@ -26,8 +22,6 @@ class Perfetto extends StatefulWidget {
 
 class _PerfettoState extends State<Perfetto>
     with AutomaticKeepAliveClientMixin {
-  late final Completer<void> _perfettoReady;
-
   PerfettoController get perfettoController =>
       widget.performanceController.perfettoController as PerfettoController;
 
@@ -35,20 +29,8 @@ class _PerfettoState extends State<Perfetto>
   bool wantKeepAlive = true;
 
   @override
-  void initState() {
-    super.initState();
-    _perfettoReady = Completer();
-    html.window.addEventListener('message', _handleMessage);
-  }
-
-  @override
-  void dispose() {
-    html.window.removeEventListener('message', _handleMessage);
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Container(
       color: Colors.white,
       child: Column(
@@ -61,11 +43,11 @@ class _PerfettoState extends State<Perfetto>
               children: [
                 const Text('WIP test controls:'),
                 ElevatedButton(
-                  onPressed: _pingUntilReady,
+                  onPressed: perfettoController.pingUntilReady,
                   child: const Text('Ping'),
                 ),
                 ElevatedButton(
-                  onPressed: _loadTrace,
+                  onPressed: perfettoController.loadTrace,
                   child: const Text('Load Trace'),
                 ),
               ],
@@ -79,54 +61,5 @@ class _PerfettoState extends State<Perfetto>
         ],
       ),
     );
-  }
-
-  Future<void> _loadTrace() async {
-    await _pingUntilReady();
-
-    const testUrl =
-        'https://storage.googleapis.com/perfetto-misc/example_android_trace_15s';
-    final request = html.HttpRequest()
-      ..open('GET', testUrl, async: true)
-      ..responseType = 'arraybuffer';
-    request.send();
-    await request.onLoad.first;
-    final arrayBuffer = (request.response as ByteBuffer).asUint8List();
-
-    _postMessage({
-      'perfetto': {
-        'buffer': arrayBuffer,
-        'title': 'My Loaded Trace',
-        'url': '${perfettoController.perfettoUrl}#reopen=$testUrl',
-      }
-    });
-  }
-
-  Future<void> _pingUntilReady() async {
-    if (!_perfettoReady.isCompleted) {
-      while (!_perfettoReady.isCompleted) {
-        await Future.delayed(const Duration(microseconds: 100), () async {
-          // Once the Perfetto UI is ready, Perfetto will receive this 'PING'
-          // message and return a 'PONG' message, handled in [_handleMessage]
-          // below.
-          _postMessage('PING');
-        });
-      }
-    }
-  }
-
-  void _postMessage(dynamic message) {
-    perfettoController.perfettoIFrame.contentWindow!.postMessage(
-      message,
-      perfettoController.perfettoUrl,
-    );
-  }
-
-  void _handleMessage(html.Event e) {
-    if (e is html.MessageEvent) {
-      if (e.data == 'PONG' && !_perfettoReady.isCompleted) {
-        _perfettoReady.complete();
-      }
-    }
   }
 }

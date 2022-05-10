@@ -4,4 +4,6 @@
 
 class PerfettoController {
   void init() {}
+
+  void dispose() {}
 }

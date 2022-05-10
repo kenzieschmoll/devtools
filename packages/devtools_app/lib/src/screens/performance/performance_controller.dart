@@ -864,6 +864,7 @@ class PerformanceController extends DisposableController
     _pollingTimer?.cancel();
     _timelinePollingRateLimiter?.dispose();
     cpuProfilerController.dispose();
+    perfettoController.dispose();
     super.dispose();
   }
 }
