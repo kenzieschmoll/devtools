@@ -13,6 +13,7 @@ import '../../shared/theme.dart';
 import '../../ui/search.dart';
 import '../../ui/tab.dart';
 import 'frame_analysis.dart';
+import 'perfetto/perfetto.dart';
 import 'performance_controller.dart';
 import 'performance_model.dart';
 import 'performance_screen.dart';
@@ -79,11 +80,12 @@ class _TabbedPerformanceViewState extends State<TabbedPerformanceView>
     );
 
     final tabViews = [
-      TimelineEventsView(
-        controller: controller,
-        processing: widget.processing,
-        processingProgress: widget.processingProgress,
-      ),
+      const EmbeddedPerfetto(),
+      // TimelineEventsView(
+      //   controller: controller,
+      //   processing: widget.processing,
+      //   processingProgress: widget.processingProgress,
+      // ),
       if (frameAnalysisSupported) frameAnalysisView,
       if (rasterMetricsSupported) rasterMetrics,
     ];
