@@ -15,15 +15,12 @@ import 'src/extension_points/extensions_base.dart';
 import 'src/extension_points/extensions_external.dart';
 import 'src/primitives/url_utils.dart';
 import 'src/screens/debugger/syntax_highlighter.dart';
-import 'src/screens/performance/perfetto/perfetto.dart';
 import 'src/screens/provider/riverpod_error_logger_observer.dart';
 import 'src/shared/app_error_handling.dart';
 import 'src/shared/globals.dart';
 import 'src/shared/preferences.dart';
 
 void main() async {
-  registerWebViewWebImplementation();
-
   // Before switching to URL path strategy, check if this URL is in the legacy
   // fragment format and redirect if necessary.
   if (_handleLegacyUrl()) return;
