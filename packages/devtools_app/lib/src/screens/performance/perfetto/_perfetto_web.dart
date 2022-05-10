@@ -1,46 +1,43 @@
+// Copyright 2022 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 import 'dart:async';
 import 'dart:html' as html;
 import 'dart:typed_data';
-import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
 import '../../../shared/theme.dart';
+import '../performance_controller.dart';
+import '_perfetto_controller_web.dart';
 
 class Perfetto extends StatefulWidget {
-  const Perfetto({Key? key}) : super(key: key);
+  const Perfetto({
+    Key? key,
+    required this.performanceController,
+  }) : super(key: key);
+
+  final PerformanceController performanceController;
 
   @override
   State<Perfetto> createState() => _PerfettoState();
 }
 
-class _PerfettoState extends State<Perfetto> {
-  // static const perfettoUrl = 'https://ui.perfetto.dev';
-
-  /// Url when running Perfetto locally following the instructions here:
-  /// https://perfetto.dev/docs/contributing/build-instructions#ui-development
-  static const _perfettoUrl = 'http://127.0.0.1:10000';
-
+class _PerfettoState extends State<Perfetto>
+    with AutomaticKeepAliveClientMixin {
   late final Completer<void> _perfettoReady;
 
-  late final html.IFrameElement _perfettoIFrame;
+  PerfettoController get perfettoController =>
+      widget.performanceController.perfettoController as PerfettoController;
+
+  @override
+  bool wantKeepAlive = true;
 
   @override
   void initState() {
     super.initState();
     _perfettoReady = Completer();
-    _perfettoIFrame = html.IFrameElement()
-      ..height = '100%'
-      ..width = '100%'
-      ..src = _perfettoUrl
-      ..style.border = 'none';
-
-    // ignore: undefined_prefixed_name
-    ui.platformViewRegistry.registerViewFactory(
-      'embedded-perfetto',
-      (int viewId) => _perfettoIFrame,
-    );
-
     html.window.addEventListener('message', _handleMessage);
   }
 
@@ -74,9 +71,8 @@ class _PerfettoState extends State<Perfetto> {
               ],
             ),
           ),
-          Expanded(
+          const Expanded(
             child: HtmlElementView(
-              key: UniqueKey(),
               viewType: 'embedded-perfetto',
             ),
           ),
@@ -101,7 +97,7 @@ class _PerfettoState extends State<Perfetto> {
       'perfetto': {
         'buffer': arrayBuffer,
         'title': 'My Loaded Trace',
-        'url': '$_perfettoUrl#reopen=$testUrl',
+        'url': '${perfettoController.perfettoUrl}#reopen=$testUrl',
       }
     });
   }
@@ -120,7 +116,10 @@ class _PerfettoState extends State<Perfetto> {
   }
 
   void _postMessage(dynamic message) {
-    _perfettoIFrame.contentWindow!.postMessage(message, _perfettoUrl);
+    perfettoController.perfettoIFrame.contentWindow!.postMessage(
+      message,
+      perfettoController.perfettoUrl,
+    );
   }
 
   void _handleMessage(html.Event e) {

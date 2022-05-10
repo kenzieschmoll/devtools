@@ -80,7 +80,7 @@ class _TabbedPerformanceViewState extends State<TabbedPerformanceView>
     );
 
     final tabViews = [
-      const EmbeddedPerfetto(),
+      EmbeddedPerfetto(performanceController: controller),
       // TimelineEventsView(
       //   controller: controller,
       //   processing: widget.processing,

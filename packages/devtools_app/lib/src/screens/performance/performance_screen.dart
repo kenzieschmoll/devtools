@@ -163,24 +163,31 @@ class PerformanceScreenBodyState extends State<PerformanceScreenBody>
             },
           ),
         Expanded(
-          child: Split(
-            axis: Axis.vertical,
-            initialFractions: const [0.7, 0.3],
-            children: [
-              TabbedPerformanceView(
-                controller: controller,
-                processing: processing,
-                processingProgress: processingProgress,
-              ),
-              ValueListenableBuilder<TimelineEvent?>(
-                valueListenable: controller.selectedTimelineEvent,
-                builder: (context, selectedEvent, _) {
-                  return EventDetails(selectedEvent);
-                },
-              ),
-            ],
+          child: TabbedPerformanceView(
+            controller: controller,
+            processing: processing,
+            processingProgress: processingProgress,
           ),
         ),
+        // Expanded(
+        //   child: Split(
+        //     axis: Axis.vertical,
+        //     initialFractions: const [0.7, 0.3],
+        //     children: [
+        //       TabbedPerformanceView(
+        //         controller: controller,
+        //         processing: processing,
+        //         processingProgress: processingProgress,
+        //       ),
+        //       ValueListenableBuilder<TimelineEvent?>(
+        //         valueListenable: controller.selectedTimelineEvent,
+        //         builder: (context, selectedEvent, _) {
+        //           return EventDetails(selectedEvent);
+        //         },
+        //       ),
+        //     ],
+        //   ),
+        // ),
       ],
     );
 
