@@ -55,7 +55,7 @@ class _PerfettoState extends State<Perfetto>
           ),
           const Expanded(
             child: HtmlElementView(
-              viewType: 'embedded-perfetto',
+              viewType: PerfettoController.viewId,
             ),
           ),
         ],
