@@ -18,7 +18,6 @@ import 'performance_controller.dart';
 import 'performance_model.dart';
 import 'performance_screen.dart';
 import 'raster_metrics.dart';
-import 'timeline_flame_chart.dart';
 
 final timelineSearchFieldKey = GlobalKey(debugLabel: 'TimelineSearchFieldKey');
 
@@ -81,11 +80,6 @@ class _TabbedPerformanceViewState extends State<TabbedPerformanceView>
 
     final tabViews = [
       EmbeddedPerfetto(performanceController: controller),
-      // TimelineEventsView(
-      //   controller: controller,
-      //   processing: widget.processing,
-      //   processingProgress: widget.processingProgress,
-      // ),
       if (frameAnalysisSupported) frameAnalysisView,
       if (rasterMetricsSupported) rasterMetrics,
     ];

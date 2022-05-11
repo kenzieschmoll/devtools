@@ -288,7 +288,8 @@ class PerformanceController extends DisposableController
   FutureOr<void> processAvailableEvents() async {
     assert(!_processing.value);
     _processing.value = true;
-    await processTraceEvents(allTraceEvents);
+    // await processTraceEvents(allTraceEvents);
+    await perfettoController.loadTrace(allTraceEvents);
     _processing.value = false;
   }
 

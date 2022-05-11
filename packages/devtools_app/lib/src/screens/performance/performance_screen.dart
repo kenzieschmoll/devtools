@@ -19,14 +19,12 @@ import '../../shared/dialogs.dart';
 import '../../shared/globals.dart';
 import '../../shared/notifications.dart';
 import '../../shared/screen.dart';
-import '../../shared/split.dart';
 import '../../shared/theme.dart';
 import '../../shared/version.dart';
 import '../../ui/icons.dart';
 import '../../ui/service_extension_widgets.dart';
 import '../../ui/vm_flag_widgets.dart';
 import 'enhance_tracing.dart';
-import 'event_details.dart';
 import 'flutter_frames_chart.dart';
 import 'performance_controller.dart';
 import 'performance_model.dart';
@@ -169,25 +167,6 @@ class PerformanceScreenBodyState extends State<PerformanceScreenBody>
             processingProgress: processingProgress,
           ),
         ),
-        // Expanded(
-        //   child: Split(
-        //     axis: Axis.vertical,
-        //     initialFractions: const [0.7, 0.3],
-        //     children: [
-        //       TabbedPerformanceView(
-        //         controller: controller,
-        //         processing: processing,
-        //         processingProgress: processingProgress,
-        //       ),
-        //       ValueListenableBuilder<TimelineEvent?>(
-        //         valueListenable: controller.selectedTimelineEvent,
-        //         builder: (context, selectedEvent, _) {
-        //           return EventDetails(selectedEvent);
-        //         },
-        //       ),
-        //     ],
-        //   ),
-        // ),
       ],
     );
 

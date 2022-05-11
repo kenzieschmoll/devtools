@@ -3,9 +3,12 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:html' as html;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+
+import '../../../primitives/trace_event.dart';
 
 const _debugUseLocalPerfetto = true;
 
@@ -63,7 +66,7 @@ class PerfettoController {
     }
   }
 
-  Future<void> loadTrace() async {
+  Future<void> loadTrace(List<TraceEventWrapper> devToolsTraceEvents) async {
     await pingUntilReady();
 
     const testUrl =
@@ -74,12 +77,17 @@ class PerfettoController {
     request.send();
     await request.onLoad.first;
     final arrayBuffer = (request.response as ByteBuffer).asUint8List();
+    final encodedJson = jsonEncode({
+      'traceEvents': devToolsTraceEvents
+          .map((eventWrapper) => eventWrapper.event.json)
+          .toList(),
+    });
+    final buffer = Uint8List.fromList(encodedJson.codeUnits);
 
     _postMessage({
       'perfetto': {
-        'buffer': arrayBuffer,
+        'buffer': buffer,
         'title': 'My Loaded Trace',
-        'url': '$perfettoUrl#reopen=$testUrl',
       }
     });
   }

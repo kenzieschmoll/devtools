@@ -4,7 +4,6 @@
 
 import 'package:flutter/material.dart';
 
-import '../../../shared/theme.dart';
 import '../performance_controller.dart';
 import '_perfetto_controller_web.dart';
 
@@ -33,32 +32,8 @@ class _PerfettoState extends State<Perfetto>
     super.build(context);
     return Container(
       color: Colors.white,
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(denseSpacing),
-            height: defaultButtonHeight,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                const Text('WIP test controls:'),
-                ElevatedButton(
-                  onPressed: perfettoController.pingUntilReady,
-                  child: const Text('Ping'),
-                ),
-                ElevatedButton(
-                  onPressed: perfettoController.loadTrace,
-                  child: const Text('Load Trace'),
-                ),
-              ],
-            ),
-          ),
-          const Expanded(
-            child: HtmlElementView(
-              viewType: PerfettoController.viewId,
-            ),
-          ),
-        ],
+      child: const HtmlElementView(
+        viewType: PerfettoController.viewId,
       ),
     );
   }
