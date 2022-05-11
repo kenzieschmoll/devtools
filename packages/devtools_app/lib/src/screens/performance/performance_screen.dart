@@ -412,10 +412,11 @@ class PerformanceSettingsDialog extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             TimelineStreamSettings(controller: controller),
-            if (serviceManager.connectedApp!.isFlutterAppNow!) ...[
-              const SizedBox(height: denseSpacing),
-              FlutterSettings(controller: controller),
-            ],
+            const SizedBox(height: denseSpacing),
+            ...dialogSubHeader(Theme.of(context), 'Additional Settings'),
+            if (serviceManager.connectedApp!.isFlutterAppNow!)
+              TraceViewerSetting(controller: controller),
+            FlutterSettings(controller: controller)
           ],
         ),
       ),
@@ -506,6 +507,22 @@ class TimelineStreamSettings extends StatelessWidget {
   }
 }
 
+class TraceViewerSetting extends StatelessWidget {
+  const TraceViewerSetting({Key? key, required this.controller})
+      : super(key: key);
+
+  final PerformanceController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return CheckboxSetting(
+      notifier: controller.useLegacyTraceViewer as ValueNotifier<bool?>,
+      title: 'Use legacy trace viewer',
+      onChanged: controller.toggleUseLegacyTraceViewer,
+    );
+  }
+}
+
 class FlutterSettings extends StatelessWidget {
   const FlutterSettings({Key? key, required this.controller}) : super(key: key);
 
@@ -513,15 +530,9 @@ class FlutterSettings extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ...dialogSubHeader(Theme.of(context), 'Additional Settings'),
-        CheckboxSetting(
-          notifier: controller.badgeTabForJankyFrames as ValueNotifier<bool?>,
-          title: 'Badge Performance tab when Flutter UI jank is detected',
-        ),
-      ],
+    return CheckboxSetting(
+      notifier: controller.badgeTabForJankyFrames as ValueNotifier<bool?>,
+      title: 'Badge Performance tab when Flutter UI jank is detected',
     );
   }
 }

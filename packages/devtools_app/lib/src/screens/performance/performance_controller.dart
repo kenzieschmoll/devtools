@@ -59,11 +59,14 @@ class PerformanceController extends DisposableController
   final cpuProfilerController =
       CpuProfilerController(analyticsScreenId: analytics_constants.performance);
 
-  final perfettoController = createPerfettoController();
-
   final rasterMetricsController = RasterMetricsController();
 
   final _exportController = ExportController();
+
+  final perfettoController = createPerfettoController();
+
+  ValueListenable<bool> get useLegacyTraceViewer => _useLegacyTraceViewer;
+  final _useLegacyTraceViewer = ValueNotifier<bool>(false);
 
   /// The currently selected timeline event.
   ValueListenable<TimelineEvent?> get selectedTimelineEvent =>
@@ -288,8 +291,11 @@ class PerformanceController extends DisposableController
   FutureOr<void> processAvailableEvents() async {
     assert(!_processing.value);
     _processing.value = true;
-    // await processTraceEvents(allTraceEvents);
-    await perfettoController.loadTrace(allTraceEvents);
+    if (_useLegacyTraceViewer.value) {
+      await processTraceEvents(allTraceEvents);
+    } else {
+      await perfettoController.loadTrace(allTraceEvents);
+    }
     _processing.value = false;
   }
 
@@ -830,6 +836,10 @@ class PerformanceController extends DisposableController
   Future<void> toggleHttpRequestLogging(bool state) async {
     await HttpService.toggleHttpRequestLogging(state);
     _httpTimelineLoggingEnabled.value = state;
+  }
+
+  void toggleUseLegacyTraceViewer(bool? value) {
+    _useLegacyTraceViewer.value = value ?? false;
   }
 
   /// Clears the timeline data currently stored by the controller as well the

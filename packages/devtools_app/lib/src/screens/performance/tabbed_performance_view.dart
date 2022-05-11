@@ -18,6 +18,7 @@ import 'performance_controller.dart';
 import 'performance_model.dart';
 import 'performance_screen.dart';
 import 'raster_metrics.dart';
+import 'timeline_flame_chart.dart';
 
 final timelineSearchFieldKey = GlobalKey(debugLabel: 'TimelineSearchFieldKey');
 
@@ -79,7 +80,19 @@ class _TabbedPerformanceViewState extends State<TabbedPerformanceView>
     );
 
     final tabViews = [
-      EmbeddedPerfetto(performanceController: controller),
+      ValueListenableBuilder<bool>(
+        valueListenable: controller.useLegacyTraceViewer,
+        builder: (context, useLegacy, _) {
+          if (useLegacy) {
+            return TimelineEventsView(
+              controller: controller,
+              processing: widget.processing,
+              processingProgress: widget.processingProgress,
+            );
+          }
+          return EmbeddedPerfetto(performanceController: controller);
+        },
+      ),
       if (frameAnalysisSupported) frameAnalysisView,
       if (rasterMetricsSupported) rasterMetrics,
     ];
@@ -98,16 +111,23 @@ class _TabbedPerformanceViewState extends State<TabbedPerformanceView>
     return [
       _buildTab(
         tabName: 'Timeline Events',
-        trailing: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            _buildSearchField(searchFieldEnabled),
-            const FlameChartHelpButton(
-              gaScreen: PerformanceScreen.id,
-              gaSelection: analytics_constants.timelineFlameChartHelp,
-            ),
-            RefreshTimelineEventsButton(controller: controller),
-          ],
+        trailing: ValueListenableBuilder<bool>(
+          valueListenable: controller.useLegacyTraceViewer,
+          builder: (context, useLegacy, _) {
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                if (useLegacy) ...[
+                  _buildSearchField(searchFieldEnabled),
+                  const FlameChartHelpButton(
+                    gaScreen: PerformanceScreen.id,
+                    gaSelection: analytics_constants.timelineFlameChartHelp,
+                  ),
+                ],
+                RefreshTimelineEventsButton(controller: controller),
+              ],
+            );
+          },
         ),
       ),
       if (frameAnalysisSupported)
