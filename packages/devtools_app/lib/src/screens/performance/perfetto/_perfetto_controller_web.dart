@@ -69,14 +69,6 @@ class PerfettoController {
   Future<void> loadTrace(List<TraceEventWrapper> devToolsTraceEvents) async {
     await pingUntilReady();
 
-    const testUrl =
-        'https://storage.googleapis.com/perfetto-misc/example_android_trace_15s';
-    final request = html.HttpRequest()
-      ..open('GET', testUrl, async: true)
-      ..responseType = 'arraybuffer';
-    request.send();
-    await request.onLoad.first;
-    final arrayBuffer = (request.response as ByteBuffer).asUint8List();
     final encodedJson = jsonEncode({
       'traceEvents': devToolsTraceEvents
           .map((eventWrapper) => eventWrapper.event.json)
