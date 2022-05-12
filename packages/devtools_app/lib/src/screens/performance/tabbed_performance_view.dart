@@ -84,17 +84,27 @@ class _TabbedPerformanceViewState extends State<TabbedPerformanceView>
         valueListenable: controller.useLegacyTraceViewer,
         builder: (context, useLegacy, _) {
           if (useLegacy) {
-            return TimelineEventsView(
-              controller: controller,
-              processing: widget.processing,
-              processingProgress: widget.processingProgress,
+            return KeepAliveWrapper(
+              child: TimelineEventsView(
+                controller: controller,
+                processing: widget.processing,
+                processingProgress: widget.processingProgress,
+              ),
             );
           }
-          return EmbeddedPerfetto(performanceController: controller);
+          return const KeepAliveWrapper(
+            child: EmbeddedPerfetto(),
+          );
         },
       ),
-      if (frameAnalysisSupported) frameAnalysisView,
-      if (rasterMetricsSupported) rasterMetrics,
+      if (frameAnalysisSupported)
+        KeepAliveWrapper(
+          child: frameAnalysisView,
+        ),
+      if (rasterMetricsSupported)
+        KeepAliveWrapper(
+          child: rasterMetrics,
+        ),
     ];
 
     return AnalyticsTabbedView(

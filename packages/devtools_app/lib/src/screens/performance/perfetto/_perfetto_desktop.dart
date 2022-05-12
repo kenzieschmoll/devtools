@@ -4,15 +4,8 @@
 
 import 'package:flutter/material.dart';
 
-import '../performance_controller.dart';
-
 class Perfetto extends StatelessWidget {
-  const Perfetto({
-    Key? key,
-    required this.performanceController,
-  }) : super(key: key);
-
-  final PerformanceController performanceController;
+  const Perfetto({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

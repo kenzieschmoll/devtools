@@ -4,7 +4,6 @@
 
 import 'package:flutter/material.dart';
 
-import '../performance_controller.dart';
 import '_perfetto_controller_desktop.dart'
     if (dart.library.html) '_perfetto_controller_web.dart';
 import '_perfetto_desktop.dart' if (dart.library.html) '_perfetto_web.dart';
@@ -12,17 +11,10 @@ import '_perfetto_desktop.dart' if (dart.library.html) '_perfetto_web.dart';
 PerfettoController createPerfettoController() => PerfettoController();
 
 class EmbeddedPerfetto extends StatelessWidget {
-  const EmbeddedPerfetto({
-    Key? key,
-    required this.performanceController,
-  }) : super(key: key);
-
-  final PerformanceController performanceController;
+  const EmbeddedPerfetto({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Perfetto(
-      performanceController: performanceController,
-    );
+    return const Perfetto();
   }
 }
