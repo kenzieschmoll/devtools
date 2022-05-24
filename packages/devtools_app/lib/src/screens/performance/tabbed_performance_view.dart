@@ -9,6 +9,7 @@ import '../../analytics/constants.dart' as analytics_constants;
 import '../../charts/flame_chart.dart';
 import '../../primitives/auto_dispose_mixin.dart';
 import '../../shared/common_widgets.dart';
+import '../../shared/globals.dart';
 import '../../shared/theme.dart';
 import '../../ui/search.dart';
 import '../../ui/tab.dart';
@@ -79,6 +80,7 @@ class _TabbedPerformanceViewState extends State<TabbedPerformanceView>
       ),
     );
 
+    final isFlutterApp = serviceManager.connectedApp!.isFlutterAppNow!;
     final tabViews = [
       ValueListenableBuilder<bool>(
         valueListenable: controller.useLegacyTraceViewer,
@@ -97,24 +99,24 @@ class _TabbedPerformanceViewState extends State<TabbedPerformanceView>
           );
         },
       ),
-      if (frameAnalysisSupported)
+      if (frameAnalysisSupported && isFlutterApp)
         KeepAliveWrapper(
           child: frameAnalysisView,
         ),
-      if (rasterMetricsSupported)
+      if (rasterMetricsSupported && isFlutterApp)
         KeepAliveWrapper(
           child: rasterMetrics,
         ),
     ];
 
     return AnalyticsTabbedView(
-      tabs: _generateTabs(),
+      tabs: _generateTabs(isFlutterApp: isFlutterApp),
       tabViews: tabViews,
       gaScreen: analytics_constants.performance,
     );
   }
 
-  List<DevToolsTab> _generateTabs() {
+  List<DevToolsTab> _generateTabs({required bool isFlutterApp}) {
     final data = controller.data;
     final hasData = data != null && !data.isEmpty;
     final searchFieldEnabled = hasData && !widget.processing;
@@ -140,11 +142,11 @@ class _TabbedPerformanceViewState extends State<TabbedPerformanceView>
           },
         ),
       ),
-      if (frameAnalysisSupported)
+      if (frameAnalysisSupported && isFlutterApp)
         _buildTab(
           tabName: 'Frame Analysis',
         ),
-      if (rasterMetricsSupported)
+      if (rasterMetricsSupported && isFlutterApp)
         _buildTab(
           tabName: 'Raster Metrics',
           trailing: Row(
