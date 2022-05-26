@@ -5,7 +5,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 import '../../analytics/analytics.dart' as ga;
 import '../../analytics/analytics_common.dart';
@@ -62,11 +61,8 @@ class PerformanceScreenBody extends StatefulWidget {
 class PerformanceScreenBodyState extends State<PerformanceScreenBody>
     with
         AutoDisposeMixin,
-        OfflineScreenMixin<PerformanceScreenBody, OfflinePerformanceData> {
-  PerformanceController get controller => _controller!;
-
-  PerformanceController? _controller;
-
+        OfflineScreenMixin<PerformanceScreenBody, OfflinePerformanceData>,
+        PerformanceControllerMixin {
   bool processing = false;
 
   double processingProgress = 0.0;
@@ -96,27 +92,27 @@ class PerformanceScreenBodyState extends State<PerformanceScreenBody>
     );
     maybePushDebugModePerformanceMessage(context, PerformanceScreen.id);
 
-    final newController = Provider.of<PerformanceController>(context);
-    if (newController == _controller) return;
-    _controller = newController;
+    if (!initPerformanceController()) return;
 
     cancelListeners();
 
-    processing = controller.processing.value;
-    addAutoDisposeListener(controller.processing, () {
+    processing = performanceController.processing.value;
+    addAutoDisposeListener(performanceController.processing, () {
       setState(() {
-        processing = controller.processing.value;
+        processing = performanceController.processing.value;
       });
     });
 
-    processingProgress = controller.processor.progressNotifier.value;
-    addAutoDisposeListener(controller.processor.progressNotifier, () {
+    processingProgress = performanceController.processor.progressNotifier.value;
+    addAutoDisposeListener(performanceController.processor.progressNotifier,
+        () {
       setState(() {
-        processingProgress = controller.processor.progressNotifier.value;
+        processingProgress =
+            performanceController.processor.progressNotifier.value;
       });
     });
 
-    addAutoDisposeListener(controller.selectedFrame);
+    addAutoDisposeListener(performanceController.selectedFrame);
 
     // Load offline timeline data if available.
     if (shouldLoadOfflineData()) {
@@ -140,8 +136,8 @@ class PerformanceScreenBodyState extends State<PerformanceScreenBody>
   @override
   Widget build(BuildContext context) {
     final isOfflineFlutterApp = offlineController.offlineMode.value &&
-        controller.offlinePerformanceData != null &&
-        controller.offlinePerformanceData!.frames.isNotEmpty;
+        performanceController.offlinePerformanceData != null &&
+        performanceController.offlinePerformanceData!.frames.isNotEmpty;
 
     final performanceScreen = Column(
       children: [
@@ -151,8 +147,8 @@ class PerformanceScreenBodyState extends State<PerformanceScreenBody>
             (!offlineController.offlineMode.value &&
                 serviceManager.connectedApp!.isFlutterAppNow!))
           DualValueListenableBuilder<List<FlutterFrame>, double>(
-            firstListenable: controller.flutterFrames,
-            secondListenable: controller.displayRefreshRate,
+            firstListenable: performanceController.flutterFrames,
+            secondListenable: performanceController.displayRefreshRate,
             builder: (context, frames, displayRefreshRate, child) {
               return FlutterFramesChart(
                 frames,
@@ -162,7 +158,7 @@ class PerformanceScreenBodyState extends State<PerformanceScreenBody>
           ),
         Expanded(
           child: TabbedPerformanceView(
-            controller: controller,
+            controller: performanceController,
             processing: processing,
             processingProgress: processingProgress,
           ),
@@ -191,19 +187,19 @@ class PerformanceScreenBodyState extends State<PerformanceScreenBody>
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         _PrimaryControls(
-          controller: controller,
+          controller: performanceController,
           processing: processing,
           onClear: () => setState(() {}),
         ),
         const SizedBox(width: defaultSpacing),
-        SecondaryPerformanceControls(controller: controller),
+        SecondaryPerformanceControls(controller: performanceController),
       ],
     );
   }
 
   @override
   FutureOr<void> processOfflineData(OfflinePerformanceData offlineData) async {
-    await controller.processOfflineData(offlineData);
+    await performanceController.processOfflineData(offlineData);
   }
 
   @override
