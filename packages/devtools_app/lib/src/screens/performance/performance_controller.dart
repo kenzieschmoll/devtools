@@ -68,7 +68,7 @@ class PerformanceController extends DisposableController
   final perfettoController = createPerfettoController();
 
   ValueListenable<bool> get useLegacyTraceViewer => _useLegacyTraceViewer;
-  final _useLegacyTraceViewer = ValueNotifier<bool>(false);
+  final _useLegacyTraceViewer = ValueNotifier<bool>(!kIsWeb);
 
   /// The currently selected timeline event.
   ValueListenable<TimelineEvent?> get selectedTimelineEvent =>
@@ -293,11 +293,7 @@ class PerformanceController extends DisposableController
   FutureOr<void> processAvailableEvents() async {
     assert(!_processing.value);
     _processing.value = true;
-    if (_useLegacyTraceViewer.value) {
-      await processTraceEvents(allTraceEvents);
-    } else {
-      await perfettoController.loadTrace(allTraceEvents);
-    }
+    await processTraceEvents(allTraceEvents);
     _processing.value = false;
   }
 
@@ -644,10 +640,17 @@ class PerformanceController extends DisposableController
     }
   }
 
-  FutureOr<void> processTraceEvents(
-    List<TraceEventWrapper> traceEvents, {
-    int startIndex = 0,
-  }) async {
+  FutureOr<void> processTraceEvents(List<TraceEventWrapper> traceEvents) async {
+    if (_useLegacyTraceViewer.value) {
+      await _processTraceEvents(traceEvents);
+    } else {
+      await perfettoController.loadTrace(traceEvents);
+    }
+  }
+
+  FutureOr<void> _processTraceEvents(
+    List<TraceEventWrapper> traceEvents,
+  ) async {
     if (data == null) {
       await _initData();
     }

@@ -15,11 +15,12 @@ const _debugUseLocalPerfetto = true;
 class PerfettoController {
   static const viewId = 'embedded-perfetto';
 
-  static const _perfettoUrl = 'https://ui.perfetto.dev';
+  static const _perfettoUrl = 'https://ui.perfetto.dev/#/?hideSidebar=true';
 
   /// Url when running Perfetto locally following the instructions here:
   /// https://perfetto.dev/docs/contributing/build-instructions#ui-development
-  static const _perfettoUrlLocal = 'http://127.0.0.1:10000';
+  static const _perfettoUrlLocal =
+      'http://127.0.0.1:10000/#!/viewer?hideSidebar=true';
 
   String get perfettoUrl =>
       _debugUseLocalPerfetto ? _perfettoUrlLocal : _perfettoUrl;
