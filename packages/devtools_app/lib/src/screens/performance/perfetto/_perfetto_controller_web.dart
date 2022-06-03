@@ -23,7 +23,8 @@ class PerfettoController {
       'http://127.0.0.1:10000/#!/viewer?hideSidebar=true';
 
   String get perfettoUrl =>
-      _debugUseLocalPerfetto ? _perfettoUrlLocal : _perfettoUrl;
+      '${html.window.location.origin}/assets/perfetto/dist/index.html?mode=embedded';
+  // _debugUseLocalPerfetto ? _perfettoUrlLocal : _perfettoUrl;
 
   late final html.IFrameElement _perfettoIFrame;
 
