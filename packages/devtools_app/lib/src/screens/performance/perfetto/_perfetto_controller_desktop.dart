@@ -9,5 +9,10 @@ class PerfettoController {
 
   void dispose() {}
 
-  Future<void> loadTrace(List<TraceEventWrapper> devToolsTraceEvents) async {}
+  Future<void> loadTrace(
+    List<TraceEventWrapper> devToolsTraceEvents,
+    Map<String, dynamic> stackFramesJson,
+  ) async {}
+
+  Future<void> clear() async {}
 }

@@ -40,7 +40,7 @@
     "assets/rec_vmstat.png": "sha256-NPpW3mqNqAU9gLehEMmEJa0qFEPjIWTFgFb+shQzxoc=",
     "controller_bundle.js": "sha256-GkgEipklobDs+nbMBN9I1oEI0rtUR2DwBl2gy6OhJxE=",
     "engine_bundle.js": "sha256-crF5j7YLxd74ht1fYjzG/PRrvGLKofeCHHTehmUE5OM=",
-    "frontend_bundle.js": "sha256-+96LTJhc2GXnBCOgdgXI+dBsa3auIiQSP85/UzT9RqM=",
+    "frontend_bundle.js": "sha256-cgXzL+23NguM9zhCx5grmAawg2htrF56OogJUztPM0Y=",
     "perfetto.css": "sha256-vdWl1VTzK+l0NNPxIHkptfhJukshXjkKQdG5e3/qppE=",
     "trace_processor.wasm": "sha256-HjTO0vsi3i2O9Mlv+TFsVd7PWkEtBODXF9phHC0cLGk=",
     "traceconv.wasm": "sha256-jpzeEf+NNKljlWIg5BMggtDL0ZwWBQz3zx02gdBrF58=",

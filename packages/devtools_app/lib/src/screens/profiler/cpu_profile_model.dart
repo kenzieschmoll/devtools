@@ -294,51 +294,21 @@ class CpuProfileData {
     // of all stacks, regardless of entrypoint. This should never be seen in the
     // final output from this method.
     const int kRootId = 0;
-    int nextId = kRootId;
     final traceObject = <String, dynamic>{
       CpuProfileData.sampleCountKey: cpuSamples.sampleCount,
       CpuProfileData.samplePeriodKey: cpuSamples.samplePeriod,
       CpuProfileData.stackDepthKey: cpuSamples.maxStackDepth,
       CpuProfileData.timeOriginKey: cpuSamples.timeOriginMicros,
       CpuProfileData.timeExtentKey: cpuSamples.timeExtentMicros,
-      CpuProfileData.stackFramesKey: {},
+      CpuProfileData.stackFramesKey: cpuSamples.generateStackFramesJson(
+        isolateId: isolateId,
+        // We want to ensure that if [kRootId] ever changes, this change is
+        // propagated to [cpuSamples.generateStackFramesJson].
+        // ignore: avoid_redundant_argument_values
+        kRootId: kRootId,
+      ),
       CpuProfileData.traceEventsKey: [],
     };
-
-    String? nameForStackFrame(_CpuProfileTimelineTree current) {
-      final className = current.className;
-      if (className != null) {
-        return '$className.${current.name}';
-      }
-      return current.name;
-    }
-
-    void processStackFrame({
-      required _CpuProfileTimelineTree current,
-      required _CpuProfileTimelineTree? parent,
-    }) {
-      final id = nextId++;
-      current.frameId = id;
-
-      // Skip the root.
-      if (id != kRootId) {
-        final key = '$isolateId-$id';
-        traceObject[CpuProfileData.stackFramesKey][key] = {
-          CpuProfileData.categoryKey: 'Dart',
-          CpuProfileData.nameKey: nameForStackFrame(current),
-          CpuProfileData.resolvedUrlKey: current.resolvedUrl,
-          CpuProfileData.sourceLineKey: current.sourceLine,
-          if (parent != null && parent.frameId != 0)
-            CpuProfileData.parentIdKey: '$isolateId-${parent.frameId}',
-        };
-      }
-      for (final child in current.children) {
-        processStackFrame(current: child, parent: current);
-      }
-    }
-
-    final root = _CpuProfileTimelineTree.fromCpuSamples(cpuSamples);
-    processStackFrame(current: root, parent: null);
 
     // Build the trace events.
     for (final sample in cpuSamples.samples ?? <vm_service.CpuSample>[]) {
@@ -499,7 +469,6 @@ class CpuProfileData {
 
   bool get isEmpty => profileMetaData.sampleCount == 0;
 
-  @visibleForTesting
   Map<String, dynamic> get stackFramesJson {
     final framesJson = <String, dynamic>{};
     for (final sf in stackFrames.values) {
@@ -986,5 +955,51 @@ class _CpuProfileTimelineTree {
       children.add(child);
     }
     return child;
+  }
+}
+
+extension CpuSamplesExtension on vm_service.CpuSamples {
+  Map<String, dynamic> generateStackFramesJson({
+    required String isolateId,
+    int kRootId = 0,
+  }) {
+    final traceObject = <String, dynamic>{};
+    int nextId = kRootId;
+
+    String? nameForStackFrame(_CpuProfileTimelineTree current) {
+      final className = current.className;
+      if (className != null) {
+        return '$className.${current.name}';
+      }
+      return current.name;
+    }
+
+    void processStackFrame({
+      required _CpuProfileTimelineTree current,
+      required _CpuProfileTimelineTree? parent,
+    }) {
+      final id = nextId++;
+      current.frameId = id;
+
+      // Skip the root.
+      if (id != kRootId) {
+        final key = '$isolateId-$id';
+        traceObject[key] = {
+          CpuProfileData.categoryKey: 'Dart',
+          CpuProfileData.nameKey: nameForStackFrame(current),
+          CpuProfileData.resolvedUrlKey: current.resolvedUrl,
+          CpuProfileData.sourceLineKey: current.sourceLine,
+          if (parent != null && parent.frameId != 0)
+            CpuProfileData.parentIdKey: '$isolateId-${parent.frameId}',
+        };
+      }
+      for (final child in current.children) {
+        processStackFrame(current: child, parent: current);
+      }
+    }
+
+    final root = _CpuProfileTimelineTree.fromCpuSamples(this);
+    processStackFrame(current: root, parent: null);
+    return traceObject;
   }
 }

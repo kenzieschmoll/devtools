@@ -136,6 +136,11 @@ class _TabbedPerformanceViewState extends State<TabbedPerformanceView>
                     gaSelection: analytics_constants.timelineFlameChartHelp,
                   ),
                 ],
+                IconButton(
+                  onPressed: () => preferences
+                      .toggleDarkModeTheme(!preferences.darkModeTheme.value),
+                  icon: const Icon(Icons.ac_unit),
+                ),
                 RefreshTimelineEventsButton(controller: controller),
               ],
             );

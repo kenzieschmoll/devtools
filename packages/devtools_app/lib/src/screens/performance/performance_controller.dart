@@ -646,7 +646,18 @@ class PerformanceController extends DisposableController
     if (_useLegacyTraceViewer.value) {
       await _processTraceEvents(traceEvents);
     } else {
-      await perfettoController.loadTrace(traceEvents);
+      // TODO: handle multiple isolates if we have trace events for all isolates?
+      // TODO: change start from 0 to earliest trace event we have. Are events sorted?
+      // final now = DateTime.now();
+      // final isolateId = serviceManager.isolateManager.selectedIsolate.value!.id!;
+      // final cpuSamples = await serviceManager.service!.getCpuSamples(
+      //   isolateId,
+      //   0,
+      //   maxJsInt,
+      // );
+      // final stackFrames = cpuSamples.generateStackFramesJson(isolateId: isolateId);
+      // print('time to generate stack frames: ${msText(Duration(microseconds: DateTime.now().microsecondsSinceEpoch - now.microsecondsSinceEpoch))}');
+      await perfettoController.loadTrace(traceEvents, {});
     }
   }
 
@@ -869,6 +880,7 @@ class PerformanceController extends DisposableController
     if (serviceManager.connectedAppInitialized) {
       await serviceManager.service!.clearVMTimeline();
     }
+
     allTraceEvents.clear();
     offlinePerformanceData = null;
     cpuProfilerController.reset();
@@ -885,6 +897,7 @@ class PerformanceController extends DisposableController
     _selectedFrameNotifier.value = null;
     _processing.value = false;
     serviceManager.errorBadgeManager.clearErrors(PerformanceScreen.id);
+    await perfettoController.clear();
   }
 
   void recordTrace(Map<String, dynamic> trace) {
