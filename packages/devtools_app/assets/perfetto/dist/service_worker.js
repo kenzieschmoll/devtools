@@ -351,7 +351,7 @@ const INSTALL_TIMEOUT_MS = 30000;
 // The service_worker.js script itself never changes, but the browser
 // re-installs it because the version in the V? query-string argument changes.
 // The reinstallation will cache the new files from the v.1.2-sha/manifest.json.
-self.addEventListener('install', event => {
+self.addEventListener('install', (event) => {
     const doInstall = () => tslib.__awaiter(void 0, void 0, void 0, function* () {
         if (yield caches.has('BYPASS_SERVICE_WORKER')) {
             // Throw will prevent the installation.
@@ -392,7 +392,7 @@ self.addEventListener('activate', (event) => {
     });
     event.waitUntil(doActivate());
 });
-self.addEventListener('fetch', event => {
+self.addEventListener('fetch', (event) => {
     // The early return here will cause the browser to fall back on standard
     // network-based fetch.
     if (!shouldHandleHttpRequest(event.request)) {
@@ -484,7 +484,7 @@ function installAppVersionIntoCache(version) {
                 const reqOpts = {
                     cache: 'no-cache',
                     mode: 'same-origin',
-                    integrity: `${integrity}`
+                    integrity: `${integrity}`,
                 };
                 urlsToCache.push(new Request(`${version}/${resource}`, reqOpts));
             }
@@ -502,15 +502,15 @@ function fetchWithTimeout(req, timeoutMs) {
     const url = req.url || `${req}`;
     return new Promise((resolve, reject) => {
         const timerId = setTimeout(() => {
-            reject(`Timed out while fetching ${url}`);
+            reject(new Error(`Timed out while fetching ${url}`));
         }, timeoutMs);
-        fetch(req).then(resp => {
+        fetch(req).then((resp) => {
             clearTimeout(timerId);
             if (resp.ok) {
                 resolve(resp);
             }
             else {
-                reject(`Fetch failed for ${url}: ${resp.status} ${resp.statusText}`);
+                reject(new Error(`Fetch failed for ${url}: ${resp.status} ${resp.statusText}`));
             }
         }, reject);
     });

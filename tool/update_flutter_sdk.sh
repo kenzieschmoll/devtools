@@ -7,7 +7,7 @@
 FLUTTER_DIR="`pwd`/flutter-sdk"
 PATH="$FLUTTER_DIR/bin":$PATH
 
-REQUIRED_FLUTTER_VERSION=$(<"flutter-version.txt")
+REQUIRED_FLUTTER_VERSION=$(<"../flutter-version.txt")
 
 if [ -d "$FLUTTER_DIR" ]; then 
   # switch to the specified version

@@ -362,6 +362,8 @@ class PerformanceController extends DisposableController
     _data.selectedFrame = frame;
     _selectedFrameNotifier.value = frame;
 
+    await perfettoController.scrollToTimeRange(frame.timeFromEventFlows);
+
     if (!offlineController.offlineMode.value) {
       final bool frameBeforeFirstWellFormedFrame =
           firstWellFormedFrameMicros != null &&
@@ -646,18 +648,7 @@ class PerformanceController extends DisposableController
     if (_useLegacyTraceViewer.value) {
       await _processTraceEvents(traceEvents);
     } else {
-      // TODO: handle multiple isolates if we have trace events for all isolates?
-      // TODO: change start from 0 to earliest trace event we have. Are events sorted?
-      // final now = DateTime.now();
-      // final isolateId = serviceManager.isolateManager.selectedIsolate.value!.id!;
-      // final cpuSamples = await serviceManager.service!.getCpuSamples(
-      //   isolateId,
-      //   0,
-      //   maxJsInt,
-      // );
-      // final stackFrames = cpuSamples.generateStackFramesJson(isolateId: isolateId);
-      // print('time to generate stack frames: ${msText(Duration(microseconds: DateTime.now().microsecondsSinceEpoch - now.microsecondsSinceEpoch))}');
-      await perfettoController.loadTrace(traceEvents, {});
+      await perfettoController.loadTrace(traceEvents);
     }
   }
 

@@ -4,8 +4,15 @@
 
 import 'package:flutter/material.dart';
 
+import '_perfetto_controller_desktop.dart';
+
 class Perfetto extends StatelessWidget {
-  const Perfetto({Key? key}) : super(key: key);
+  const Perfetto({
+    Key? key,
+    required this.perfettoController,
+  }) : super(key: key);
+
+  final PerfettoController perfettoController;
 
   @override
   Widget build(BuildContext context) {

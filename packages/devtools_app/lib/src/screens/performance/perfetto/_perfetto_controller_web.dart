@@ -10,8 +10,16 @@ import 'dart:ui' as ui;
 
 import '../../../primitives/auto_dispose.dart';
 import '../../../primitives/trace_event.dart';
+import '../../../primitives/utils.dart';
 import '../../../shared/globals.dart';
 
+/// Flag to enable embedding an instance of the Perfetto UI running on
+/// localhost.
+///
+/// The version running on localhost will not include the DevTools styling
+/// modifications for dark mode, as those CSS changes are defined in
+/// [devtools_app/assets/perfetto] and will not be served with the Perfetto web
+/// app running locally.
 const _debugUseLocalPerfetto = false;
 
 class PerfettoController extends DisposableController
@@ -25,7 +33,25 @@ class PerfettoController extends DisposableController
   /// https://perfetto.dev/docs/contributing/build-instructions#ui-development
   static const _debugPerfettoUrl = 'http://127.0.0.1:10000/$_embeddedModeQuery';
 
-  static const _embeddedModeQuery = '?mode=embedded';
+  static const _embeddedModeQuery = '?mode=embedded&hideSidebar=true';
+
+  static const _perfettoPing = 'PING';
+
+  static const _perfettoPong = 'PONG';
+
+  static const _devtoolsThemePing = 'DART-DEVTOOLS-THEME-PING';
+
+  static const _devtoolsThemePong = 'DART-DEVTOOLS-THEME-PONG';
+
+  /// Id for a [postMessage] request that is sent on DevTools theme changes.
+  ///
+  /// This id is marked in the Perfetto UI codebase [post_message_handler.ts] as
+  /// trusted. This ensures that the embedded Perfetto web app does not try to
+  /// handle this message and warn "Unknown postMessage() event received".
+  ///
+  /// Any changes to this string must also be applied in
+  /// [post_message_handler.ts] in the Perfetto codebase.
+  static const _devtoolsThemeChange = 'DART-DEVTOOLS-THEME-CHANGE';
 
   String get perfettoUrl =>
       _debugUseLocalPerfetto ? _debugPerfettoUrl : _bundledPerfettoUrl;
@@ -34,8 +60,11 @@ class PerfettoController extends DisposableController
 
   late final Completer<void> _perfettoReady;
 
+  late final Completer<void> _devtoolsThemeHandlerReady;
+
   void init() {
     _perfettoReady = Completer();
+    _devtoolsThemeHandlerReady = Completer();
     _perfettoIFrame = html.IFrameElement()
       ..src = perfettoUrl
       ..allow = 'usb';
@@ -43,10 +72,6 @@ class PerfettoController extends DisposableController
       ..border = 'none'
       ..height = '100%'
       ..width = '100%';
-
-    print('supported?');
-    print(_perfettoIFrame.style.supportsProperty('overscroll-behavior-x'));
-    _perfettoIFrame.style.setProperty('overscrollBehaviorX', 'none');
 
     // ignore: undefined_prefixed_name
     ui.platformViewRegistry.registerViewFactory(
@@ -56,30 +81,59 @@ class PerfettoController extends DisposableController
 
     html.window.addEventListener('message', _handleMessage);
 
+    _loadInitialStyle();
     addAutoDisposeListener(preferences.darkModeTheme, () async {
-      final useDarkMode = preferences.darkModeTheme.value;
-      await setStyle(useDarkMode);
+      _loadStyle(preferences.darkModeTheme.value);
     });
   }
 
-  static const _darkModeStylesheetId = 'devtools-dark';
-  static const _lightModeStylesheetId = 'devtools-light';
-  Future<void> setStyle(bool darkMode) async {
-    print('calling set style: ${darkMode ? 'dark' : 'light'}');
-    await _pingUntilReady();
+  Future<void> loadTrace(List<TraceEventWrapper> devToolsTraceEvents) async {
+    await _pingPerfettoUntilReady();
+
+    final encodedJson = jsonEncode({
+      'traceEvents': devToolsTraceEvents
+          .map((eventWrapper) => eventWrapper.event.json)
+          .toList(),
+    });
+    final buffer = Uint8List.fromList(encodedJson.codeUnits);
+
     _postMessage({
       'perfetto': {
-        'addStyle': darkMode ? _darkModeStylesheetId : _lightModeStylesheetId,
-        'removeStyle':
-            darkMode ? _lightModeStylesheetId : _darkModeStylesheetId,
-      },
+        'buffer': buffer,
+        'title': 'My Loaded Trace',
+      }
     });
   }
 
-  @override
-  void dispose() {
-    html.window.removeEventListener('message', _handleMessage);
-    super.dispose();
+  Future<void> scrollToTimeRange(TimeRange timeRange) async {
+    assert(timeRange.isWellFormed);
+    await _pingPerfettoUntilReady();
+    _postMessage({
+      'perfetto': {
+        'timeStartMicros': timeRange.start!.inMicroseconds,
+        'timeEndMicros': timeRange.end!.inMicroseconds,
+      }
+    });
+  }
+
+  void togglePointerEvents(bool enable) {
+    _perfettoIFrame.style.pointerEvents = enable ? 'auto' : 'none';
+  }
+
+  Future<void> _loadInitialStyle() async {
+    await _pingDevToolsThemeHandlerUntilReady();
+    _loadStyle(preferences.darkModeTheme.value);
+  }
+
+  void _loadStyle(bool darkMode) {
+    // This message will be handled by [devtools_theme_handler.js], which is
+    // included in the Perfetto build inside [assets/perfetto/dist].
+    _postMessageWithId(
+      _devtoolsThemeChange,
+      args: {
+        'theme': '${darkMode ? 'dark' : 'light'}',
+      },
+    );
   }
 
   void _postMessage(dynamic message) {
@@ -89,50 +143,55 @@ class PerfettoController extends DisposableController
     );
   }
 
+  void _postMessageWithId(String id, {Map<String, dynamic> args = const {}}) {
+    final message = <String, dynamic>{
+      'msgId': id,
+    }..addAll(args);
+    _postMessage(message);
+  }
+
   void _handleMessage(html.Event e) {
     if (e is html.MessageEvent) {
-      if (e.data == 'PONG' && !_perfettoReady.isCompleted) {
+      if (e.data == _perfettoPong && !_perfettoReady.isCompleted) {
         _perfettoReady.complete();
+      }
+
+      if (e.data == _devtoolsThemePong &&
+          !_devtoolsThemeHandlerReady.isCompleted) {
+        _devtoolsThemeHandlerReady.complete();
       }
     }
   }
 
-  Future<void> loadTrace(
-    List<TraceEventWrapper> devToolsTraceEvents,
-    Map<String, dynamic> stackFramesJson,
-  ) async {
-    print('entering load trace');
-    await _pingUntilReady();
-
-    final encodedJson = jsonEncode({
-      'traceEvents': devToolsTraceEvents
-          .map((eventWrapper) => eventWrapper.event.json)
-          .toList(),
-      'stackFrames': stackFramesJson,
-    });
-    final buffer = Uint8List.fromList(encodedJson.codeUnits);
-
-    print('posting trace');
-    _postMessage({
-      'perfetto': {
-        'buffer': buffer,
-        'title': 'My Loaded Trace',
-      }
-    });
-  }
-
-  Future<void> clear() async {
-    await loadTrace([], {});
-  }
-
-  Future<void> _pingUntilReady() async {
+  Future<void> _pingPerfettoUntilReady() async {
     while (!_perfettoReady.isCompleted) {
       await Future.delayed(const Duration(microseconds: 100), () async {
         // Once the Perfetto UI is ready, Perfetto will receive this 'PING'
         // message and return a 'PONG' message, handled in [_handleMessage]
         // below.
-        _postMessage('PING');
+        _postMessage(_perfettoPing);
       });
     }
+  }
+
+  Future<void> _pingDevToolsThemeHandlerUntilReady() async {
+    while (!_devtoolsThemeHandlerReady.isCompleted) {
+      await Future.delayed(const Duration(microseconds: 100), () async {
+        // Once [devtools_theme_handler.js] is ready, it will receive this
+        // 'PING-DEVTOOLS-THEME' message and return a 'PONG-DEVTOOLS-THEME'
+        // message, handled in [_handleMessage].
+        _postMessageWithId(_devtoolsThemePing);
+      });
+    }
+  }
+
+  Future<void> clear() async {
+    await loadTrace([]);
+  }
+
+  @override
+  void dispose() {
+    html.window.removeEventListener('message', _handleMessage);
+    super.dispose();
   }
 }

@@ -8,7 +8,7 @@
 FLUTTER_DIR="`pwd`/flutter-sdk"
 PATH="$FLUTTER_DIR/bin":$PATH
 
-REQUIRED_FLUTTER_VERSION=$(<"flutter-version.txt")
+REQUIRED_FLUTTER_VERSION=$(<"../flutter-version.txt")
 
 flutter --version
 ACTUAL_FLUTTER_VERSION=$(<"$FLUTTER_DIR/version")
@@ -25,6 +25,10 @@ fi
 
 # echo on
 set -ex
+
+if [[ $1 = "--update-perfetto" ]]; then
+  ./update_perfetto.sh
+fi
 
 pushd packages/devtools_app
 
