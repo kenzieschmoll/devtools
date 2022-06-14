@@ -100,7 +100,8 @@ class PerfettoController extends DisposableController
     _postMessage({
       'perfetto': {
         'buffer': buffer,
-        'title': 'My Loaded Trace',
+        'title': 'DevTools timeline trace',
+        'keepApiOpen': true,
       }
     });
   }
