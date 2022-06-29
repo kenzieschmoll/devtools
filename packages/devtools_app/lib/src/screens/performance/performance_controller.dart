@@ -815,6 +815,8 @@ class PerformanceController extends DisposableController
         storeAsUserTagNone: true,
       );
     }
+
+    _displayRefreshRate.value = _offlineData.displayRefreshRate;
   }
 
   /// Exports the current timeline data to a .json file.
