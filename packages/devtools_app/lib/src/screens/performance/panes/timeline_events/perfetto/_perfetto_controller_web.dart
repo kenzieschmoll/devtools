@@ -8,10 +8,10 @@ import 'dart:html' as html;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
-import '../../../primitives/auto_dispose.dart';
-import '../../../primitives/trace_event.dart';
-import '../../../primitives/utils.dart';
-import '../../../shared/globals.dart';
+import '../../../../../primitives/auto_dispose.dart';
+import '../../../../../primitives/trace_event.dart';
+import '../../../../../primitives/utils.dart';
+import '../../../../../shared/globals.dart';
 
 /// Flag to enable embedding an instance of the Perfetto UI running on
 /// localhost.
