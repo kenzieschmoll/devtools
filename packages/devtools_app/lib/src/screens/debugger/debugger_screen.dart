@@ -28,6 +28,7 @@ import 'debugger_controller.dart';
 import 'debugger_model.dart';
 import 'key_sets.dart';
 import 'program_explorer.dart';
+import 'program_explorer_model.dart';
 import 'variables.dart';
 
 class DebuggerScreen extends Screen {
@@ -85,8 +86,6 @@ class DebuggerScreenBody extends StatefulWidget {
 
   static final codeViewKey = GlobalKey(debugLabel: 'codeViewKey');
   static final scriptViewKey = GlobalKey(debugLabel: 'scriptViewKey');
-  static final programExplorerKey =
-      GlobalKey(debugLabel: 'programExploreryKey');
   static const callStackCopyButtonKey =
       Key('debugger_call_stack_copy_to_clipboard_button');
 
@@ -119,7 +118,8 @@ class DebuggerScreenBodyState extends State<DebuggerScreenBody>
     controller.onFirstDebuggerScreenLoad();
   }
 
-  void _onLocationSelected(ScriptLocation? location) {
+  void _onNodeSelected(VMServiceObjectNode? node) {
+    final location = node?.location;
     if (location != null) {
       controller.showScriptLocation(location);
     }
@@ -138,9 +138,8 @@ class DebuggerScreenBodyState extends State<DebuggerScreenBody>
             children: [
               child!,
               ProgramExplorer(
-                key: DebuggerScreenBody.programExplorerKey,
                 controller: controller.programExplorerController,
-                onSelected: _onLocationSelected,
+                onNodeSelected: _onNodeSelected,
               ),
             ],
           );

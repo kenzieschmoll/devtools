@@ -14,7 +14,6 @@ import '../../shared/globals.dart';
 import '../../shared/theme.dart';
 import '../../shared/tree.dart';
 import '../../shared/utils.dart';
-import 'debugger_model.dart';
 import 'program_explorer_controller.dart';
 import 'program_explorer_model.dart';
 
@@ -245,6 +244,9 @@ class ProgramStructureIcon extends StatelessWidget {
     } else if (object is ScriptRef) {
       icon = libraryIcon;
       color = colorScheme.stringSyntaxColor;
+    } else if (object is CodeRef) {
+      icon = Icons.code;
+      color = colorScheme.controlFlowSyntaxColor;
     } else {
       icon = containerIcon;
     }
@@ -313,7 +315,7 @@ class _FileExplorer extends StatefulWidget {
 }
 
 class _FileExplorerState extends State<_FileExplorer> with AutoDisposeMixin {
-  final ScrollController _scrollController = ScrollController();
+  late final ScrollController _scrollController;
 
   double get selectedNodeOffset => widget.controller.selectedNodeIndex.value ==
           -1
@@ -323,6 +325,7 @@ class _FileExplorerState extends State<_FileExplorer> with AutoDisposeMixin {
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
     addAutoDisposeListener(
       widget.controller.selectedNodeIndex,
       _maybeScrollToSelectedNode,
@@ -330,27 +333,30 @@ class _FileExplorerState extends State<_FileExplorer> with AutoDisposeMixin {
   }
 
   @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scrollbar(
-      thumbVisibility: true,
-      controller: _scrollController,
-      child: TreeView<VMServiceObjectNode>(
-        itemExtent: _programExplorerRowHeight,
-        dataRootsListenable: widget.controller.rootObjectNodes,
-        onItemSelected: widget.onItemSelected,
-        onItemExpanded: widget.onItemExpanded,
-        scrollController: _scrollController,
-        dataDisplayProvider: (node, onTap) {
-          return _ProgramExplorerRow(
-            controller: widget.controller,
-            node: node,
-            onTap: () {
-              widget.controller.selectNode(node);
-              onTap();
-            },
-          );
-        },
-      ),
+    return TreeView<VMServiceObjectNode>(
+      itemExtent: _programExplorerRowHeight,
+      dataRootsListenable: widget.controller.rootObjectNodes,
+      onItemSelected: widget.onItemSelected,
+      onItemExpanded: widget.onItemExpanded,
+      scrollController: _scrollController,
+      includeScrollbar: true,
+      dataDisplayProvider: (node, onTap) {
+        return _ProgramExplorerRow(
+          controller: widget.controller,
+          node: node,
+          onTap: () {
+            widget.controller.selectNode(node);
+            onTap();
+          },
+        );
+      },
     );
   }
 
@@ -420,15 +426,17 @@ class _ProgramOutlineView extends StatelessWidget {
 /// filtering.
 class ProgramExplorer extends StatelessWidget {
   const ProgramExplorer({
-    required Key key,
+    Key? key,
     required this.controller,
-    this.onSelected,
     this.title = 'File Explorer',
-  }) : super(key: key);
+    this.onNodeSelected,
+    this.displayCodeNodes = false,
+  });
 
   final ProgramExplorerController controller;
-  final void Function(ScriptLocation)? onSelected;
   final String title;
+  final void Function(VMServiceObjectNode)? onNodeSelected;
+  final bool displayCodeNodes;
 
   @override
   Widget build(BuildContext context) {
@@ -511,7 +519,7 @@ class ProgramExplorer extends StatelessWidget {
       node.expand();
     }
 
-    if (onSelected != null) onSelected!(node.location!);
+    if (onNodeSelected != null) onNodeSelected!(node);
   }
 
   void onItemExpanded(VMServiceObjectNode node) async {

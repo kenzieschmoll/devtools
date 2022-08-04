@@ -9,13 +9,13 @@ import 'package:provider/provider.dart';
 
 import '../../analytics/analytics.dart' as ga;
 import '../../analytics/constants.dart' as analytics_constants;
+import '../../framework/scaffold.dart';
 import '../../primitives/auto_dispose_mixin.dart';
 import '../../primitives/flutter_widgets/linked_scroll_controller.dart';
 import '../../primitives/utils.dart';
 import '../../shared/banner_messages.dart';
 import '../../shared/common_widgets.dart';
 import '../../shared/globals.dart';
-import '../../shared/scaffold.dart';
 import '../../shared/theme.dart';
 import '../../shared/utils.dart';
 import '../../ui/colors.dart';
@@ -24,6 +24,7 @@ import '../../ui/utils.dart';
 import 'performance_controller.dart';
 import 'performance_model.dart';
 import 'performance_screen.dart';
+import 'performance_utils.dart';
 
 // Turn this flag on to see when flutter frames are linked with timeline events.
 bool debugFrames = false;

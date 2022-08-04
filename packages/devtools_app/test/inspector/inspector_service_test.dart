@@ -5,6 +5,7 @@
 @TestOn('vm')
 import 'package:devtools_app/src/screens/inspector/diagnostics_node.dart';
 import 'package:devtools_app/src/screens/inspector/inspector_service.dart';
+import 'package:devtools_app/src/screens/inspector/primitives/inspector_common.dart';
 import 'package:devtools_app/src/shared/globals.dart';
 import 'package:devtools_test/devtools_test.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -79,12 +80,43 @@ void main() async {
         final group = inspectorServiceLocal.createObjectGroup('test-group');
         // These tests are moot if widget creation is not tracked.
         expect(await inspectorServiceLocal.isWidgetCreationTracked(), isTrue);
-        await inspectorServiceLocal.setPubRootDirectories([]);
+        await inspectorServiceLocal.addPubRootDirectories([]);
         final List<String> rootDirectories =
             await inspectorServiceLocal.inferPubRootDirectoryIfNeeded();
         expect(rootDirectories.length, 1);
         expect(rootDirectories.first, endsWith('/fixtures/flutter_app'));
         await group.dispose();
+      });
+
+      test('pub root directory operations', () async {
+        await env.setupEnvironment();
+        final inspectorServiceLocal = inspectorService!;
+        const testPubRootDirectory = '/alpha/bravo/charlie';
+
+        // Empty the pubroot directories.
+        final initialPubRootDirectories =
+            await inspectorServiceLocal.getPubRootDirectories();
+        await inspectorServiceLocal
+            .removePubRootDirectories(initialPubRootDirectories!);
+        expect(await inspectorServiceLocal.getPubRootDirectories(), equals([]));
+
+        // Can add a new pub root directory.
+        await inspectorServiceLocal
+            .addPubRootDirectories([testPubRootDirectory]);
+        expect(
+          await inspectorServiceLocal.getPubRootDirectories(),
+          equals([
+            testPubRootDirectory,
+          ]),
+        );
+
+        // Can remove the new pub root directory.
+        await inspectorServiceLocal
+            .removePubRootDirectories([testPubRootDirectory]);
+        expect(
+          await inspectorServiceLocal.getPubRootDirectories(),
+          equals([]),
+        );
       });
 
       test('local classes', () async {
@@ -94,7 +126,7 @@ void main() async {
         final group = inspectorServiceLocal.createObjectGroup('test-group');
         // These tests are moot if widget creation is not tracked.
         expect(await inspectorServiceLocal.isWidgetCreationTracked(), isTrue);
-        await inspectorServiceLocal.setPubRootDirectories([]);
+        await inspectorServiceLocal.addPubRootDirectories([]);
         final List<String> rootDirectories =
             await inspectorServiceLocal.inferPubRootDirectoryIfNeeded();
         expect(rootDirectories.length, 1);
@@ -118,7 +150,7 @@ void main() async {
           );
 
           await inspectorServiceLocal
-              .setPubRootDirectories(['${rootDirectories.first}/lib/src']);
+              .addPubRootDirectories(['${rootDirectories.first}/lib/src']);
           // Adding src does not change the directory as local classes are
           // computed at the library level.
           expect(
@@ -143,7 +175,7 @@ void main() async {
           );
           expect(inspectorServiceLocal.rootPackagePrefixes.toList(), isEmpty);
 
-          await inspectorServiceLocal.setPubRootDirectories(
+          await inspectorServiceLocal.addPubRootDirectories(
             ['/usr/jacobr/foo/lib', '/usr/jacobr/bar/lib/bla'],
           );
           expect(
@@ -189,7 +221,7 @@ void main() async {
         } finally {
           // Restore.
           await inspectorServiceLocal
-              .setPubRootDirectories(originalRootDirectories);
+              .addPubRootDirectories(originalRootDirectories);
 
           await group.dispose();
         }
@@ -202,12 +234,12 @@ void main() async {
         final group = inspectorServiceLocal.createObjectGroup('test-group');
         // These tests are moot if widget creation is not tracked.
         expect(await inspectorServiceLocal.isWidgetCreationTracked(), isTrue);
-        await inspectorServiceLocal.setPubRootDirectories([]);
+        await inspectorServiceLocal.addPubRootDirectories([]);
         final originalRootDirectories =
             (await inspectorServiceLocal.inferPubRootDirectoryIfNeeded())
                 .toList();
         try {
-          await inspectorServiceLocal.setPubRootDirectories(
+          await inspectorServiceLocal.addPubRootDirectories(
             ['/usr/me/clients/google3/foo/bar/baz/lib/src/bla'],
           );
           expect(
@@ -219,7 +251,7 @@ void main() async {
             equals(['foo.bar.baz.']),
           );
 
-          await inspectorServiceLocal.setPubRootDirectories([
+          await inspectorServiceLocal.addPubRootDirectories([
             '/usr/me/clients/google3/foo/bar/baz/lib/src/bla',
             '/usr/me/clients/google3/foo/core/lib'
           ]);
@@ -237,7 +269,7 @@ void main() async {
           );
 
           // Test bazel directories without a lib directory.
-          await inspectorServiceLocal.setPubRootDirectories([
+          await inspectorServiceLocal.addPubRootDirectories([
             '/usr/me/clients/google3/foo/bar/baz',
             '/usr/me/clients/google3/foo/core/'
           ]);
@@ -253,7 +285,7 @@ void main() async {
               ['foo.bar.baz.', 'foo.core.'],
             ),
           );
-          await inspectorServiceLocal.setPubRootDirectories([
+          await inspectorServiceLocal.addPubRootDirectories([
             '/usr/me/clients/google3/third_party/dart/foo/lib/src/bla',
             '/usr/me/clients/google3/third_party/dart_src/bar/core/lib'
           ]);
@@ -298,7 +330,7 @@ void main() async {
             isFalse,
           );
 
-          await inspectorServiceLocal.setPubRootDirectories([
+          await inspectorServiceLocal.addPubRootDirectories([
             '/usr/me/clients/google3/third_party/dart/foo',
             '/usr/me/clients/google3/third_party/dart_src/bar/core'
           ]);
@@ -313,15 +345,13 @@ void main() async {
         } finally {
           // Restore.
           await inspectorServiceLocal
-              .setPubRootDirectories(originalRootDirectories);
+              .addPubRootDirectories(originalRootDirectories);
 
           await group.dispose();
         }
       });
 
       test('widget tree', () async {
-        // TODO(https://github.com/flutter/devtools/issues/4081): stop ignoring goldens when pinned to a new version with stable dependency orders
-        const ignoreGoldensForNow = true;
         await env.setupEnvironment();
         final group = inspectorService!.createObjectGroup('test-group');
         final RemoteDiagnosticsNode root =
@@ -373,26 +403,25 @@ void main() async {
         );
 
         nodeInDetailsTree = (await group.getDetailsSubtree(nodeInSummaryTree))!;
-        // ignore: dead_code
-        if (!ignoreGoldensForNow) {
-          expect(
-            treeToDebugString(nodeInDetailsTree),
-            anyOf(
-              equalsGoldenIgnoringHashCodes(
-                'inspector_service_text_details_tree.txt',
-              ),
-              equalsGoldenIgnoringHashCodes(
-                'inspector_service_text_details_tree_v2.txt',
-              ),
-              equalsGoldenIgnoringHashCodes(
-                'inspector_service_text_details_tree_v3.txt',
-              ),
-              equalsGoldenIgnoringHashCodes(
-                'inspector_service_text_details_tree_v4.txt',
-              ),
+
+        expect(
+          treeToDebugString(nodeInDetailsTree),
+          anyOf(
+            equalsGoldenIgnoringHashCodes(
+              'inspector_service_text_details_tree.txt',
             ),
-          );
-        }
+            equalsGoldenIgnoringHashCodes(
+              'inspector_service_text_details_tree_v2.txt',
+            ),
+            equalsGoldenIgnoringHashCodes(
+              'inspector_service_text_details_tree_v3.txt',
+            ),
+            equalsGoldenIgnoringHashCodes(
+              'inspector_service_text_details_tree_v4.txt',
+            ),
+          ),
+        );
+
         expect(nodeInDetailsTree.valueRef, equals(nodeInSummaryTree.valueRef));
 
         await group.setSelectionInspector(nodeInDetailsTree.valueRef, true);

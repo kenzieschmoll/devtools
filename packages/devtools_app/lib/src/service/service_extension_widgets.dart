@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -14,7 +16,6 @@ import '../primitives/utils.dart';
 import '../shared/common_widgets.dart';
 import '../shared/globals.dart';
 import '../shared/notifications.dart';
-import '../shared/scaffold.dart';
 import '../shared/theme.dart';
 import '../shared/utils.dart';
 import '../ui/hover.dart';
@@ -302,8 +303,8 @@ class _RegisteredServiceExtensionButtonState
       }),
       child: Container(
         constraints: BoxConstraints.tightFor(
-          width: DevToolsScaffold.actionWidgetSize,
-          height: DevToolsScaffold.actionWidgetSize,
+          width: actionWidgetSize,
+          height: actionWidgetSize,
         ),
         alignment: Alignment.center,
         // TODO(djshuckerow): Just make these icons the right size to fit this
@@ -539,6 +540,7 @@ class ServiceExtensionCheckboxGroupButton extends StatefulWidget {
     required this.icon,
     required this.extensions,
     required this.overlayDescription,
+    this.forceShowOverlayController,
     this.customExtensionUi = const <String, Widget>{},
     this.tooltip,
     double overlayWidthBeforeScaling = _defaultWidth,
@@ -571,6 +573,8 @@ class ServiceExtensionCheckboxGroupButton extends StatefulWidget {
   /// to describe what the settings in this overlay are for. This widget should
   /// likely be a [Text] or [RichText] widget, but any widget can be used here.
   final Widget overlayDescription;
+
+  final StreamController<void>? forceShowOverlayController;
 
   final String? tooltip;
 
@@ -615,6 +619,14 @@ class _ServiceExtensionCheckboxGroupButtonState
       });
     }
     _enabled.value = _isEnabled();
+
+    if (widget.forceShowOverlayController != null) {
+      autoDisposeStreamSubscription(
+        widget.forceShowOverlayController!.stream.listen(
+          (_) => _insertOverlay(context),
+        ),
+      );
+    }
   }
 
   bool _isEnabled() {

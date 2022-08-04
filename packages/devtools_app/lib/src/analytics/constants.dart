@@ -73,18 +73,23 @@ const trackPaints = 'trackPaints';
 const trackPaintsDocs = 'trackPaintsDocs';
 const trackLayouts = 'trackLayouts';
 const trackLayoutsDocs = 'trackLayoutsDocs';
+const smallEnhanceTracingButton = 'enhanceTracingButtonSmall';
 const disableClipLayersOption = 'disableClipLayers';
 const disableClipLayersOptionDocs = 'disableClipLayersDocs';
 const disableOpacityLayersOption = 'disableOpacityLayers';
 const disableOpacityLayersOptionDocs = 'disableOpacityLayersDocs';
 const disablePhysicalShapeLayersOption = 'disablePhysicalShapeLayers';
 const disablePhysicalShapeLayersOptionDocs = 'disablePhysicalShapeLayersDocs';
+const canvasSaveLayerDocs = 'canvasSaveLayerDocs';
+const intrinsicOperationsDocs = 'intrinsicOperationsDocs';
+const shaderCompilationDocs = 'shaderCompilationDocs';
 const shaderCompilationDocsTooltipLink = 'shaderCompilationDocsTooltipLink';
 const analyzeSelectedFrame = 'analyzeSelectedFrame';
 const collectRasterStats = 'collectRasterStats';
 
 // CPU profiler UX actions:
 const profileGranularityPrefix = 'profileGranularity';
+const profileGranularityDocs = 'profileGranularityDocs';
 const loadAllCpuSamples = 'loadAllCpuSamples';
 const profileAppStartUp = 'profileAppStartUp';
 const cpuProfileFlameChartHelp = 'cpuProfileFlameChartHelp';
@@ -134,7 +139,12 @@ const stop = 'stop';
 const export = 'export';
 const expandAll = 'expandAll';
 const collapseAll = 'collapseAll';
-const documentationLink = 'documentationLink';
+const profileModeDocs = 'profileModeDocs';
 // This should track the time from `initState` for a screen to the time when
 // the page data has loaded and is ready to interact with.
 const pageReady = 'pageReady';
+
+/// Documentation actions shared across screens.
+const documentationLink = 'documentationLink';
+String topicDocumentationButton(String topic) => '${topic}DocumentationButton';
+String topicDocumentationLink(String topic) => '${topic}DocumentationLink';
