@@ -2,13 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:vm_service/vm_service.dart';
 
+import '../../primitives/utils.dart';
 import '../../service/vm_service_wrapper.dart';
 import '../../shared/globals.dart';
 import '../debugger/debugger_model.dart';
 import '../debugger/program_explorer_model.dart';
+import 'vm_service_private_extensions.dart';
 
 /// Wrapper class for storing Dart VM objects with their relevant VM
 /// information.
@@ -43,13 +46,13 @@ abstract class VmObject {
   SourcePosition? _pos;
 
   ValueListenable<bool> get fetchingReachableSize => _fetchingReachableSize;
-  final ValueNotifier<bool> _fetchingReachableSize = ValueNotifier(false);
+  final _fetchingReachableSize = ValueNotifier<bool>(false);
 
   InstanceRef? get reachableSize => _reachableSize;
   InstanceRef? _reachableSize;
 
   ValueListenable<bool> get fetchingRetainedSize => _fetchingRetainedSize;
-  final ValueNotifier<bool> _fetchingRetainedSize = ValueNotifier(false);
+  final _fetchingRetainedSize = ValueNotifier<bool>(false);
 
   InstanceRef? get retainedSize => _retainedSize;
   InstanceRef? _retainedSize;
@@ -109,7 +112,8 @@ abstract class VmObject {
   }
 }
 
-//TODO(mtaylee): finish class implementation.
+/// Stores a 'Class' VM object and provides an interface for obtaining the
+/// Dart VM information related to this object.
 class ClassObject extends VmObject {
   ClassObject({required super.ref, super.scriptRef, super.outlineNode});
 
@@ -132,7 +136,8 @@ class ClassObject extends VmObject {
   }
 }
 
-//TODO(mtaylee): finish class implementation.
+/// Stores a function (Func type) VM object and provides an interface for
+/// obtaining the Dart VM information related to this object.
 class FuncObject extends VmObject {
   FuncObject({required super.ref, super.scriptRef, super.outlineNode});
 
@@ -144,9 +149,41 @@ class FuncObject extends VmObject {
 
   @override
   SourceLocation? get _sourceLocation => obj.location;
+
+  FunctionKind? get kind {
+    final funcKind = obj.kind;
+    return funcKind == null
+        ? null
+        : FunctionKind.values
+            .firstWhereOrNull((element) => element.kind() == funcKind);
+  }
+
+  int? get deoptimizations => obj.deoptimizations;
+
+  bool? get isOptimizable => obj.optimizable;
+
+  bool? get isInlinable => obj.inlinable;
+
+  bool? get hasIntrinsic => obj.intrinsic;
+
+  bool? get isRecognized => obj.recognized;
+
+  bool? get isNative => obj.native;
+
+  String? get vmName => obj.vmName;
+
+  late final Instance? icDataArray;
+
+  @override
+  Future<void> initialize() async {
+    await super.initialize();
+
+    icDataArray = await obj.icDataArray;
+  }
 }
 
-//TODO(mtaylee): finish class implementation.
+/// Stores a 'Field' VM object and provides an interface for obtaining the
+/// Dart VM information related to this object.
 class FieldObject extends VmObject {
   FieldObject({required super.ref, super.scriptRef, super.outlineNode});
 
@@ -158,6 +195,25 @@ class FieldObject extends VmObject {
 
   @override
   SourceLocation? get _sourceLocation => obj.location;
+
+  bool? get guardNullable => obj.guardNullable;
+
+  late final Class? guardClass;
+
+  late final GuardClassKind? guardClassKind;
+
+  @override
+  Future<void> initialize() async {
+    await super.initialize();
+
+    guardClassKind = obj.guardClassKind();
+
+    if (guardClassKind == GuardClassKind.single) {
+      guardClass = await obj.guardClass;
+    } else {
+      guardClass = null;
+    }
+  }
 }
 
 //TODO(mtaylee): finish class implementation.
@@ -172,9 +228,12 @@ class LibraryObject extends VmObject {
 
   @override
   String? get name => obj.name;
+
+  String? get vmName => obj.vmName;
 }
 
-//TODO(mtaylee): finish class implementation.
+/// Stores a 'Script' VM object and provides an interface for obtaining the
+/// Dart VM information related to this object.
 class ScriptObject extends VmObject {
   ScriptObject({required super.ref, super.scriptRef, super.outlineNode});
 
@@ -185,7 +244,9 @@ class ScriptObject extends VmObject {
   SourceLocation? get _sourceLocation => null;
 
   @override
-  String? get name => null;
+  String? get name => fileNameFromUri(obj.uri ?? scriptRef?.uri);
+
+  DateTime get loadTime => DateTime.fromMillisecondsSinceEpoch(obj.loadTime);
 }
 
 //TODO(mtaylee): finish class implementation.

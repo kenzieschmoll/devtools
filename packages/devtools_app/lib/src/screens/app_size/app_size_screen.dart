@@ -15,7 +15,6 @@ import '../../primitives/utils.dart';
 import '../../shared/common_widgets.dart';
 import '../../shared/file_import.dart';
 import '../../shared/globals.dart';
-import '../../shared/notifications.dart';
 import '../../shared/screen.dart';
 import '../../shared/split.dart';
 import '../../shared/theme.dart';
@@ -157,7 +156,7 @@ class _AppSizeBodyState extends State<AppSizeBody>
   }
 
   void _pushErrorMessage(String error) {
-    if (mounted) Notifications.of(context)!.push(error);
+    if (mounted) notificationService.push(error);
   }
 
   @override
@@ -208,11 +207,11 @@ class _AppSizeBodyState extends State<AppSizeBody>
                   ),
                   Row(
                     children: [
-                      if (currentTab.key == AppSizeScreen.analysisTabKey &&
-                          isDeferredApp)
-                        _buildAppUnitDropdown(),
-                      if (currentTab.key == AppSizeScreen.diffTabKey)
+                      if (isDeferredApp) _buildAppUnitDropdown(currentTab.key!),
+                      if (currentTab.key == AppSizeScreen.diffTabKey) ...[
+                        const SizedBox(width: defaultSpacing),
                         _buildDiffTreeTypeDropdown(),
+                      ],
                       const SizedBox(width: defaultSpacing),
                       _buildClearButton(currentTab.key!),
                     ],
@@ -253,7 +252,7 @@ class _AppSizeBodyState extends State<AppSizeBody>
     );
   }
 
-  DropdownButtonHideUnderline _buildAppUnitDropdown() {
+  DropdownButtonHideUnderline _buildAppUnitDropdown(Key tabKey) {
     return DropdownButtonHideUnderline(
       key: AppSizeScreen.appUnitDropdownKey,
       child: DropdownButton<AppUnit>(
@@ -265,7 +264,7 @@ class _AppSizeBodyState extends State<AppSizeBody>
         ],
         onChanged: (newAppUnit) {
           setState(() {
-            controller.changeSelectedAppUnit(newAppUnit!);
+            controller.changeSelectedAppUnit(newAppUnit!, tabKey);
           });
         },
       ),
@@ -436,7 +435,7 @@ class _AnalysisViewState extends State<AnalysisView>
                     controller.loadTreeFromJsonFile(
                       jsonFile: jsonFile,
                       onError: (error) {
-                        if (mounted) Notifications.of(context)!.push(error);
+                        if (mounted) notificationService.push(error);
                       },
                     );
                   },

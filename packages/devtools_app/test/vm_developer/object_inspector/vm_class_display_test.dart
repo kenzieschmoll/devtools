@@ -2,9 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'package:devtools_app/devtools_app.dart';
+import 'package:devtools_app/src/config_specific/ide_theme/ide_theme.dart';
 import 'package:devtools_app/src/screens/vm_developer/vm_class_display.dart';
 import 'package:devtools_app/src/screens/vm_developer/vm_developer_common_widgets.dart';
+import 'package:devtools_app/src/shared/globals.dart';
 import 'package:devtools_test/devtools_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -30,33 +31,16 @@ void main() {
 
     testClassCopy.size = 1024;
 
-    when(mockClassObject.outlineNode).thenReturn(null);
-    when(mockClassObject.scriptRef).thenReturn(null);
-    when(mockClassObject.name).thenReturn('FooClass');
-    when(mockClassObject.ref).thenReturn(testClass);
+    mockVmObject(mockClassObject);
     when(mockClassObject.obj).thenReturn(testClassCopy);
-    when(mockClassObject.script).thenReturn(testScript);
-    when(mockClassObject.instances).thenReturn(testInstances);
-    when(mockClassObject.pos).thenReturn(testPos);
-    when(mockClassObject.fetchingReachableSize)
-        .thenReturn(ValueNotifier<bool>(false));
-    when(mockClassObject.reachableSize).thenReturn(testRequestableSize);
-    when(mockClassObject.fetchingRetainedSize)
-        .thenReturn(ValueNotifier<bool>(false));
-    when(mockClassObject.retainedSize).thenReturn(testRequestableSize);
-    when(mockClassObject.retainingPath).thenReturn(
-      ValueNotifier<RetainingPath?>(testRetainingPath),
-    );
-    when(mockClassObject.inboundReferences).thenReturn(
-      ValueNotifier<InboundReferences?>(testInboundRefs),
-    );
   });
 
   testWidgetsWithWindowSize('builds class display', windowSize,
       (WidgetTester tester) async {
     await tester.pumpWidget(wrap(VmClassDisplay(clazz: mockClassObject)));
 
-    expect(find.byType(ClassInfoWidget), findsOneWidget);
+    expect(find.byType(VmObjectDisplayBasicLayout), findsOneWidget);
+    expect(find.byType(VMInfoCard), findsOneWidget);
     expect(find.text('General Information'), findsOneWidget);
     expect(find.text('1 KB'), findsOneWidget);
     expect(find.text('fooLib'), findsOneWidget);
@@ -73,6 +57,5 @@ void main() {
     expect(find.byType(InboundReferencesWidget), findsOneWidget);
 
     // TODO(mtaylee): test ClassInstancesWidget when implemented
-    // expect(find.byType(ClassInstancesWidget), findsOneWidget);
   });
 }

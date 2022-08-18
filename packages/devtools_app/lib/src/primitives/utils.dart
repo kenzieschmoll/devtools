@@ -1217,6 +1217,19 @@ class ListValueNotifier<T> extends ChangeNotifier
     _listChanged();
   }
 
+  /// Replaces the first occurrence of [value] in this list.
+  ///
+  /// Runtime is O(n).
+  bool replace(T existing, T replacement) {
+    final index = _rawList.indexOf(existing);
+    if (index == -1) return false;
+    _rawList = _rawList.toList();
+    _rawList.removeAt(index);
+    _rawList.insert(index, replacement);
+    _listChanged();
+    return true;
+  }
+
   /// Replaces all elements in the list and notifies listeners. It's preferred
   /// to calling .clear() then .addAll(), because it only notifies listeners
   /// once.
@@ -1457,3 +1470,10 @@ bool isPrimativeInstanceKind(String? kind) {
       kind == InstanceKind.kNull ||
       kind == InstanceKind.kString;
 }
+
+// TODO(mtaylee): Prefer to use this helper method whenever a call to
+// .split('/').last is made on a String (usually on URIs).
+// See https://github.com/flutter/devtools/issues/4360.
+/// Returns the file name from a URI or path string, by splitting the [uri] at
+/// the directory separators '/', and returning the last element.
+String? fileNameFromUri(String? uri) => uri?.split('/').last;

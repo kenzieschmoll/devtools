@@ -22,6 +22,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 
 import '../test_data/app_size/deferred_app.dart';
+import '../test_data/app_size/diff_deferred_app.dart';
+import '../test_data/app_size/diff_no_deferred_app.dart';
 import '../test_data/app_size/new_v8.dart';
 import '../test_data/app_size/old_v8.dart';
 import '../test_data/app_size/sizes.dart';
@@ -31,6 +33,7 @@ void main() {
   setUp(() {
     setGlobal(ServiceConnectionManager, FakeServiceManager());
     setGlobal(IdeTheme, IdeTheme());
+    setGlobal(NotificationService, NotificationService());
   });
 
   final lastModifiedTime = DateTime.parse('2020-07-28 13:29:00');
@@ -51,6 +54,18 @@ void main() {
     name: 'lib/src/app_size/stub_data/deferred_app.dart',
     lastModifiedTime: lastModifiedTime,
     data: json.decode(deferredApp),
+  );
+
+  DevToolsJsonFile(
+    name: 'lib/src/app_size/stub_data/diff_deferred_app.dart',
+    lastModifiedTime: lastModifiedTime,
+    data: json.decode(diffDeferredApp),
+  );
+
+  DevToolsJsonFile(
+    name: 'lib/src/app_size/stub_data/diff_no_deferred_app.dart',
+    lastModifiedTime: lastModifiedTime,
+    data: json.decode(diffNonDeferredApp),
   );
 
   late AppSizeScreen screen;
@@ -397,8 +412,6 @@ void main() {
   });
 
   group('AppSizeController', () {
-    late BuildContext buildContext;
-
     setUp(() async {
       screen = const AppSizeScreen();
       appSizeController = AppSizeTestController();
@@ -411,10 +424,9 @@ void main() {
       await tester.pumpWidget(
         wrapWithControllers(
           MaterialApp(
-            builder: (context, child) => Notifications(child: child!),
+            builder: (context, child) => child!,
             home: Builder(
               builder: (context) {
-                buildContext = context;
                 return const AppSizeBody();
               },
             ),
@@ -443,7 +455,7 @@ void main() {
           lastModifiedTime: lastModifiedTime,
           data: json.decode(secondFile),
         ),
-        onError: (error) => Notifications.of(buildContext)!.push(error),
+        onError: (error) => notificationService.push(error),
       );
       await tester.pumpAndSettle();
     }
@@ -462,7 +474,7 @@ void main() {
           lastModifiedTime: lastModifiedTime,
           data: unsupportedFile,
         ),
-        onError: (error) => Notifications.of(buildContext)!.push(error),
+        onError: (error) => notificationService.push(error),
       );
       await tester.pumpAndSettle();
       expect(
@@ -497,6 +509,162 @@ void main() {
       expect(
         find.text(AppSizeController.unsupportedFileTypeError),
         findsOneWidget,
+      );
+    });
+
+    testWidgetsWithWindowSize(
+        'builds deferred content for diff table', windowSize,
+        (WidgetTester tester) async {
+      await pumpAppSizeScreen(
+        tester,
+        controller: appSizeController,
+      );
+      await tester.tap(find.byKey(AppSizeScreen.diffTabKey));
+      await tester.pumpAndSettle();
+
+      await loadDiffTreeAndPump(tester, diffNonDeferredApp, diffDeferredApp);
+
+      // Verify the dropdown for selecting app units exists.
+      final appUnitDropdownFinder = _findDropdownButton<AppUnit>();
+      expect(appUnitDropdownFinder, findsOneWidget);
+
+      // Open the app unit dropdown.
+      await tester.tap(appUnitDropdownFinder);
+      await tester.pumpAndSettle();
+
+      // Verify the menu items in the dropdown are expected.
+      final entireAppMenuItemFinder =
+          _findMenuItemWithText<AppUnit>('Entire App');
+      expect(entireAppMenuItemFinder, findsOneWidget);
+      final mainMenuItemFinder = _findMenuItemWithText<AppUnit>('Main');
+      expect(mainMenuItemFinder, findsOneWidget);
+      final deferredMenuItemFinder = _findMenuItemWithText<AppUnit>('Deferred');
+      expect(deferredMenuItemFinder, findsOneWidget);
+
+      // Select the main unit.
+      await tester.tap(find.text('Main').hitTestable());
+      await tester.pumpAndSettle();
+
+      // Verify the main unit is shown for entire app.
+      final mainBreadcrumbs = _fetchBreadcrumbs(tester);
+      expect(mainBreadcrumbs.length, 1);
+      expect(
+        mainBreadcrumbs.first.text,
+        equals(
+          '/Main/appsize_app.app/Contents/Frameworks/App.framework/Resources/flutter_assets [-344.3 KB]',
+        ),
+      );
+      expect(
+        find.richText('packages/cupertino_icons/assets [-276.8 KB]'),
+        findsOneWidget,
+      );
+
+      // Open the diffType dropdown.
+      await tester.tap(find.byKey(AppSizeScreen.diffTypeDropdownKey));
+      await tester.pumpAndSettle();
+
+      // Select increase only.
+      await tester.tap(find.text('Increase Only').hitTestable());
+      await tester.pumpAndSettle();
+
+      // Verify the main unit is shown for increase only.
+      final mainIncreaseBreadcrumbs = _fetchBreadcrumbs(tester);
+      expect(mainIncreaseBreadcrumbs.length, 1);
+      expect(
+        mainIncreaseBreadcrumbs.first.text,
+        equals(
+          '/Main/appsize_app.app/Contents/Frameworks/App.framework/Resources/flutter_assets [0 B]',
+        ),
+      );
+
+      // Open the diffType dropdown.
+      await tester.tap(find.byKey(AppSizeScreen.diffTypeDropdownKey));
+      await tester.pumpAndSettle();
+
+      // Select decrease only.
+      await tester.tap(find.text('Decrease Only').hitTestable());
+      await tester.pumpAndSettle();
+
+      // Verify the main unit is shown for decrease only.
+      final mainDecreaseBreadcrumbs = _fetchBreadcrumbs(tester);
+      expect(mainDecreaseBreadcrumbs.length, 1);
+      expect(
+        mainDecreaseBreadcrumbs.first.text,
+        equals(
+          '/Main/appsize_app.app/Contents/Frameworks/App.framework/Resources/flutter_assets [-344.3 KB]',
+        ),
+      );
+      expect(
+        find.richText('packages/cupertino_icons/assets [-276.8 KB]'),
+        findsOneWidget,
+      );
+
+      // Open the diffType dropdown.
+      await tester.tap(find.byKey(AppSizeScreen.diffTypeDropdownKey));
+      await tester.pumpAndSettle();
+
+      // Select entire app.
+      await tester.tap(find.text('Combined').hitTestable());
+      await tester.pumpAndSettle();
+
+      // Open the app unit dropdown.
+      await tester.tap(appUnitDropdownFinder);
+      await tester.pumpAndSettle();
+
+      // Select the deferred units.
+      await tester.tap(find.text('Deferred').hitTestable());
+      await tester.pumpAndSettle();
+
+      // Verify the deferred units are shown for entire app.
+      final deferredBreadcrumbs = _fetchBreadcrumbs(tester);
+      expect(deferredBreadcrumbs.length, 1);
+      expect(
+        deferredBreadcrumbs.first.text,
+        equals('/Deferred/flutter_assets [+344.3 KB]'),
+      );
+      expect(
+        find.richText('packages/cupertino_icons/assets [+276.8 KB]'),
+        findsOneWidget,
+      );
+
+      // Open the diffType dropdown.
+      await tester.tap(find.byKey(AppSizeScreen.diffTypeDropdownKey));
+      await tester.pumpAndSettle();
+
+      // Select increase only.
+      await tester.tap(find.text('Increase Only').hitTestable());
+      await tester.pumpAndSettle();
+
+      // Verify the deferred unit is shown for increase only.
+      final deferredIncreaseBreadcrumbs = _fetchBreadcrumbs(tester);
+      expect(deferredIncreaseBreadcrumbs.length, 1);
+      expect(
+        deferredIncreaseBreadcrumbs.first.text,
+        equals(
+          '/Deferred/flutter_assets [+344.3 KB]',
+        ),
+      );
+      expect(
+        find.richText('packages/cupertino_icons/assets [+276.8 KB]'),
+        findsOneWidget,
+      );
+
+      // Open the diffType dropdown.
+      await tester.tap(find.byKey(AppSizeScreen.diffTypeDropdownKey));
+      await tester.pumpAndSettle();
+
+      // Select decrease only.
+      await tester.tap(find.text('Decrease Only').hitTestable());
+      await tester.pumpAndSettle();
+
+      // Verify the main unit is shown for decrease only.
+      final deferredDecreaseBreadcrumbs = _fetchBreadcrumbs(tester);
+      expect(deferredDecreaseBreadcrumbs.length, 1);
+      expect(
+        deferredDecreaseBreadcrumbs.first.text,
+        equals(
+          '/Deferred/flutter_assets [0 B]',
+        ),
       );
     });
   });

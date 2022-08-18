@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide Stack;
 import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
@@ -11,7 +12,6 @@ import '../../primitives/listenable.dart';
 import '../../primitives/utils.dart';
 import '../../shared/common_widgets.dart';
 import '../../shared/globals.dart';
-import '../../shared/notifications.dart';
 import '../../shared/object_tree.dart';
 import '../../shared/routing.dart';
 import '../../shared/theme.dart';
@@ -166,7 +166,6 @@ Widget displayProvider(
             ? (delegate) async {
                 delegate.hideToolbar();
                 final router = DevToolsRouterDelegate.of(context);
-                final notifications = Notifications.of(context);
                 final inspectorService = serviceManager.inspectorService;
                 if (await variable.inspectWidget()) {
                   router.navigateIfNotCurrent(InspectorScreen.id);
@@ -175,11 +174,11 @@ Widget displayProvider(
                   final isInspectable = await variable.isInspectable;
                   if (inspectorService.isDisposed) return;
                   if (isInspectable) {
-                    notifications?.push(
+                    notificationService.push(
                       'Widget is already the current inspector selection.',
                     );
                   } else {
-                    notifications?.push(
+                    notificationService.push(
                       'Only Elements and RenderObjects can currently be inspected',
                     );
                   }
@@ -210,7 +209,7 @@ class VariableSelectionControls extends MaterialTextSelectionControls {
     Offset selectionMidpoint,
     List<TextSelectionPoint> endpoints,
     TextSelectionDelegate delegate,
-    ValueNotifier<ClipboardStatus>? clipboardStatus,
+    ValueListenable<ClipboardStatus>? clipboardStatus,
     Offset? lastSecondaryTapDownPosition,
   ) {
     return _TextSelectionControlsToolbar(
@@ -248,7 +247,7 @@ class _TextSelectionControlsToolbar extends StatefulWidget {
     required this.textLineHeight,
   }) : super(key: key);
 
-  final ValueNotifier<ClipboardStatus> clipboardStatus;
+  final ValueListenable<ClipboardStatus> clipboardStatus;
   final TextSelectionDelegate delegate;
   final List<TextSelectionPoint> endpoints;
   final Rect globalEditableRegion;
