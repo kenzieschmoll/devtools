@@ -107,7 +107,15 @@ class PerfettoController extends DisposableController
   }
 
   Future<void> scrollToTimeRange(TimeRange timeRange) async {
-    assert(timeRange.isWellFormed);
+    // this isn't working.
+    if (!timeRange.isWellFormed) {
+      notificationService.push(
+        'No timeline events available for the selected frame. Timeline '
+        'events occurred too long ago before DevTools could access them. '
+        'To avoid this, open the DevTools Performance page sooner.',
+      );
+      return;
+    }
     await _pingPerfettoUntilReady();
     _postMessage({
       'perfetto': {
