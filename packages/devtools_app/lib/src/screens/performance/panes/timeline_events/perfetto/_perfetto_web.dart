@@ -36,6 +36,7 @@ class _PerfettoState extends State<Perfetto> with AutoDisposeMixin {
 
   @override
   void initState() {
+    print('_PerfettoState.initState');
     super.initState();
     _perfettoController = widget.perfettoController as PerfettoControllerImpl;
     _viewController = _PerfettoViewController(_perfettoController)..init();
@@ -69,6 +70,7 @@ class _PerfettoState extends State<Perfetto> with AutoDisposeMixin {
 
   @override
   Widget build(BuildContext context) {
+    print('_PerfettoState.build');
     return Container(
       color: Theme.of(context).scaffoldBackgroundColor,
       child: HtmlElementView(
@@ -79,6 +81,7 @@ class _PerfettoState extends State<Perfetto> with AutoDisposeMixin {
 
   @override
   void dispose() {
+    print('_PerfettoState.dispose');
     _viewController.dispose();
     super.dispose();
   }
@@ -149,27 +152,30 @@ class _PerfettoViewController extends DisposableController
   static const _pollUntilReadyTimeout = Duration(seconds: 10);
 
   void init() {
+    print('_PerfettoViewController.init');
     _perfettoIFrameReady = Completer<bool>();
     _perfettoHandlerReady = Completer();
     _devtoolsThemeHandlerReady = Completer();
 
     unawaited(
       perfettoController.perfettoIFrame.onLoad.first.then((_) {
+        print('_PerfettoViewController - _perfettoIFrameReady.complete()');
         _perfettoIFrameReady.complete();
       }),
     );
 
     html.window.addEventListener('message', _handleMessage);
 
-    if (isExternalBuild) {
-      unawaited(_loadStyle(preferences.darkModeTheme.value));
-      addAutoDisposeListener(preferences.darkModeTheme, () async {
-        await _loadStyle(preferences.darkModeTheme.value);
-      });
-    }
+    // if (isExternalBuild) {
+    //   unawaited(_loadStyle(preferences.darkModeTheme.value));
+    //   addAutoDisposeListener(preferences.darkModeTheme, () async {
+    //     await _loadStyle(preferences.darkModeTheme.value);
+    //   });
+    // }
   }
 
   Future<void> _loadTrace(List<TraceEventWrapper> devToolsTraceEvents) async {
+    await _pingPerfettoUntilReady();
     final encodedJson = jsonEncode({
       'traceEvents': devToolsTraceEvents
           .map((eventWrapper) => eventWrapper.event.json)
@@ -177,6 +183,7 @@ class _PerfettoViewController extends DisposableController
     });
     final buffer = Uint8List.fromList(encodedJson.codeUnits);
 
+    print('calling _postMessage from _loadTrace');
     _postMessage({
       'perfetto': {
         'buffer': buffer,
@@ -198,6 +205,7 @@ class _PerfettoViewController extends DisposableController
       return;
     }
     await _pingPerfettoUntilReady();
+    print('calling _postMessage from _scrollToTimeRange');
     _postMessage({
       'perfetto': {
         // Pass the values to Perfetto in seconds.
@@ -223,7 +231,9 @@ class _PerfettoViewController extends DisposableController
   }
 
   void _postMessage(dynamic message) async {
+    print('in the _postMessage waiting for _perfettoIFrameReady.future');
     await _perfettoIFrameReady.future;
+    print('in the _postMessage AFTER waiting for _perfettoIFrameReady.future');
     assert(
       perfettoController.perfettoIFrame.contentWindow != null,
       'Something went wrong. The iFrame\'s contentWindow is null after the'
@@ -244,6 +254,7 @@ class _PerfettoViewController extends DisposableController
       'msgId': id,
       if (perfettoIgnore) 'perfettoIgnore': true,
     }..addAll(args);
+    print('calling _postMessage from _postMessageWithId with $id');
     _postMessage(message);
   }
 
@@ -266,6 +277,7 @@ class _PerfettoViewController extends DisposableController
           Timer.periodic(const Duration(milliseconds: 200), (_) async {
         // Once the Perfetto UI is ready, Perfetto will receive this 'PING'
         // message and return a 'PONG' message, handled in [_handleMessage].
+        print('posting PING. The Perfetto iFrame should respond with PONG.');
         _postMessage(_perfettoPing);
       });
 
