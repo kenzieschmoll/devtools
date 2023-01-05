@@ -11,27 +11,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:vm_service/vm_service.dart';
 
-import '../../shared/globals.dart';
-import '../../shared/primitives/auto_dispose.dart';
-import '../../shared/primitives/utils.dart';
-import '../../shared/theme.dart';
-import '../../shared/ui/search.dart';
-import '../../shared/ui/utils.dart';
-import 'debugger_controller.dart';
+import '../../connected_app.dart';
+import '../../globals.dart';
+import '../../primitives/auto_dispose.dart';
+import '../../primitives/utils.dart';
+import '../../theme.dart';
+import '../../ui/search.dart';
+import '../../ui/utils.dart';
+import '../eval/eval_service.dart';
+import '../primitives/eval_history.dart';
 
 typedef AutoCompleteResultsFunction = Future<List<String>> Function(
   EditingParts parts,
-  DebuggerController controller,
+  EvalService evalService,
 );
 
 class ExpressionEvalField extends StatefulWidget {
   const ExpressionEvalField({
-    required this.controller,
     AutoCompleteResultsFunction? getAutoCompleteResults,
   }) : getAutoCompleteResults =
             getAutoCompleteResults ?? autoCompleteResultsFor;
 
-  final DebuggerController controller;
   final AutoCompleteResultsFunction getAutoCompleteResults;
 
   @override
@@ -156,7 +156,7 @@ class ExpressionEvalFieldState extends State<ExpressionEvalField>
       final matches =
           parts.activeWord.startsWith(_activeWord) && _activeWord.isNotEmpty
               ? _filterMatches(_matches, parts.activeWord)
-              : await widget.getAutoCompleteResults(parts, widget.controller);
+              : await widget.getAutoCompleteResults(parts, evalService);
 
       _matches = matches;
       _activeWord = parts.activeWord;
@@ -294,7 +294,7 @@ class ExpressionEvalFieldState extends State<ExpressionEvalField>
 
   void _handleExpressionEval() async {
     final expressionText = searchTextFieldController.value.text.trim();
-    updateSearchField(_autoCompleteController, newValue: '', caretPosition: 0);
+    updateSearchField(newValue: '', caretPosition: 0);
     clearSearchField(_autoCompleteController, force: true);
 
     if (expressionText.isEmpty) return;
@@ -310,14 +310,13 @@ class ExpressionEvalFieldState extends State<ExpressionEvalField>
     serviceManager.consoleService.appendStdio('> $expressionText\n');
     setState(() {
       historyPosition = -1;
-      widget.controller.evalHistory.pushEvalHistory(expressionText);
+      _appState.evalHistory.pushEvalHistory(expressionText);
     });
 
     try {
       // Response is either a ErrorRef, InstanceRef, or Sentinel.
-      final isolateRef = widget.controller.isolateRef;
-      final response =
-          await widget.controller.evalAtCurrentFrame(expressionText);
+      final isolateRef = serviceManager.isolateManager.selectedIsolate.value;
+      final response = await evalService.evalAtCurrentFrame(expressionText);
 
       // Display the response to the user.
       if (response is InstanceRef) {
@@ -342,7 +341,6 @@ class ExpressionEvalFieldState extends State<ExpressionEvalField>
   void _emitToConsole(String text) {
     serviceManager.consoleService.appendStdio(
       '  ${text.replaceAll('\n', '\n  ')}\n',
-      forceScrollIntoView: true,
     );
   }
 
@@ -364,16 +362,17 @@ class ExpressionEvalFieldState extends State<ExpressionEvalField>
     super.dispose();
   }
 
+  EvalHistory get _evalHistory => _appState.evalHistory;
+
   void _historyNavUp() {
-    final evalHistory = widget.controller.evalHistory;
-    if (!evalHistory.canNavigateUp) {
+    if (!_evalHistory.canNavigateUp) {
       return;
     }
 
     setState(() {
-      evalHistory.navigateUp();
+      _evalHistory.navigateUp();
 
-      final text = evalHistory.currentText ?? '';
+      final text = _evalHistory.currentText ?? '';
       searchTextFieldController.value = TextEditingValue(
         text: text,
         selection: TextSelection.collapsed(offset: text.length),
@@ -382,15 +381,14 @@ class ExpressionEvalFieldState extends State<ExpressionEvalField>
   }
 
   void _historyNavDown() {
-    final evalHistory = widget.controller.evalHistory;
-    if (!evalHistory.canNavigateDown) {
+    if (!_evalHistory.canNavigateDown) {
       return;
     }
 
     setState(() {
-      evalHistory.navigateDown();
+      _evalHistory.navigateDown();
 
-      final text = evalHistory.currentText ?? '';
+      final text = _evalHistory.currentText ?? '';
       searchTextFieldController.value = TextEditingValue(
         text: text,
         selection: TextSelection.collapsed(offset: text.length),
@@ -399,13 +397,15 @@ class ExpressionEvalFieldState extends State<ExpressionEvalField>
   }
 }
 
+AppState get _appState => serviceManager.appState;
+
 Future<List<String>> autoCompleteResultsFor(
   EditingParts parts,
-  DebuggerController controller,
+  EvalService evalService,
 ) async {
   final result = <String>{};
   if (!parts.isField) {
-    final variables = controller.variables.value;
+    final variables = _appState.variables.value;
     result.addAll(removeNullValues(variables.map((variable) => variable.name)));
 
     final thisVariable = variables.firstWhereOrNull(
@@ -422,30 +422,30 @@ Future<List<String>> autoCompleteResultsFor(
         await _addAllInstanceMembersToAutocompleteList(
           result,
           thisValue,
-          controller,
+          evalService,
         );
         final classRef = thisValue.classRef;
         if (classRef != null) {
           result.addAll(
             await _autoCompleteMembersFor(
               classRef,
-              controller,
+              evalService,
               staticContext: true,
             ),
           );
         }
       }
     }
-    final frame = controller.frameForEval;
+    final frame = _appState.currentFrame.value;
     if (frame != null) {
       final function = frame.function;
       if (function != null) {
-        final libraryRef = await controller.findOwnerLibrary(function);
+        final libraryRef = await evalService.findOwnerLibrary(function);
         if (libraryRef != null) {
           result.addAll(
             await libraryMemberAndImportsAutocompletes(
               libraryRef,
-              controller,
+              evalService,
             ),
           );
         }
@@ -456,7 +456,7 @@ Future<List<String>> autoCompleteResultsFor(
     // Removing trailing `.`.
     left = left.substring(0, left.length - 1);
     try {
-      final response = await controller.evalAtCurrentFrame(left);
+      final response = await evalService.evalAtCurrentFrame(left);
       if (response is InstanceRef) {
         final typeClass = response.typeClass;
         if (typeClass != null) {
@@ -467,7 +467,7 @@ Future<List<String>> autoCompleteResultsFor(
           result.addAll(
             await _autoCompleteMembersFor(
               typeClass,
-              controller,
+              evalService,
               staticContext: true,
             ),
           );
@@ -475,7 +475,7 @@ Future<List<String>> autoCompleteResultsFor(
           await _addAllInstanceMembersToAutocompleteList(
             result,
             response,
-            controller,
+            evalService,
           );
         }
       }
@@ -495,12 +495,12 @@ bool debugIncludeExports = true;
 
 Future<Set<String>> libraryMemberAndImportsAutocompletes(
   LibraryRef libraryRef,
-  DebuggerController controller,
+  EvalService evalService,
 ) async {
   final values = removeNullValues(
-    await controller.libraryMemberAndImportsAutocompleteCache.putIfAbsent(
+    await _appState.cache.libraryMemberAndImportsAutocomplete.putIfAbsent(
       libraryRef,
-      () => _libraryMemberAndImportsAutocompletes(libraryRef, controller),
+      () => _libraryMemberAndImportsAutocompletes(libraryRef, evalService),
     ),
   );
   return values.toSet();
@@ -508,20 +508,20 @@ Future<Set<String>> libraryMemberAndImportsAutocompletes(
 
 Future<Set<String>> _libraryMemberAndImportsAutocompletes(
   LibraryRef libraryRef,
-  DebuggerController controller,
+  EvalService evalService,
 ) async {
   final result = <String>{};
   try {
     final List<Future<Set<String>>> futures = <Future<Set<String>>>[];
     futures.add(
       libraryMemberAutocompletes(
-        controller,
+        evalService,
         libraryRef,
         includePrivates: true,
       ),
     );
 
-    final Library library = await controller.getObject(libraryRef) as Library;
+    final Library library = await evalService.getObject(libraryRef) as Library;
     final dependencies = library.dependencies;
 
     if (dependencies != null) {
@@ -535,7 +535,7 @@ Future<Set<String>> _libraryMemberAndImportsAutocompletes(
         } else if (target != null) {
           futures.add(
             libraryMemberAutocompletes(
-              controller,
+              evalService,
               target,
               includePrivates: false,
             ),
@@ -551,14 +551,14 @@ Future<Set<String>> _libraryMemberAndImportsAutocompletes(
 }
 
 Future<Set<String>> libraryMemberAutocompletes(
-  DebuggerController controller,
+  EvalService evalService,
   LibraryRef libraryRef, {
   required bool includePrivates,
 }) async {
   var result = removeNullValues(
-    await controller.libraryMemberAutocompleteCache.putIfAbsent(
+    await _appState.cache.libraryMemberAutocomplete.putIfAbsent(
       libraryRef,
-      () => _libraryMemberAutocompletes(controller, libraryRef),
+      () => _libraryMemberAutocompletes(evalService, libraryRef),
     ),
   );
   if (!includePrivates) {
@@ -568,11 +568,11 @@ Future<Set<String>> libraryMemberAutocompletes(
 }
 
 Future<Set<String>> _libraryMemberAutocompletes(
-  DebuggerController controller,
+  EvalService evalService,
   LibraryRef libraryRef,
 ) async {
   final result = <String>{};
-  final Library library = await controller.getObject(libraryRef) as Library;
+  final Library library = await evalService.getObject(libraryRef) as Library;
   final variables = library.variables;
   if (variables != null) {
     final fields = variables.map((field) => field.name);
@@ -603,7 +603,7 @@ Future<Set<String>> _libraryMemberAutocompletes(
         } else if (target != null) {
           futures.add(
             libraryMemberAutocompletes(
-              controller,
+              evalService,
               target,
               includePrivates: false,
             ),
@@ -621,7 +621,7 @@ Future<Set<String>> _libraryMemberAutocompletes(
 Future<void> _addAllInstanceMembersToAutocompleteList(
   Set<String> result,
   InstanceRef response,
-  DebuggerController controller,
+  EvalService controller,
 ) async {
   final Instance instance = await controller.getObject(response) as Instance;
   final classRef = instance.classRef;
@@ -650,7 +650,7 @@ Future<void> _addAllInstanceMembersToAutocompleteList(
 
 Future<Set<String>> _autoCompleteMembersFor(
   ClassRef classRef,
-  DebuggerController controller, {
+  EvalService controller, {
   required bool staticContext,
 }) async {
   final result = <String>{};
@@ -730,8 +730,12 @@ bool _isOperator(FuncRef funcRef) => const {
 bool _isConstructor(FuncRef funcRef, Class clazz) =>
     funcRef.name == clazz.name || funcRef.name!.startsWith('${clazz.name}.');
 
-bool _isAccessible(String member, Class? clazz, DebuggerController controller) {
-  final frame = controller.frameForEval!;
+bool _isAccessible(
+  String member,
+  Class? clazz,
+  EvalService evalService,
+) {
+  final frame = _appState.currentFrame.value!;
   final currentScript = frame.location!.script;
   return !isPrivate(member) || currentScript!.id == clazz?.location?.script?.id;
 }

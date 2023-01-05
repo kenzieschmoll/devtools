@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-library diagnostics_node;
-
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -11,10 +9,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:vm_service/vm_service.dart';
 
-import '../../shared/primitives/enum_utils.dart';
-import '../../shared/primitives/utils.dart';
-import '../../shared/ui/icons.dart';
-import '../debugger/debugger_model.dart';
+import '../../primitives/enum_utils.dart';
+import '../../primitives/utils.dart';
+import '../../ui/icons.dart';
+import '../primitives/instance_ref.dart';
+import '../primitives/source_location.dart';
 import 'inspector_service.dart';
 
 final diagnosticLevelUtils = EnumUtils<DiagnosticLevel>(DiagnosticLevel.values);
@@ -171,7 +170,7 @@ class RemoteDiagnosticsNode extends DiagnosticableTree {
   bool? _isLocalClass;
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (other is! RemoteDiagnosticsNode) return false;
     return dartDiagnosticRef == other.dartDiagnosticRef;
   }
@@ -283,7 +282,7 @@ class RemoteDiagnosticsNode extends DiagnosticableTree {
   ///
   /// Only applies to IterableProperty.
   List<String>? get values {
-    final rawValues = json['values'] as List<Object>?;
+    final rawValues = json['values'] as List<Object?>?;
     if (rawValues == null) {
       return null;
     }
@@ -297,7 +296,7 @@ class RemoteDiagnosticsNode extends DiagnosticableTree {
   /// interactive object debugger view to get more information on what the value
   /// is.
   List<bool>? get primitiveValues {
-    final rawValues = json['primitiveValues'] as List<Object>?;
+    final rawValues = json['primitiveValues'] as List<Object?>?;
     if (rawValues == null) {
       return null;
     }
@@ -520,7 +519,7 @@ class RemoteDiagnosticsNode extends DiagnosticableTree {
     // that indicates the node should have no children in the tree while if the
     // 'children' property is not specified it means we do not know whether
     // there is a list of children and need to query the server to find out.
-    final children = json['children'] as List<dynamic>?;
+    final children = json['children'] as List<Object?>?;
     if (children != null) {
       return children.isNotEmpty;
     }
@@ -574,7 +573,7 @@ class RemoteDiagnosticsNode extends DiagnosticableTree {
     }
   }
 
-  Future<List<RemoteDiagnosticsNode>> _getChildrenHelper() async {
+  Future<List<RemoteDiagnosticsNode>> _getChildrenHelper() {
     return inspectorService!.getChildren(
       dartDiagnosticRef,
       isSummaryTree,
@@ -704,39 +703,33 @@ class RemoteDiagnosticsNode extends DiagnosticableTree {
   }
 }
 
-class InspectorSourceLocation {
-  InspectorSourceLocation(this.json, this.parent);
+/// A generic [InstanceRef] using either format used by the [InspectorService]
+/// or Dart VM.
+///
+/// Either one or both of [value] and [diagnostic] may be provided. The
+/// `valueRef` getter on the [diagnostic] should refer to the same object as
+/// [instanceRef] although using the [InspectorInstanceRef] scheme.
+/// A [RemoteDiagnosticsNode] is used rather than an [InspectorInstanceRef] as
+/// the additional data provided by [RemoteDiagnosticsNode] is helpful to
+/// correctly display the object and [RemoteDiagnosticsNode] includes a
+/// reference to an [InspectorInstanceRef]. [value] must be a VM service type,
+/// Sentinel, or primitive type.
+class GenericInstanceRef {
+  GenericInstanceRef({
+    required this.isolateRef,
+    this.value,
+    this.diagnostic,
+  });
 
-  final Map<String, Object?> json;
-  final InspectorSourceLocation? parent;
+  final Object? value;
 
-  String? get path => JsonUtils.getStringMember(json, 'file');
+  InstanceRef? get instanceRef =>
+      value is InstanceRef ? value as InstanceRef? : null;
 
-  String? getFile() {
-    final fileName = path;
-    if (fileName == null) {
-      return parent != null ? parent!.getFile() : null;
-    }
+  /// If both [diagnostic] and [instanceRef] are provided, [diagnostic.valueRef]
+  /// must reference the same underlying object just using the
+  /// [InspectorInstanceRef] scheme.
+  final RemoteDiagnosticsNode? diagnostic;
 
-    return fileName;
-  }
-
-  int getLine() => JsonUtils.getIntMember(json, 'line');
-
-  String? getName() => JsonUtils.getStringMember(json, 'name');
-
-  int getColumn() => JsonUtils.getIntMember(json, 'column');
-
-  SourcePosition? getXSourcePosition() {
-    final file = getFile();
-    if (file == null) {
-      return null;
-    }
-    final int line = getLine();
-    final int column = getColumn();
-    if (line < 0 || column < 0) {
-      return null;
-    }
-    return SourcePosition(file: file, line: line - 1, column: column - 1);
-  }
+  final IsolateRef? isolateRef;
 }

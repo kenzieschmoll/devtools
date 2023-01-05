@@ -66,15 +66,15 @@ class _ListControlPane extends StatelessWidget {
               icon: Icons.block,
               tooltip: 'Clear all snapshots',
               onPressed: clearAllEnabled
-                  ? () async {
+                  ? () {
                       ga.select(
                         gac.memory,
                         gac.MemoryEvent.diffClearSnapshots,
                       );
-                      unawaited(controller.clearSnapshots());
+                      controller.clearSnapshots();
                     }
                   : null,
-            )
+            ),
           ],
         );
       },
@@ -122,7 +122,7 @@ class _SnapshotListTitle extends StatelessWidget {
               )!,
               style: textStyle,
             ),
-            const SizedBox(width: denseRowSpacing)
+            const SizedBox(width: denseRowSpacing),
           ],
           if (theItem is SnapshotDocItem)
             Expanded(
@@ -134,7 +134,7 @@ class _SnapshotListTitle extends StatelessWidget {
             ),
           if (isProcessing) ...[
             CenteredCircularProgressIndicator(size: smallProgressSize),
-            const SizedBox(width: denseRowSpacing)
+            const SizedBox(width: denseRowSpacing),
           ],
         ],
       ),
@@ -153,7 +153,7 @@ class _SnapshotListItems extends StatefulWidget {
 
 class _SnapshotListItemsState extends State<_SnapshotListItems>
     with AutoDisposeMixin {
-  final _headerHeight = 1.20 * defaultRowHeight;
+  final _headerHeight = 1.2 * defaultRowHeight;
   late final ScrollController _scrollController;
 
   @override

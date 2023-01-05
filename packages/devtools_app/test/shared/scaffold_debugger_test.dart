@@ -2,16 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'package:devtools_app/devtools_app.dart';
 import 'package:devtools_app/src/framework/scaffold.dart';
-import 'package:devtools_app/src/screens/debugger/debugger_screen.dart';
-import 'package:devtools_app/src/service/service_manager.dart';
-import 'package:devtools_app/src/shared/analytics/analytics_controller.dart';
-import 'package:devtools_app/src/shared/config_specific/ide_theme/ide_theme.dart';
 import 'package:devtools_app/src/shared/config_specific/import_export/import_export.dart';
 import 'package:devtools_app/src/shared/framework_controller.dart';
-import 'package:devtools_app/src/shared/globals.dart';
-import 'package:devtools_app/src/shared/notifications.dart';
-import 'package:devtools_app/src/shared/screen.dart';
 import 'package:devtools_app/src/shared/survey.dart';
 import 'package:devtools_test/devtools_test.dart';
 import 'package:flutter/material.dart';
@@ -25,6 +19,9 @@ void main() {
   when(mockServiceManager.connectedState).thenReturn(
     ValueNotifier<ConnectedState>(const ConnectedState(false)),
   );
+  when(mockServiceManager.isolateManager).thenReturn(FakeIsolateManager());
+  when(mockServiceManager.appState)
+      .thenReturn(AppState(mockServiceManager.isolateManager.selectedIsolate));
 
   final mockErrorBadgeManager = MockErrorBadgeManager();
   when(mockServiceManager.errorBadgeManager).thenReturn(mockErrorBadgeManager);
@@ -39,57 +36,56 @@ void main() {
   setGlobal(NotificationService, NotificationService());
 
   testWidgets(
-      'does not display floating debugger controls when debugger screen is showing',
-      (WidgetTester tester) async {
-    final mockConnectedApp = MockConnectedAppLegacy();
-    when(mockConnectedApp.isFlutterAppNow).thenReturn(true);
-    when(mockConnectedApp.isProfileBuildNow).thenReturn(false);
-    when(mockServiceManager.connectedAppInitialized).thenReturn(true);
-    when(mockServiceManager.connectedApp).thenReturn(mockConnectedApp);
-    final mockDebuggerController = MockDebuggerController();
-    when(mockDebuggerController.isPaused)
-        .thenReturn(ValueNotifier<bool>(false));
+    'does not display floating debugger controls when debugger screen is showing',
+    (WidgetTester tester) async {
+      final mockConnectedApp = MockConnectedAppLegacy();
+      when(mockConnectedApp.isFlutterAppNow).thenReturn(true);
+      when(mockConnectedApp.isProfileBuildNow).thenReturn(false);
+      when(mockServiceManager.connectedAppInitialized).thenReturn(true);
+      when(mockServiceManager.connectedApp).thenReturn(mockConnectedApp);
+      final mockDebuggerController = MockDebuggerController();
 
-    const debuggerScreenKey = Key('debugger screen');
-    const debuggerTabKey = Key('debugger tab');
-    await tester.pumpWidget(
-      wrapWithControllers(
-        DevToolsScaffold(
-          screens: [
-            _TestScreen(
-              DebuggerScreen.id,
-              debuggerScreenKey,
-              tabKey: debuggerTabKey,
-              showFloatingDebuggerControls: false,
-            ),
-            _screen2,
-          ],
-          ideTheme: IdeTheme(),
+      const debuggerScreenKey = Key('debugger screen');
+      const debuggerTabKey = Key('debugger tab');
+      await tester.pumpWidget(
+        wrapWithControllers(
+          DevToolsScaffold(
+            screens: [
+              _TestScreen(
+                DebuggerScreen.id,
+                debuggerScreenKey,
+                tabKey: debuggerTabKey,
+                showFloatingDebuggerControls: false,
+              ),
+              _screen2,
+            ],
+            ideTheme: IdeTheme(),
+          ),
+          debugger: mockDebuggerController,
+          analytics: AnalyticsController(enabled: false, firstRun: false),
         ),
-        debugger: mockDebuggerController,
-        analytics: AnalyticsController(enabled: false, firstRun: false),
-      ),
-    );
-    expect(find.byKey(debuggerScreenKey), findsOneWidget);
-    expect(find.byKey(_k2), findsNothing);
-    expect(find.byType(FloatingDebuggerControls), findsNothing);
+      );
+      expect(find.byKey(debuggerScreenKey), findsOneWidget);
+      expect(find.byKey(_k2), findsNothing);
+      expect(find.byType(FloatingDebuggerControls), findsNothing);
 
-    // Tap on the tab for screen 2 and verify the controls are present.
-    await tester.tap(find.byKey(_t2));
-    await tester.pumpAndSettle();
-    await tester.pumpAndSettle();
-    expect(find.byKey(debuggerScreenKey), findsNothing);
-    expect(find.byKey(_k2), findsOneWidget);
-    expect(find.byType(FloatingDebuggerControls), findsOneWidget);
+      // Tap on the tab for screen 2 and verify the controls are present.
+      await tester.tap(find.byKey(_t2));
+      await tester.pumpAndSettle();
+      await tester.pumpAndSettle();
+      expect(find.byKey(debuggerScreenKey), findsNothing);
+      expect(find.byKey(_k2), findsOneWidget);
+      expect(find.byType(FloatingDebuggerControls), findsOneWidget);
 
-    // Return to the debugger screen and verify the controls are gone.
-    await tester.tap(find.byKey(debuggerTabKey));
-    await tester.pumpAndSettle();
-    await tester.pumpAndSettle();
-    expect(find.byKey(debuggerScreenKey), findsOneWidget);
-    expect(find.byKey(_k2), findsNothing);
-    expect(find.byType(FloatingDebuggerControls), findsNothing);
-  });
+      // Return to the debugger screen and verify the controls are gone.
+      await tester.tap(find.byKey(debuggerTabKey));
+      await tester.pumpAndSettle();
+      await tester.pumpAndSettle();
+      expect(find.byKey(debuggerScreenKey), findsOneWidget);
+      expect(find.byKey(_k2), findsNothing);
+      expect(find.byType(FloatingDebuggerControls), findsNothing);
+    },
+  );
 }
 
 class _TestScreen extends Screen {

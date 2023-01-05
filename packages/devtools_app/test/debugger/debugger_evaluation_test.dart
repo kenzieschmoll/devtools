@@ -6,7 +6,8 @@ import 'dart:async';
 
 import 'package:devtools_app/src/screens/debugger/breakpoint_manager.dart';
 import 'package:devtools_app/src/screens/debugger/debugger_controller.dart';
-import 'package:devtools_app/src/screens/debugger/evaluate.dart';
+import 'package:devtools_app/src/shared/console/eval/eval_service.dart';
+import 'package:devtools_app/src/shared/console/widgets/evaluate.dart';
 import 'package:devtools_app/src/shared/eval_on_dart_library.dart';
 import 'package:devtools_app/src/shared/globals.dart';
 import 'package:devtools_app/src/shared/primitives/storage.dart';
@@ -29,11 +30,14 @@ void main() {
   late Disposable isAlive;
   late DebuggerController debuggerController;
   late EvalOnDartLibrary eval;
+
   setUp(() async {
     setGlobal(BreakpointManager, BreakpointManager());
+    setGlobal(EvalService, EvalService());
     isAlive = Disposable();
     await env.setupEnvironment();
     debuggerController = DebuggerController();
+
     eval = EvalOnDartLibrary(
       'package:flutter_app/src/autocomplete.dart',
       serviceManager.service!,
@@ -74,7 +78,7 @@ void main() {
                 leftSide: '',
                 rightSide: '',
               ),
-              debuggerController,
+              evalService,
             ),
             equals(['foo', 'foobar']),
           );
@@ -85,7 +89,7 @@ void main() {
                 leftSide: '',
                 rightSide: '',
               ),
-              debuggerController,
+              evalService,
             ),
             equals(['bar', 'baz']),
           );
@@ -106,7 +110,7 @@ void main() {
                 leftSide: 'foo.',
                 rightSide: '',
               ),
-              debuggerController,
+              evalService,
             ),
             equals(['field1', 'field2', 'func1', 'func2']),
           );
@@ -117,7 +121,7 @@ void main() {
                 leftSide: 'foo.',
                 rightSide: '',
               ),
-              debuggerController,
+              evalService,
             ),
             equals(['func1', 'func2']),
           );
@@ -138,14 +142,14 @@ void main() {
                 activeWord: '',
                 rightSide: '',
               ),
-              debuggerController,
+              evalService,
             ),
             equals([
               'staticField1',
               'staticField2',
               'namedConstructor',
               'factory1',
-              'staticMethod'
+              'staticMethod',
             ]),
           );
           expect(
@@ -155,7 +159,7 @@ void main() {
                 leftSide: 'FooClass.',
                 rightSide: '',
               ),
-              debuggerController,
+              evalService,
             ),
             equals(['factory1']),
           );
@@ -176,7 +180,7 @@ void main() {
                   leftSide: '',
                   rightSide: '',
                 ),
-                debuggerController,
+                evalService,
               ),
               [
                 '_privateField2',
@@ -203,7 +207,7 @@ void main() {
                 leftSide: '',
                 rightSide: '',
               ),
-              debuggerController,
+              evalService,
             ),
             equals([
               'exportedField',
@@ -217,7 +221,7 @@ void main() {
                 leftSide: '',
                 rightSide: '',
               ),
-              debuggerController,
+              evalService,
             ),
             equals([
               'ExportedClass',
@@ -232,7 +236,7 @@ void main() {
                 leftSide: '',
                 rightSide: '',
               ),
-              debuggerController,
+              evalService,
             ),
             equals([]),
           );
@@ -244,7 +248,7 @@ void main() {
                 leftSide: '',
                 rightSide: '',
               ),
-              debuggerController,
+              evalService,
             ),
             equals([]),
           );
@@ -265,7 +269,7 @@ void main() {
                 leftSide: '',
                 rightSide: '',
               ),
-              debuggerController,
+              evalService,
             ),
             equals([
               'developer',
@@ -279,7 +283,7 @@ void main() {
                 leftSide: '',
                 rightSide: '',
               ),
-              debuggerController,
+              evalService,
             ),
             equals([
               'math',
@@ -302,7 +306,7 @@ void main() {
                 activeWord: '',
                 rightSide: '',
               ),
-              debuggerController,
+              evalService,
             ),
             equals(
               [
@@ -340,7 +344,7 @@ void main() {
                 'modInverse',
                 'gcd',
                 'noSuchMethod',
-                'runtimeType'
+                'runtimeType',
               ],
             ),
           );
