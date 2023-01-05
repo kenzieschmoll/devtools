@@ -2,10 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:devtools_app/devtools_app.dart';
 import 'package:devtools_app/main.dart' as app;
 import 'package:devtools_app/src/app.dart';
+import 'package:devtools_app/src/service/service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -59,6 +62,7 @@ class TestApp {
 
   factory TestApp.fromEnvironment() {
     const testArgs = String.fromEnvironment('test_args');
+    print('testArgs; $testArgs');
     final Map<String, Object> argsMap =
         jsonDecode(testArgs).cast<String, Object>();
     return TestApp.parse(argsMap);
@@ -67,4 +71,15 @@ class TestApp {
   static const serviceUriKey = 'service_uri';
 
   final String vmServiceUri;
+
+  late final VmServiceWrapper? vmService;
+
+  Future<void> init() async {
+    final finishedCompleter = Completer<void>();
+    vmService = await connect(Uri.parse(vmServiceUri), finishedCompleter);
+  }
+
+  Future<void> dispose() async {
+    await vmService?.dispose();
+  }
 }

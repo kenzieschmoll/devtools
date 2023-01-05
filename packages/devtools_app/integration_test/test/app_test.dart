@@ -23,6 +23,10 @@ void main() {
     expect(testApp.vmServiceUri, isNotNull);
   });
 
+  tearDownAll(() async {
+    await testApp.dispose();
+  });
+
   testWidgets('connect to app and switch tabs', (tester) async {
     await pumpDevTools(tester);
     expect(find.byType(LandingScreenBody), findsOneWidget);

@@ -10,11 +10,12 @@ import 'package:collection/collection.dart';
 import 'io_utils.dart';
 import 'test_app_driver.dart';
 
-bool _debugTestScript = false;
+bool _debugTestScript = true;
 
-Future<void> runFlutterIntegrationTest(
+Future<void> runIntegrationTestWithFlutterApp(
   TestArgs testRunnerArgs, {
   String testAppPath = 'test/test_infra/fixtures/flutter_app',
+  bool isPartial = false,
 }) async {
   TestFlutterApp? testApp;
   late String testAppUri;
@@ -24,6 +25,7 @@ Future<void> runFlutterIntegrationTest(
     // Create the test app and start it.
     // TODO(kenz): support running Dart CLI test apps from here too.
     try {
+      _debugLog('starting the test app at $testAppPath');
       testApp = TestFlutterApp(appPath: testAppPath);
       await testApp.start();
     } catch (e) {
@@ -34,17 +36,21 @@ Future<void> runFlutterIntegrationTest(
     testAppUri = testRunnerArgs.testAppUri!;
   }
 
-  // TODO(kenz): do we need to start chromedriver in headless mode?
-  // Start chrome driver before running the flutter integration test.
-  final chromedriver = ChromeDriver();
-  try {
-    await chromedriver.start();
-  } catch (e) {
-    throw Exception('Error starting chromedriver: $e');
+  _ChromeDriver? chromeDriver;
+  // In partial integration tests, we do not spin up a real DevTools web app.
+  if (!isPartial) {
+    // TODO(kenz): do we need to start chromedriver in headless mode?
+    // Start chrome driver before running the flutter integration test.
+    chromeDriver = _ChromeDriver();
+    try {
+      await chromeDriver.start();
+    } catch (e) {
+      throw Exception('Error starting chromedriver: $e');
+    }
   }
 
   // Run the flutter integration test.
-  final testRunner = TestRunner();
+  final testRunner = isPartial ? _TestRunner() : _IntegrationTestRunner();
   try {
     await testRunner.run(
       testRunnerArgs.testTarget,
@@ -64,14 +70,17 @@ Future<void> runFlutterIntegrationTest(
 
     _debugLog('cancelling stream subscriptions');
     await testRunner.cancelAllStreamSubscriptions();
-    await chromedriver.cancelAllStreamSubscriptions();
 
-    _debugLog('killing the chromedriver process');
-    chromedriver.kill();
+    if (!isPartial) {
+      await chromeDriver?.cancelAllStreamSubscriptions();
+
+      _debugLog('killing the chromedriver process');
+      chromeDriver?.kill();
+    }
   }
 }
 
-class ChromeDriver with IOMixin {
+class _ChromeDriver with IOMixin {
   late final Process _process;
 
   // TODO(kenz): add error messaging if the chromedriver executable is not
@@ -93,7 +102,56 @@ class ChromeDriver with IOMixin {
   }
 }
 
-class TestRunner with IOMixin {
+class _TestRunner extends _BaseTestRunner {
+  @override
+  Future<void> run(
+    String testTarget, {
+    bool headless = false,
+    bool enableExperiments = false,
+    Map<String, Object> testAppArguments = const <String, Object>{},
+  }) async {
+    _debugLog('starting the flutter test process');
+    print([
+      'test',
+      testTarget,
+      if (testAppArguments.isNotEmpty)
+        '--dart-define=test_args=${jsonEncode(testAppArguments)}',
+      if (enableExperiments) '--dart-define=enable_experiments=true',
+    ].join(' '));
+    final process = await Process.start(
+      'flutter',
+      [
+        'test',
+        testTarget,
+        if (testAppArguments.isNotEmpty)
+          '--dart-define=test_args=${jsonEncode(testAppArguments)}',
+        if (enableExperiments) '--dart-define=enable_experiments=true',
+      ],
+    );
+    listenToProcessOutput(
+      process,
+      onStdout: (line) {
+        print('test runner output line: [$line]');
+        // if (line.startsWith(_TestResult.testResultPrefix)) {
+        //   final testResultJson = line.substring(line.indexOf('{'));
+        //   final testResultMap =
+        //       jsonDecode(testResultJson) as Map<String, Object?>;
+        //   final result = _TestResult.parse(testResultMap);
+        //   if (!result.result) {
+        //     throw Exception(result.toString());
+        //   }
+        // }
+      },
+    );
+
+    await process.exitCode;
+    process.kill();
+    _debugLog('flutter test process has exited');
+  }
+}
+
+class _IntegrationTestRunner extends _BaseTestRunner {
+  @override
   Future<void> run(
     String testTarget, {
     bool headless = false,
@@ -127,7 +185,6 @@ class TestRunner with IOMixin {
             throw Exception(result.toString());
           }
         }
-        print('stdout = $line');
       },
     );
 
@@ -135,6 +192,15 @@ class TestRunner with IOMixin {
     process.kill();
     _debugLog('flutter drive process has exited');
   }
+}
+
+abstract class _BaseTestRunner with IOMixin {
+  Future<void> run(
+    String testTarget, {
+    bool headless = false,
+    bool enableExperiments = false,
+    Map<String, Object> testAppArguments = const <String, Object>{},
+  });
 }
 
 class _TestResult {

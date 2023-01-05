@@ -24,13 +24,17 @@ import 'test_infra/_run_test.dart';
 //    integration test run in Chrome when running locally.
 
 void main(List<String> args) async {
-  final targetProvided =
-      args.firstWhereOrNull((arg) => arg.startsWith(TestArgs.testTargetArg)) !=
-          null;
-  if (targetProvided) {
+  const _partialIntegrationTestIndicator = '/partial/';
+  
+  final providedTarget =
+      args.firstWhereOrNull((arg) => arg.startsWith(TestArgs.testTargetArg));
+  if (providedTarget != null) {
     // Run the single test at this path.
     final testRunnerArgs = TestArgs(args);
-    await runFlutterIntegrationTest(testRunnerArgs);
+    await runIntegrationTestWithFlutterApp(
+      testRunnerArgs,
+      isPartial: providedTarget.contains(_partialIntegrationTestIndicator),
+    );
   } else {
     // Ran all tests since a target test was not provided.
     const testSuffix = '_test.dart';
@@ -40,7 +44,7 @@ void main(List<String> args) async {
     // an argument (e.g. --directory=integration_test/test/performance).
     final testDirectory = Directory('integration_test/test');
     final testFiles = testDirectory
-        .listSync()
+        .listSync(recursive: true)
         .where((testFile) => testFile.path.endsWith(testSuffix));
     for (final testFile in testFiles) {
       final testTarget = testFile.path;
@@ -48,7 +52,10 @@ void main(List<String> args) async {
         ...args,
         '${TestArgs.testTargetArg}$testTarget',
       ]);
-      await runFlutterIntegrationTest(testRunnerArgs);
+      await runIntegrationTestWithFlutterApp(
+        testRunnerArgs,
+        isPartial: testTarget.contains(_partialIntegrationTestIndicator),
+      );
     }
   }
 }
