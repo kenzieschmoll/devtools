@@ -10,8 +10,8 @@ import 'package:flutter/foundation.dart';
 import '../service/vm_service_wrapper.dart';
 import 'analytics/analytics.dart' as ga;
 import 'analytics/constants.dart' as gac;
+import 'diagnostics/inspector_service.dart';
 import 'globals.dart';
-import 'inspector_service.dart';
 import 'primitives/auto_dispose.dart';
 import 'primitives/utils.dart';
 
@@ -154,8 +154,7 @@ class InspectorPreferencesController extends DisposableController
       () {
         if (_mainScriptDir != null &&
             serviceManager.isolateManager.mainIsolate.value != null) {
-          final debuggerState =
-              serviceManager.isolateManager.mainIsolateDebuggerState;
+          final debuggerState = serviceManager.isolateManager.mainIsolateState;
 
           if (debuggerState?.isPaused.value == false) {
             // the isolate is already unpaused, we can try to load

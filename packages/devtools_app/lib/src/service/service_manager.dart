@@ -15,9 +15,9 @@ import '../shared/analytics/analytics.dart' as ga;
 import '../shared/config_specific/logger/logger.dart';
 import '../shared/connected_app.dart';
 import '../shared/console/console_service.dart';
+import '../shared/diagnostics/inspector_service.dart';
 import '../shared/error_badge_manager.dart';
 import '../shared/globals.dart';
-import '../shared/inspector_service.dart';
 import '../shared/primitives/utils.dart';
 import '../shared/title.dart';
 import '../shared/utils.dart';
@@ -77,6 +77,12 @@ class ServiceConnectionManager {
   final timelineStreamManager = TimelineStreamManager();
 
   final isolateManager = IsolateManager();
+
+  /// Proxy to state inside the isolateManager, for code consizeness.
+  ///
+  /// Defaults to false if there is no main isolate.
+  bool get isMainIsolatePaused =>
+      isolateManager.mainIsolateState?.isPaused.value ?? false;
 
   final consoleService = ConsoleService();
 
@@ -547,7 +553,7 @@ class ServiceConnectionManager {
     if (uri == null) return false;
     assert(_serviceAvailable.isCompleted);
     assert(serviceManager.isolateManager.mainIsolate.value != null);
-    final isolate = isolateManager.mainIsolateDebuggerState!.isolateNow;
+    final isolate = isolateManager.mainIsolateState!.isolateNow;
     return (isolate?.libraries ?? [])
         .map((ref) => ref.uri)
         .toList()
