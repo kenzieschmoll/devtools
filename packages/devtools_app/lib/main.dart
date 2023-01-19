@@ -47,11 +47,6 @@ void main() async {
   await SyntaxHighlighter.initialize();
 
   setupErrorHandling(() async {
-    // Experiments are enabled here,
-    // not at initialization, because
-    // [enableExperiments] should be false for tests.
-    if (!kReleaseMode) setExperimentsEnabled();
-
     // Run the app.
     runApp(
       ProviderScope(

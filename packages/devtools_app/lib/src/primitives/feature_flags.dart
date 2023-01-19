@@ -16,11 +16,10 @@ import '../shared/globals.dart';
 ///   "args": [
 ///     "--dart-define=enable_experiments=true"
 ///   ]
-const bool _kEnableExperiments = bool.fromEnvironment('enable_experiments');
+// const bool _kEnableExperiments = bool.fromEnvironment('enable_experiments');
 
 @visibleForTesting
-bool enableExperiments = _kEnableExperiments;
-void setExperimentsEnabled() => enableExperiments = true;
+bool enableExperiments = false;
 
 @visibleForTesting
 bool get enableBeta => enableExperiments || !isExternalBuild;
