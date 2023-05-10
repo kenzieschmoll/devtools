@@ -163,6 +163,8 @@ class TimelineEventsController extends PerformanceFeatureController
     });
   }
 
+// todo use the perfetto rpcs for this. will have to merge responses and post them
+// to perfetto somehow. try first to get one response and post it
   Future<void> _pullTraceEventsFromVmTimeline({
     bool isInitialPull = false,
   }) async {
