@@ -10,6 +10,7 @@ import 'config_specific/ide_theme/ide_theme.dart';
 import 'console/eval/eval_service.dart';
 import 'framework_controller.dart';
 import 'offline_mode.dart';
+import 'plugins/plugins_service.dart';
 import 'preferences.dart';
 import 'primitives/message_bus.dart';
 import 'primitives/storage.dart';
@@ -34,6 +35,8 @@ FrameworkController get frameworkController =>
     globals[FrameworkController] as FrameworkController;
 
 Storage get storage => globals[Storage] as Storage;
+
+PluginsService get pluginsManager => globals[PluginsService] as PluginsService;
 
 SurveyService get surveyService => globals[SurveyService] as SurveyService;
 

@@ -13,6 +13,7 @@ import 'config_specific/notifications/notifications.dart';
 import 'config_specific/sse/sse_shim.dart';
 import 'framework_controller.dart';
 import 'globals.dart';
+import 'plugins/plugins_model.dart';
 
 final _log = Logger('lib/src/shared/server_api_client');
 
@@ -222,5 +223,22 @@ class DevToolsServerConnection {
   /// active and doesn't just appear to be connected because of SSE timeouts.
   void ping() {
     unawaited(_callMethod('pingResponse'));
+  }
+
+  /// Requests that the DevTools server refreshes and serves available plugins
+  /// for the given [rootPaths].
+  /// 
+  /// Returns the list available plugins.
+  Future<List<DevToolsPluginConfig>> refreshAvailablePlugins(
+    List<String> rootPaths,
+  ) async {
+    final result = await _callMethod(
+      'serveAvailablePlugins',
+      {'rootPaths': rootPaths},
+    );
+    final Map<String, Object?> parsedResult = jsonDecode(result);
+    final pluginsAsJson = (parsedResult['plugins']! as List<Object?>)
+        .cast<Map<String, Object?>>();
+    return pluginsAsJson.map((p) => DevToolsPluginConfig.parse(p)).toList();
   }
 }

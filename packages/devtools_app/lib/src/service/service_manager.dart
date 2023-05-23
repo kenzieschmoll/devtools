@@ -331,6 +331,8 @@ class ServiceConnectionManager {
       return;
     }
 
+    await pluginsManager.initialize();
+
     _connectionAvailableController.add(service);
   }
 
@@ -370,6 +372,8 @@ class ServiceConnectionManager {
 
     isolateManager.handleVmServiceClosed();
     consoleService.handleVmServiceClosed();
+    unawaited(pluginsManager.vmServiceClosed());
+
     setDeviceBusy(false);
 
     _connectedState.value = connectionState;
