@@ -38,6 +38,10 @@ class EmbeddedPluginControllerImpl extends EmbeddedPluginController {
       'devtools-plugin-${_viewIdIncrementer++}'; // this needs name
 
   String get pluginUrl {
+    // TODO remove this.
+    if (selectedPluginNotifier.value == null) {
+      return 'https://flutter.dev/';
+    }
     assert(selectedPluginNotifier.value != null);
     final pluginName = selectedPluginNotifier.value!.name;
     return '${html.window.location.origin}/devtools_plugins/$pluginName/index.html';

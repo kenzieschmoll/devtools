@@ -6,8 +6,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../primitives/auto_dispose.dart';
 import '../plugins_model.dart';
-import '_controller_desktop.dart'
-    if (dart.library.html) '_view_controller_web.dart';
+import '_controller_desktop.dart' if (dart.library.html) '_controller_web.dart';
 
 EmbeddedPluginControllerImpl createEmbeddedPluginController(
   ValueListenable<DevToolsPluginConfig?> selectedPluginNotifier,
