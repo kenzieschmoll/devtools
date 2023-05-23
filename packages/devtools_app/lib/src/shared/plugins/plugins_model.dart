@@ -54,3 +54,40 @@ extension PluginExtension on DevToolsPluginConfig {
       );
 }
 
+// TODO do not check in
+final List<DevToolsPluginConfig> debugPlugins = [
+  // DevToolsPlugin(
+  //   indexLocation: 'foo/location/index.html',
+  //   config:
+
+  DevToolsPluginConfig.parse({
+    DevToolsPluginConfig.nameKey: 'foo',
+    DevToolsPluginConfig.issueTrackerKey: 'www.google.com',
+    DevToolsPluginConfig.versionKey: '1.0.0',
+    DevToolsPluginConfig.pathKey: '/path/to/foo',
+  }),
+  // ),
+  // DevToolsPlugin(
+  // indexLocation: 'bar/location/index.html',
+  // config:
+  DevToolsPluginConfig.parse({
+    DevToolsPluginConfig.nameKey: 'bar',
+    DevToolsPluginConfig.issueTrackerKey: 'www.google.com',
+    DevToolsPluginConfig.versionKey: '2.0.0',
+    DevToolsPluginConfig.materialIconCodePointKey: 0xe638,
+    DevToolsPluginConfig.pathKey: '/path/to/bar',
+  }),
+  // ),
+  // DevToolsPluginConfig(
+  //   indexLocation: 'provider/location/index.html',
+  //   config:
+  DevToolsPluginConfig.parse({
+    DevToolsPluginConfig.nameKey: 'provider',
+    DevToolsPluginConfig.issueTrackerKey:
+        'https://github.com/rrousselGit/provider/issues',
+    DevToolsPluginConfig.versionKey: '3.0.0',
+    DevToolsPluginConfig.materialIconCodePointKey: 0xe50a,
+    DevToolsPluginConfig.pathKey: '/path/to/provider',
+  }),
+  // ),
+];
