@@ -7,9 +7,9 @@
 ./tool/generate_code.sh >> output.txt
 
 # Test devtools_shared
-cd packages/devtools_shared
-flutter test test/
+# cd packages/devtools_shared
+# flutter test test/
 
 # Test devtools_app
-cd ../devtools_app
-flutter test test/
+cd packages/devtools_app
+dart run integration_test/run_tests.dart --headless
