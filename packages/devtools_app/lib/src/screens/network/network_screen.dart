@@ -504,7 +504,7 @@ class StatusColumn extends ColumnData<NetworkRequest>
     VoidCallback? onPressed,
   }) {
     final theme = Theme.of(context);
-    return Text(
+    return SelectableText(
       getDisplayValue(data),
       style: data.didFail
           ? TextStyle(color: theme.colorScheme.error)

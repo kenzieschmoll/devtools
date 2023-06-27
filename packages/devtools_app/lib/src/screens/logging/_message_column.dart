@@ -51,12 +51,11 @@ class MessageColumn extends ColumnData<LogData>
     bool isRowSelected = false,
     VoidCallback? onPressed,
   }) {
-    final textStyle = Theme.of(context).fixedFontStyle;
+    final textStyle = Theme.of(context).ellipsizedFixedFontStyle;
     if (data.kind == 'flutter.frame') {
       const Color color = Color.fromARGB(0xff, 0x00, 0x91, 0xea);
-      final Text text = Text(
+      final text = SelectableText(
         getDisplayValue(data),
-        overflow: TextOverflow.ellipsis,
         style: textStyle,
       );
 
@@ -81,8 +80,8 @@ class MessageColumn extends ColumnData<LogData>
         ],
       );
     } else {
-      return RichText(
-        text: TextSpan(
+      return SelectableText.rich(
+        TextSpan(
           children: processAnsiTerminalCodes(
             // TODO(helin24): Recompute summary length considering ansi codes.
             //  The current summary is generally the first 200 chars of details.
@@ -90,7 +89,6 @@ class MessageColumn extends ColumnData<LogData>
             textStyle,
           ),
         ),
-        overflow: TextOverflow.ellipsis,
         maxLines: 1,
       );
     }

@@ -46,7 +46,7 @@ class KindColumn extends ColumnData<LogData>
     }
 
     // Use a font color that contrasts with the colored backgrounds.
-    final textStyle = Theme.of(context).fixedFontStyle.copyWith(
+    final textStyle = Theme.of(context).ellipsizedFixedFontStyle.copyWith(
           color: Colors.white,
         );
 
@@ -56,9 +56,8 @@ class KindColumn extends ColumnData<LogData>
         color: color,
         borderRadius: BorderRadius.circular(3.0),
       ),
-      child: Text(
+      child: SelectableText(
         kind,
-        overflow: TextOverflow.ellipsis,
         style: textStyle,
       ),
     );

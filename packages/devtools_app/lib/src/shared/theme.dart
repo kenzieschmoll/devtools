@@ -428,6 +428,10 @@ extension ThemeDataExtension on ThemeData {
         ),
       );
 
+  TextStyle get ellipsizedFixedFontStyle => fixedFontStyle.copyWith(
+        overflow: TextOverflow.ellipsis,
+      );
+
   TextStyle get subtleFixedFontStyle => fixedFontStyle.copyWith(
         color: colorScheme.subtleTextColor,
       );
