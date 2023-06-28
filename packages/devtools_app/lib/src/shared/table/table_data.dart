@@ -101,7 +101,10 @@ abstract class ColumnData<T> {
   }) {
     final theme = Theme.of(context);
     final textColor = getTextColor(dataObject) ?? theme.colorScheme.onSurface;
-    return theme.fixedFontStyle.copyWith(color: textColor);
+    return theme.fixedFontStyle.copyWith(
+      color: textColor,
+      overflow: TextOverflow.ellipsis,
+    );
   }
 
   @override

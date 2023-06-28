@@ -1486,8 +1486,8 @@ class _TableRowState<T> extends State<TableRow<T>>
         }
         // If ColumnRenderer.build returns null, fall back to the default
         // rendering.
-        content ??= RichText(
-          text: TextSpan(
+        content ??= SelectableText.rich(
+          TextSpan(
             text: column.getDisplayValue(node),
             children: [
               if (column.getCaption(node) != null)
@@ -1505,7 +1505,6 @@ class _TableRowState<T> extends State<TableRow<T>>
             ),
           ),
           maxLines: 1,
-          overflow: TextOverflow.ellipsis,
           textAlign: column.contentTextAlignment,
         );
 
