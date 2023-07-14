@@ -26,7 +26,7 @@ class PluginsScreen extends Screen {
       : super.conditional(
           id: id,
           title: ScreenMetaData.plugins.title,
-          icon: Icons.extension_outlined,
+          icon: ScreenMetaData.plugins.icon,
         );
 
   static final id = ScreenMetaData.plugins.id;

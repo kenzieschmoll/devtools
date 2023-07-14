@@ -30,6 +30,7 @@ enum ScreenMetaData {
   network('network', title: 'Network', icon: Icons.network_check),
   logging('logging', title: 'Logging', icon: Octicons.clippy),
   provider('provider', title: 'Provider', icon: Icons.attach_file),
+  plugins('plugins', title: 'Plugins', icon: Icons.extension_outlined),
   appSize('app-size', title: 'App Size', icon: Octicons.fileZip),
   deepLinks('deep-links', title: 'Deep Links', icon: Icons.link_rounded),
   vmTools('vm-tools', title: 'VM Tools', icon: Icons.settings_applications),
