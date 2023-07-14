@@ -1,12 +1,19 @@
 This is draft for future release notes, that are going to land on
 [the Flutter website](https://docs.flutter.dev/development/tools/devtools/release-notes).
 
-# DevTools 2.24.0 release notes
+# DevTools 2.26.0 release notes
 
 Dart & Flutter DevTools - A Suite of Performance Tools for Dart and Flutter
 
 ## General updates
-* Improve the overal performance of DevTools tables - [#5664](https://github.com/flutter/devtools/pull/5664), [#5696](https://github.com/flutter/devtools/pull/5696)
+* Added a new "Home" screen in DevTools that either shows the "Connect" dialog or
+a summary of your connected app, depending on the connection status in DevTools. Keep an
+eye on this screen for cool new features in the future. This change also enables support
+for static tooling (tools that don't require a connected app) in DevTools - [#6010](https://github.com/flutter/devtools/pull/6010)
+![home screen](images/home_screen.png "DevTools home screen")
+* Added an action to the main toolbar for loading offline data into DevTools - [#6003](https://github.com/flutter/devtools/pull/6003)
+![load data action](images/load_data.png "Load data action")
+* Fixed overlay notifications so that they cover the area that their background blocks - [#5975](https://github.com/flutter/devtools/pull/5975)
 
 ## Inspector updates
 TODO: Remove this section if there are not any general updates.
@@ -15,22 +22,17 @@ TODO: Remove this section if there are not any general updates.
 TODO: Remove this section if there are not any general updates.
 
 ## CPU profiler updates
-* Fix bug with CPU flame chart selection and tooltips - [#5676](https://github.com/flutter/devtools/pull/5676)
+TODO: Remove this section if there are not any general updates.
 
 ## Memory updates
-TODO: Remove this section if there are not any general updates.
+* Added a context menu to rename or delete a heap snapshot from the list - [#5997](https://github.com/flutter/devtools/pull/5997)
+* Warn users when HTTP logging may be affecting their app's memory consumption - [#5998](https://github.com/flutter/devtools/pull/5998)
 
 ## Debugger updates
-* Improve support for inspecting `UserTag` and `MirrorReferent` instances - [#5490](https://github.com/flutter/devtools/pull/5490)
-* Fixes expression evaluation bug where selecting an autocomplete result for a field would clear the current input - [#5717](https://github.com/flutter/devtools/pull/5717)
-* Selecting a stack frame scrolls to the frame location in the source code - [#5722](https://github.com/flutter/devtools/pull/5722)
-* Performance improvements when searching in a file, or searching for a file - [#5733](https://github.com/flutter/devtools/pull/5733)
-* Disables syntax highlighting for files with more than 100,000 characters due to performance constraints - [#5743](https://github.com/flutter/devtools/pull/5743)
-* Fix bug where source code wasn't visible if syntax highlighting for a file was disabled - [#5743](https://github.com/flutter/devtools/pull/5743)
-
+* Improvements to text selection and copy behavior in the codeview, console, and variables window. - [#6020](https://github.com/flutter/devtools/pull/6020)
 
 ## Network profiler updates
-TODO: Remove this section if there are not any general updates.
+* Added a selector to customize the display type of text and json responses (thanks to @hhacker1999!) - [#5816](https://github.com/flutter/devtools/pull/5816)
 
 ## Logging updates
 TODO: Remove this section if there are not any general updates.

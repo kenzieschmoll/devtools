@@ -168,7 +168,7 @@ class _CodeViewState extends State<CodeView> with AutoDisposeMixin {
     }
 
     if (oldWidget.scriptRef != widget.scriptRef) {
-      verticalController.resetScroll();
+      _updateScrollPosition();
     }
   }
 
@@ -232,8 +232,9 @@ class _CodeViewState extends State<CodeView> with AutoDisposeMixin {
       final lineCount = parsedScript?.lineCount;
       if (lineCount != null && lineCount * CodeView.rowHeight > extent) {
         final lineIndex = line - 1;
-        final scrollPosition = lineIndex * CodeView.rowHeight -
+        var scrollPosition = lineIndex * CodeView.rowHeight -
             ((extent - CodeView.rowHeight) / 2);
+        scrollPosition = scrollPosition.clamp(0.0, position.extentTotal);
         if (animate) {
           unawaited(
             verticalController.animateTo(
@@ -450,8 +451,8 @@ class _CodeViewState extends State<CodeView> with AutoDisposeMixin {
           ScriptPopupMenu(widget.codeViewController),
           ScriptHistoryPopupMenu(
             itemBuilder: _buildScriptMenuFromHistory,
-            onSelected: (scriptRef) {
-              widget.codeViewController
+            onSelected: (scriptRef) async {
+              await widget.codeViewController
                   .showScriptLocation(ScriptLocation(scriptRef));
             },
             enabled: widget.codeViewController.scriptsHistory.hasScripts,
@@ -1053,29 +1054,31 @@ class _LinesState extends State<Lines> with AutoDisposeMixin {
     final pausedFrame = widget.selectedFrameNotifier?.value;
     final pausedLine = pausedFrame?.line;
 
-    return ListView.builder(
-      controller: widget.scrollController,
-      physics: const ClampingScrollPhysics(),
-      itemExtent: CodeView.rowHeight,
-      itemCount: widget.lines.length,
-      itemBuilder: (context, index) {
-        final lineNum = index + 1;
-        final isPausedLine = pausedLine == lineNum;
-        return ValueListenableBuilder<int>(
-          valueListenable: widget.codeViewController.focusLine,
-          builder: (context, focusLine, _) {
-            final isFocusedLine = focusLine == lineNum;
-            return LineItem(
-              lineContents: widget.lines[index],
-              pausedFrame: isPausedLine ? pausedFrame : null,
-              focused: isPausedLine || isFocusedLine,
-              searchMatches: _searchMatchesForLine(index),
-              activeSearchMatch:
-                  activeSearch?.position.line == index ? activeSearch : null,
-            );
-          },
-        );
-      },
+    return SelectionArea(
+      child: ListView.builder(
+        controller: widget.scrollController,
+        physics: const ClampingScrollPhysics(),
+        itemExtent: CodeView.rowHeight,
+        itemCount: widget.lines.length,
+        itemBuilder: (context, index) {
+          final lineNum = index + 1;
+          final isPausedLine = pausedLine == lineNum;
+          return ValueListenableBuilder<int>(
+            valueListenable: widget.codeViewController.focusLine,
+            builder: (context, focusLine, _) {
+              final isFocusedLine = focusLine == lineNum;
+              return LineItem(
+                lineContents: widget.lines[index],
+                pausedFrame: isPausedLine ? pausedFrame : null,
+                focused: isPausedLine || isFocusedLine,
+                searchMatches: _searchMatchesForLine(index),
+                activeSearchMatch:
+                    activeSearch?.position.line == index ? activeSearch : null,
+              );
+            },
+          );
+        },
+      ),
     );
   }
 
@@ -1242,9 +1245,8 @@ class _LineItemState extends State<LineItem>
         enabled: () => true,
         asyncTimeout: 100,
         asyncGenerateHoverCardData: _generateHoverCardData,
-        child: SelectableText.rich(
+        child: Text.rich(
           searchAwareLineContents(),
-          scrollPhysics: const NeverScrollableScrollPhysics(),
           maxLines: 1,
         ),
       );
@@ -1553,13 +1555,13 @@ class GoToLineDialog extends StatelessWidget {
         children: [
           TextField(
             autofocus: true,
-            onSubmitted: (value) {
+            onSubmitted: (value) async {
               final scriptRef =
                   _codeViewController.scriptLocation.value?.scriptRef;
               if (value.isNotEmpty && scriptRef != null) {
                 Navigator.of(context).pop(dialogDefaultContext);
                 final line = int.parse(value);
-                _codeViewController.showScriptLocation(
+                await _codeViewController.showScriptLocation(
                   ScriptLocation(
                     scriptRef,
                     location: SourcePosition(line: line, column: 0),

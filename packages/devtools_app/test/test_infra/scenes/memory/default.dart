@@ -4,6 +4,7 @@
 
 import 'package:devtools_app/devtools_app.dart';
 import 'package:devtools_app/src/screens/memory/panes/diff/controller/diff_pane_controller.dart';
+import 'package:devtools_app/src/screens/memory/panes/profile/profile_pane_controller.dart';
 import 'package:devtools_app/src/screens/memory/shared/heap/class_filter.dart';
 import 'package:devtools_app/src/screens/memory/shared/heap/model.dart';
 import 'package:devtools_app/src/shared/memory/adapted_heap_data.dart';
@@ -41,6 +42,7 @@ class MemoryDefaultScene extends Scene {
     setGlobal(OfflineModeController, OfflineModeController());
     setGlobal(IdeTheme, IdeTheme());
     setGlobal(NotificationService, NotificationService());
+    setGlobal(BannerMessagesController, BannerMessagesController());
     setGlobal(
       PreferencesController,
       PreferencesController()..memory.showChart.value = false,
@@ -69,12 +71,20 @@ class MemoryDefaultScene extends Scene {
     when(fakeServiceManager.vm.operatingSystem).thenReturn('ios');
     setGlobal(ServiceConnectionManager, fakeServiceManager);
 
-    final diffController = DiffPaneController(_TestSnapshotTaker());
-    diffController.derived.applyFilter(
-      ClassFilter(filterType: ClassFilterType.showAll, except: '', only: ''),
+    final showAllFilter = ClassFilter(
+      filterType: ClassFilterType.showAll,
+      except: '',
+      only: '',
     );
+
+    final diffController = DiffPaneController(_TestSnapshotTaker())
+      ..derived.applyFilter(showAllFilter);
+
+    final profileController = ProfilePaneController()..setFilter(showAllFilter);
+
     controller = MemoryController(
       diffPaneController: diffController,
+      profilePaneController: profileController,
     )
       ..offline = true
       ..memoryTimeline.offlineData.clear()

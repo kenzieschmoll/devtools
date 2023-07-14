@@ -96,12 +96,26 @@ class NetworkRequestInspector extends StatelessWidget {
             (
               tab: _buildTab(
                 tabName: NetworkRequestInspector._responseTabTitle,
-                trailing: HttpViewTrailingCopyButton(
-                  data,
-                  (data) => data.responseBody,
+                trailing: Row(
+                  children: [
+                    HttpResponseTrailingDropDown(
+                      data,
+                      currentResponseViewType:
+                          controller.currentResponseViewType,
+                      onChanged: (value) =>
+                          controller.setResponseViewType = value,
+                    ),
+                    HttpViewTrailingCopyButton(
+                      data,
+                      (data) => data.responseBody,
+                    ),
+                  ],
                 ),
               ),
-              tabView: HttpResponseView(data),
+              tabView: HttpResponseView(
+                data,
+                currentResponseViewType: controller.currentResponseViewType,
+              ),
             ),
           if (data.hasCookies)
             (
@@ -115,7 +129,7 @@ class NetworkRequestInspector extends StatelessWidget {
           .map(
             (t) => (
               tab: t.tab,
-              tabView: OutlineDecoration.onlyTop(child: t.tabView)
+              tabView: OutlineDecoration.onlyTop(child: t.tabView),
             ),
           )
           .toList();

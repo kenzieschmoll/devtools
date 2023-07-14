@@ -71,9 +71,10 @@ class ServiceConnectionManager {
 
   final _registeredServiceNotifiers = <String, ImmediateValueNotifier<bool>>{};
 
-  Map<String, List<String>> get registeredMethodsForService =>
+  /// Mapping of service name to service method.
+  Map<String, String> get registeredMethodsForService =>
       _registeredMethodsForService;
-  final Map<String, List<String>> _registeredMethodsForService = {};
+  final Map<String, String> _registeredMethodsForService = {};
 
   final vmFlagManager = VmFlagManager();
 
@@ -133,6 +134,8 @@ class ServiceConnectionManager {
   final ValueNotifier<ConnectedState> _connectedState =
       ValueNotifier(const ConnectedState(false));
 
+  // TODO(kenz): try to replace all uses of this stream with a listener to the
+  // [connectedState] ValueListenable.
   Stream<VmServiceWrapper> get onConnectionAvailable =>
       _connectionAvailableController.stream;
 
@@ -167,12 +170,12 @@ class ServiceConnectionManager {
     String? isolateId,
     Map<String, dynamic>? args,
   }) async {
-    final registered = _registeredMethodsForService[name] ?? const [];
-    if (registered.isEmpty) {
-      throw Exception('There are no registered methods for service "$name"');
+    final registeredMethod = _registeredMethodsForService[name];
+    if (registeredMethod == null) {
+      throw Exception('There is no registered method for service "$name"');
     }
     return service!.callMethod(
-      registered.first,
+      registeredMethod,
       isolateId: isolateId,
       args: args,
     );
@@ -250,11 +253,10 @@ class ServiceConnectionManager {
     unawaited(onClosed.then((_) => vmServiceClosed()));
 
     void handleServiceEvent(Event e) {
+      _log.fine('ServiceEvent: [${e.kind}] - ${e.service}');
       if (e.kind == EventKind.kServiceRegistered) {
         final serviceName = e.service!;
-        _registeredMethodsForService
-            .putIfAbsent(serviceName, () => [])
-            .add(e.method!);
+        _registeredMethodsForService[serviceName] = e.method!;
         final serviceNotifier = _registeredServiceNotifiers.putIfAbsent(
           serviceName,
           () => ImmediateValueNotifier(true),
@@ -305,8 +307,6 @@ class ServiceConnectionManager {
       return;
     }
 
-    _connectedState.value = const ConnectedState(true);
-
     final isolates = vm?.isolatesForDevToolsMode() ?? <IsolateRef>[];
     await isolateManager.init(isolates);
     if (service != this.service) {
@@ -334,6 +334,7 @@ class ServiceConnectionManager {
     await pluginsManager.initialize();
 
     _connectionAvailableController.add(service);
+    _connectedState.value = const ConnectedState(true);
   }
 
   void manuallyDisconnect() {
@@ -378,6 +379,8 @@ class ServiceConnectionManager {
 
     _connectedState.value = connectionState;
     _connectionClosedController.add(null);
+
+    _registeredMethodsForService.clear();
 
     _inspectorService?.onIsolateStopped();
     _inspectorService?.dispose();
@@ -568,4 +571,18 @@ class ConnectedState {
 
   /// Whether this [ConnectedState] was manually initiated by the user.
   final bool userInitiatedConnectionState;
+
+  @override
+  bool operator ==(Object? other) {
+    return other is ConnectedState &&
+        other.connected == connected &&
+        other.userInitiatedConnectionState == userInitiatedConnectionState;
+  }
+
+  @override
+  int get hashCode => Object.hash(connected, userInitiatedConnectionState);
+
+  @override
+  String toString() =>
+      'ConnectedState(connected: $connected, userInitiated: $userInitiatedConnectionState)';
 }
