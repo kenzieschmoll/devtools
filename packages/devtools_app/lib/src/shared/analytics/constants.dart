@@ -22,6 +22,7 @@ final debugger = ScreenMetaData.debugger.id;
 final logging = ScreenMetaData.logging.id;
 final appSize = ScreenMetaData.appSize.id;
 final vmTools = ScreenMetaData.vmTools.id;
+final plugins = ScreenMetaData.plugins.id;
 const console = 'console';
 final simple = ScreenMetaData.simple.id;
 
@@ -38,6 +39,11 @@ const feedbackLink = 'feedback';
 const feedbackButton = 'feedbackButton';
 const contributingLink = 'contributing';
 const discordLink = 'discord';
+
+// Plugins screen UX actions.
+String pluginFeedback(String name) => 'pluginFeedback-$name';
+String pluginActivate(String name) => 'pluginActivate-$name';
+String pluginDeactivate(String name) => 'pluginDeactivate-$name';
 
 // Inspector UX actions:
 const refresh = 'refresh';

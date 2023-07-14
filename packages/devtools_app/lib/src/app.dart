@@ -30,6 +30,8 @@ import 'screens/network/network_controller.dart';
 import 'screens/network/network_screen.dart';
 import 'screens/performance/performance_controller.dart';
 import 'screens/performance/performance_screen.dart';
+import 'screens/plugins/plugins_screen.dart';
+import 'screens/plugins/plugins_screen_controller.dart';
 import 'screens/profiler/profiler_screen.dart';
 import 'screens/profiler/profiler_screen_controller.dart';
 import 'screens/provider/provider_screen.dart';
@@ -501,6 +503,11 @@ List<DevToolsScreen> get defaultScreens {
     DevToolsScreen<VMDeveloperToolsController>(
       VMDeveloperToolsScreen(),
       createController: (_) => VMDeveloperToolsController(),
+    ),
+    // TODO: Only show this screen if plugins are available.
+    DevToolsScreen<PluginsScreenController>(
+      PluginsScreen(),
+      createController: (_) => PluginsScreenController(),
     ),
     // Show the sample DevTools screen.
     if (debugEnableSampleScreen && (kDebugMode || kProfileMode))

@@ -7,6 +7,7 @@ import 'dart:html' hide Storage;
 
 import '../../../service/service_manager.dart';
 import '../../globals.dart';
+import '../../plugins/plugins_service.dart';
 import '../../primitives/storage.dart';
 import '../../server_api_client.dart';
 
@@ -26,6 +27,8 @@ Future<String> initializePlatform() async {
   } else {
     setGlobal(Storage, BrowserStorage());
   }
+
+  setGlobal(PluginsService, PluginsService(connection));
 
   // Prevent the browser default behavior for specific keybindings we'll later
   // handle in the app. This is a workaround for

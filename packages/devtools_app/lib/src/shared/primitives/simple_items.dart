@@ -36,6 +36,7 @@ enum ScreenMetaData {
   provider('provider', 'Provider'),
   appSize('app-size', 'App Size'),
   vmTools('vm-tools', 'VM Tools'),
+  plugins('plugins', 'Plugins'),
   simple('simple', '');
 
   const ScreenMetaData(this.id, this.title);
