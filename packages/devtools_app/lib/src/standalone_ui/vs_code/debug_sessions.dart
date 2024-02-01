@@ -36,7 +36,7 @@ class DebugSessions extends StatelessWidget {
       children: [
         Text(
           'Debug Sessions',
-          style: Theme.of(context).textTheme.titleMedium,
+          style: Theme.of(context).textTheme.titleSmall,
         ),
         if (sessions.isEmpty)
           const Text('Begin a debug session to use DevTools.')

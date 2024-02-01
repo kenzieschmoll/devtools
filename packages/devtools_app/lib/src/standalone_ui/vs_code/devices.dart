@@ -37,7 +37,7 @@ class Devices extends StatelessWidget {
       children: [
         Text(
           'Devices',
-          style: theme.textTheme.titleMedium,
+          style: theme.textTheme.titleSmall,
         ),
         if (devices.isEmpty)
           const Text('Connect a device or enable web/desktop platforms.')
