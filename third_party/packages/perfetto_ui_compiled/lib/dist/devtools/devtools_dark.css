@@ -29,6 +29,8 @@ found in the LICENSE file.
     /* Matches dialog backgorund color in Devtools. */
     --devtools-dialog-background-color: #2b2d37;
 
+    --selection-highlight-color: #6e6e6eab;
+
     /* Perfetto CSS variable overrides. */
     --overview-timeline-non-visible-color: #6e6e6e80 !important;
     --track-border-color: var(--devtools-dark-border-color) !important;
@@ -199,4 +201,12 @@ header.overview .code {
 
 .modal-logs, .modal-textarea {
   border: 1px solid var(--devtools-dark-border-color) !important;
+}
+
+button.pf-minimal.pf-active {
+  background: var(--selection-highlight-color) !important;
+}
+
+input:focus-visible {
+  outline-color: var(--devtools-dark-primary-color) !important;
 }
