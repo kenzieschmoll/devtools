@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:convert';
-
 import 'package:devtools_app/devtools_app.dart';
 import 'package:devtools_app/src/screens/performance/panes/timeline_events/timeline_events_view.dart';
 import 'package:devtools_test/helpers.dart';
@@ -43,7 +41,7 @@ void main() {
       await tester.pump(safePumpDuration);
 
       await tester.tap(find.widgetWithText(InkWell, 'Timeline Events'));
-      await tester.pumpAndSettle(veryLongPumpDuration);
+      await tester.pumpAndSettle(longPumpDuration);
 
       // Find the [PerformanceController] to access its data.
       final performanceScreenFinder = find.byType(PerformanceScreenBody);
@@ -53,24 +51,17 @@ void main() {
       final performanceController = screenState.controller;
 
       logStatus('Verifying that data is processed upon first load');
-      final initialTrace = List.of(
-        performanceController
-            .timelineEventsController.fullPerfettoTrace!.packet,
-        growable: false,
+      final initialTrace = Trace.fromBuffer(
+        performanceController.timelineEventsController.fullPerfettoTrace,
       );
+      final initialTracePacket = List.of(initialTrace.packet, growable: false);
       final initialTrackDescriptors =
-          initialTrace.where((e) => e.hasTrackDescriptor());
-      expect(initialTrace, isNotEmpty);
+          initialTracePacket.where((e) => e.hasTrackDescriptor());
+      expect(initialTracePacket, isNotEmpty);
       expect(initialTrackDescriptors, isNotEmpty);
 
-      final trackEvents = initialTrace.where((e) => e.hasTrackEvent());
-      expect(
-        trackEvents,
-        isNotEmpty,
-        reason: trackEvents
-            .map((TracePacket p) => jsonEncode(p.trackEvent.toProto3Json()))
-            .join('\n'),
-      );
+      final trackEvents = initialTracePacket.where((e) => e.hasTrackEvent());
+      expect(trackEvents, isNotEmpty);
 
       expect(
         performanceController
@@ -91,74 +82,29 @@ void main() {
         reason: 'Expected frameRangeFromTimelineEvents to be non-null',
       );
 
-      logStatus('Verify Flutter frames have been assigned timeline events');
-      _verifyFlutterFramesHaveTimelineEvents(performanceController);
+      logStatus(
+        'toggling the Performance Overlay to trigger new Flutter frames',
+      );
+      final performanceOverlayFinder = find.text('Performance Overlay');
+      expect(performanceOverlayFinder, findsOneWidget);
+      await tester.tap(performanceOverlayFinder);
+      await tester.pump(longPumpDuration);
 
-      // logStatus(
-      //   'toggling the Performance Overlay to trigger new Flutter frames',
-      // );
-      // final performanceOverlayFinder = find.text('Performance Overlay');
-      // expect(performanceOverlayFinder, findsOneWidget);
-      // await tester.tap(performanceOverlayFinder);
-      // await tester.pump(veryLongPumpDuration);
+      logStatus('Refreshing the timeline to load new events');
+      await tester.tap(find.byType(RefreshTimelineEventsButton));
+      await tester.pump(longPumpDuration);
 
-      // logStatus('Refreshing the timeline to load new events');
-      // await _refreshTimeline(tester);
-
-      // logStatus('Verifying that we have not recorded new events');
-      // final refreshedTrace = List.of(
-      //   performanceController
-      //       .timelineEventsController.fullPerfettoTrace!.packet,
-      //   growable: false,
-      // );
-      // expect(
-      //   refreshedTrace.length,
-      //   greaterThan(initialTrace.length),
-      //   reason: 'Expeced new events to have been recorded.',
-      // );
-
-      // logStatus('Verify new Flutter frames have been assigned timeline events');
-      // // Refresh the timeilne one more time to ensure we have collected all
-      // // timeline events in the VM's buffer.
-      // await _refreshTimeline(tester);
-      // _verifyFlutterFramesHaveTimelineEvents(performanceController);
-      // await tester.pump(veryLongPumpDuration);
+      logStatus('Verifying that we have recorded new events');
+      final refreshedTrace = Trace.fromBuffer(
+        performanceController.timelineEventsController.fullPerfettoTrace,
+      );
+      final refreshedTracePacket =
+          List.of(refreshedTrace.packet, growable: false);
+      expect(
+        refreshedTracePacket.length,
+        greaterThan(initialTracePacket.length),
+        reason: 'Expected new events to have been recorded, but none were.',
+      );
     },
   );
-}
-
-Future<void> _refreshTimeline(WidgetTester tester) async {
-  await tester.tap(find.byType(RefreshTimelineEventsButton));
-  await tester.pump(veryLongPumpDuration);
-}
-
-void _verifyFlutterFramesHaveTimelineEvents(
-  PerformanceController performanceController,
-) {
-  final flutterFrames =
-      performanceController.flutterFramesController.flutterFrames.value;
-  expect(flutterFrames, isNotEmpty);
-  for (final frame in flutterFrames) {
-    if (frame.timelineEventData.uiEvent == null ||
-        frame.timelineEventData.rasterEvent == null) {
-      expect(
-        performanceController.timelineEventsController.perfettoController
-            .processor.debugProcessingLog
-            .toString(),
-        isEmpty,
-        reason: 'debug log:\n'
-            '${performanceController.timelineEventsController.perfettoController.processor.debugProcessingLog.toString()}',
-      );
-    }
-    expect(
-      frame.timelineEventData.uiEvent,
-      isNotNull,
-      reason: 'Expected a non-null UI event for frame ${frame.id}.',
-    );
-    expect(
-      frame.timelineEventData.rasterEvent,
-      isNotNull,
-      reason: 'Expected a non-null Raster event for frame ${frame.id}.',
-    );
-  }
 }

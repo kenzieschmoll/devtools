@@ -366,23 +366,23 @@ class _AllDeepLinkDataTable extends StatelessWidget {
           isScrollable: true,
         ),
         Expanded(
-          child: ValueListenableBuilder<List<LinkData>?>(
+          child: ValueListenableBuilder<ValidatedLinkDatas>(
             valueListenable: controller.displayLinkDatasNotifier,
             builder: (context, linkDatas, _) => TabBarView(
               children: [
                 _DataTable(
                   viewType: TableViewType.domainView,
-                  linkDatas: controller.getLinkDatasByDomain,
+                  linkDatas: linkDatas.byDomain,
                   controller: controller,
                 ),
                 _DataTable(
                   viewType: TableViewType.pathView,
-                  linkDatas: controller.getLinkDatasByPath,
+                  linkDatas: linkDatas.byPath,
                   controller: controller,
                 ),
                 _DataTable(
                   viewType: TableViewType.singleUrlView,
-                  linkDatas: linkDatas!,
+                  linkDatas: linkDatas.all,
                   controller: controller,
                 ),
               ],
@@ -407,7 +407,7 @@ class _NotificationCardSection extends StatelessWidget {
   final DeepLinksController controller;
   @override
   Widget build(BuildContext context) {
-    if (domainErrorCount == 0 && domainErrorCount == 0) {
+    if (domainErrorCount == 0 && pathErrorCount == 0) {
       return const SizedBox.shrink();
     }
     return OutlineDecoration(
@@ -425,7 +425,7 @@ class _NotificationCardSection extends StatelessWidget {
                     // Switch to the domain view. Select the first link with domain error and show the split screen.
                     DefaultTabController.of(context).index = 0;
                     controller.selectLink(
-                      controller.getLinkDatasByDomain
+                      controller.displayLinkDatasNotifier.value.byDomain
                           .where((element) => element.domainErrors.isNotEmpty)
                           .first,
                     );
@@ -450,8 +450,8 @@ class _NotificationCardSection extends StatelessWidget {
                     // Switch to the path view. Select the first link with path error and show the split screen.
                     DefaultTabController.of(context).index = 1;
                     controller.selectLink(
-                      controller.getLinkDatasByPath
-                          .where((element) => element.pathError)
+                      controller.displayLinkDatasNotifier.value.byPath
+                          .where((element) => element.pathErrors.isNotEmpty)
                           .first,
                     );
                     controller.updateDisplayOptions(showSplitScreen: true);

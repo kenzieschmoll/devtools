@@ -37,7 +37,7 @@ class NetworkScreen extends Screen {
   String get docPageId => screenId;
 
   @override
-  Widget build(BuildContext context) => const NetworkScreenBody();
+  Widget buildScreenBody(BuildContext context) => const NetworkScreenBody();
 
   @override
   Widget buildStatus(BuildContext context) {
@@ -278,27 +278,24 @@ class _NetworkProfilerBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => FocusScope.of(context).unfocus(),
-      child: SplitPane(
-        initialFractions: const [0.5, 0.5],
-        minSizes: const [200, 200],
-        axis: Axis.horizontal,
-        children: [
-          ValueListenableBuilder<List<NetworkRequest>>(
-            valueListenable: controller.filteredData,
-            builder: (context, filteredRequests, _) {
-              return NetworkRequestsTable(
-                networkController: controller,
-                requests: filteredRequests,
-                searchMatchesNotifier: controller.searchMatches,
-                activeSearchMatchNotifier: controller.activeSearchMatch,
-              );
-            },
-          ),
-          NetworkRequestInspector(controller),
-        ],
-      ),
+    return SplitPane(
+      initialFractions: const [0.5, 0.5],
+      minSizes: const [200, 200],
+      axis: Axis.horizontal,
+      children: [
+        ValueListenableBuilder<List<NetworkRequest>>(
+          valueListenable: controller.filteredData,
+          builder: (context, filteredRequests, _) {
+            return NetworkRequestsTable(
+              networkController: controller,
+              requests: filteredRequests,
+              searchMatchesNotifier: controller.searchMatches,
+              activeSearchMatchNotifier: controller.activeSearchMatch,
+            );
+          },
+        ),
+        NetworkRequestInspector(controller),
+      ],
     );
   }
 }
