@@ -149,7 +149,7 @@ class DevToolsRouterDelegate extends RouterDelegate<DevToolsRouteConfiguration>
     final page = routeConfig?.page;
     final args = routeConfig?.args ?? {};
     final state = routeConfig?.state;
-
+print('devtools router delegate page: $page');
     return Navigator(
       key: navigatorKey,
       pages: [_getPage(context, page, args, state)],

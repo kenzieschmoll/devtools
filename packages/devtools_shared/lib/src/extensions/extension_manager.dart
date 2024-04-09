@@ -13,7 +13,7 @@ import 'extension_model.dart';
 
 /// Location where DevTools extension assets will be served, relative to where
 /// DevTools assets are served (build/).
-const extensionRequestPath = 'devtools_extensions';
+// const extensionRequestPath = 'devtools_extensions';
 
 /// The default location for the DevTools extension, relative to
 /// `<parent_package_root>/extension/devtools/`.
@@ -35,7 +35,7 @@ class ExtensionsManager {
 
   /// The directory path where DevTools extensions are being served by the
   /// DevTools server.
-  String get _servedExtensionsPath => path.join(buildDir, extensionRequestPath);
+  // String get _servedExtensionsPath => path.join(buildDir, extensionRequestPath);
 
   /// The list of available DevTools extensions that are being served by the
   /// DevTools server.
@@ -44,24 +44,24 @@ class ExtensionsManager {
   /// [serveAvailableExtensions] is called.
   final devtoolsExtensions = <DevToolsExtensionConfig>[];
 
-  /// Serves any available DevTools extensions for the given [rootPathFileUri],
-  /// where [rootPathFileUri] is the root for a Dart or Flutter project
+  /// Serves any available DevTools extensions for the given [rootFileUriString],
+  /// where [rootFileUriString] is the root for a Dart or Flutter project
   /// containing the `.dart_tool/` directory.
   ///
-  /// [rootPathFileUri] is expected to be a file uri (e.g. starting with
-  /// 'file://').
+  /// [rootFileUriString] is expected to be a file URI string (e.g. starting
+  /// with 'file://').
   ///
   /// This method first looks up the available extensions using
   /// package:extension_discovery, and the available extension's
   /// assets will be copied to the `build/devtools_extensions` directory that
   /// DevTools server is serving.
   Future<void> serveAvailableExtensions(
-    String? rootPathFileUri,
+    String? rootFileUriString,
     List<String> logs,
   ) async {
-    if (rootPathFileUri != null && !rootPathFileUri.startsWith('file://')) {
+    if (rootFileUriString != null && !rootFileUriString.startsWith('file://')) {
       throw ArgumentError.value(
-        rootPathFileUri,
+        rootFileUriString,
         'rootPathFileUri',
         'must be a file:// URI String',
       );
@@ -69,73 +69,33 @@ class ExtensionsManager {
 
     logs.add(
       'ExtensionsManager.serveAvailableExtensions: '
-      'rootPathFileUri: $rootPathFileUri',
+      'rootPathFileUri: $rootFileUriString',
     );
 
     devtoolsExtensions.clear();
     final parsingErrors = StringBuffer();
 
-    if (rootPathFileUri != null) {
-      late final List<Extension> extensions;
-      try {
-        extensions = await findExtensions(
-          'devtools',
-          packageConfig: Uri.parse(
-            path.posix.join(
-              rootPathFileUri,
-              '.dart_tool',
-              'package_config.json',
-            ),
-          ),
-        );
-        logs.add(
-          'ExtensionsManager.serveAvailableExtensions: findExtensionsResult  - '
-          '${extensions.map((e) => e.package).toList()}',
-        );
-      } catch (e) {
-        extensions = <Extension>[];
-        rethrow;
-      }
-
-      for (final extension in extensions) {
-        final config = extension.config;
-        // TODO(https://github.com/dart-lang/pub/issues/4042): make this check
-        // more robust.
-        final isPubliclyHosted = (extension.rootUri.path.contains('pub.dev') ||
-                extension.rootUri.path.contains('pub.flutter-io.cn'))
-            .toString();
-
-        // This should be relative to the 'extension/devtools/' directory and
-        // defaults to 'build';
-        final relativeExtensionLocation =
-            config['buildLocation'] as String? ?? 'build';
-
-        final location = path.join(
-          extension.rootUri.toFilePath(),
-          'extension',
-          'devtools',
-          relativeExtensionLocation,
-        );
-
-        try {
-          final extensionConfig = DevToolsExtensionConfig.parse({
-            ...config,
-            DevToolsExtensionConfig.pathKey: location,
-            DevToolsExtensionConfig.isPubliclyHostedKey: isPubliclyHosted,
-          });
-          devtoolsExtensions.add(extensionConfig);
-        } on StateError catch (e) {
-          parsingErrors.writeln(e.message);
-          continue;
-        }
-      }
+    // Find all runtime extensions for [rootFileUriString], if non-null, and add
+    // them to [devtoolsExtensions].
+    if (rootFileUriString != null) {
+      await addExtensionsForRoot(
+        rootFileUriString,
+        logs: logs,
+        parsingErrors: parsingErrors,
+      );
     }
 
-    _resetServedPluginsDir();
-    await Future.wait([
-      for (final extension in devtoolsExtensions)
-        _moveToServedExtensionsDir(extension.name, extension.path, logs: logs),
-    ]);
+    // Find all static extensions.
+
+    // _resetServedPluginsDir();
+    // await Future.wait([
+    //   for (final extension in devtoolsExtensions)
+    //     _symlinkToServedExtensionsDir(
+    //       extension.name,
+    //       extension.path,
+    //       logs: logs,
+    //     ),
+    // ]);
 
     if (parsingErrors.isNotEmpty) {
       throw ExtensionParsingException(
@@ -145,35 +105,99 @@ class ExtensionsManager {
     }
   }
 
-  void _resetServedPluginsDir() {
-    final buildDirectory = Directory(buildDir);
-    if (!buildDirectory.existsSync()) {
-      throw const FileSystemException('The build directory does not exist.');
-    }
+  // void _resetServedPluginsDir() {
+  //   final buildDirectory = Directory(buildDir);
+  //   if (!buildDirectory.existsSync()) {
+  //     throw const FileSystemException('The build directory does not exist.');
+  //   }
 
-    // Destroy and recreate the 'devtools_extensions' directory where extension
-    // assets are served.
-    final servedExtensionsDir = Directory(_servedExtensionsPath);
-    if (servedExtensionsDir.existsSync()) {
-      servedExtensionsDir.deleteSync(recursive: true);
-    }
-    servedExtensionsDir.createSync();
-  }
+  //   // Destroy and recreate the 'devtools_extensions' directory where extension
+  //   // assets are served.
+  //   final servedExtensionsDir = Directory(_servedExtensionsPath);
+  //   if (servedExtensionsDir.existsSync()) {
+  //     servedExtensionsDir.deleteSync(recursive: true);
+  //   }
+  //   servedExtensionsDir.createSync();
+  // }
 
-  Future<void> _moveToServedExtensionsDir(
-    String extensionPackageName,
-    String extensionPath, {
+  // Future<void> _symlinkToServedExtensionsDir(
+  //   String extensionPackageName,
+  //   String extensionPath, {
+  //   required List<String> logs,
+  // }) async {
+  //   final newExtensionPath = path.join(
+  //     _servedExtensionsPath,
+  //     extensionPackageName,
+  //   );
+  //   logs.add(
+  //     'ExtensionsManager._moveToServedExtensionsDir: moving '
+  //     '$extensionPath to $newExtensionPath',
+  //   );
+  //   await Link(newExtensionPath).create(extensionPath, recursive: true);
+  //   // await copyPath(extensionPath, newExtensionPath);
+  // }
+
+  Future<void> addExtensionsForRoot(
+    String rootFileUriString, {
     required List<String> logs,
+    required StringBuffer parsingErrors,
   }) async {
-    final newExtensionPath = path.join(
-      _servedExtensionsPath,
-      extensionPackageName,
-    );
-    logs.add(
-      'ExtensionsManager._moveToServedExtensionsDir: moving '
-      '$extensionPath to $newExtensionPath',
-    );
-    await copyPath(extensionPath, newExtensionPath);
+    late final List<Extension> extensions;
+    try {
+      extensions = await findExtensions(
+        'devtools',
+        packageConfig: Uri.parse(
+          path.posix.join(
+            rootFileUriString,
+            '.dart_tool',
+            'package_config.json',
+          ),
+        ),
+      );
+      logs.add(
+        'ExtensionsManager.serveAvailableExtensions: findExtensionsResult  - '
+        '${extensions.map((e) => e.package).toList()}',
+      );
+    } catch (e) {
+      extensions = <Extension>[];
+      rethrow;
+    }
+
+    for (final extension in extensions) {
+      final config = extension.config;
+      // TODO(https://github.com/dart-lang/pub/issues/4042): make this check
+      // more robust.
+      final isPubliclyHosted = (extension.rootUri.path.contains('pub.dev') ||
+              extension.rootUri.path.contains('pub.flutter-io.cn'))
+          .toString();
+
+      // This should be relative to the package's 'extension/devtools/'
+      // directory and defaults to 'build';
+      final relativeExtensionLocation =
+          config['buildLocation'] as String? ?? 'build';
+
+      final location = path.join(
+        extension.rootUri.toFilePath(),
+        'extension',
+        'devtools',
+        relativeExtensionLocation,
+      );
+
+      print('!!!! Found extension. Location is:');
+      print(location);
+
+      try {
+        final extensionConfig = DevToolsExtensionConfig.parse({
+          ...config,
+          DevToolsExtensionConfig.pathKey: location,
+          DevToolsExtensionConfig.isPubliclyHostedKey: isPubliclyHosted,
+        });
+        devtoolsExtensions.add(extensionConfig);
+      } on StateError catch (e) {
+        parsingErrors.writeln(e.message);
+        continue;
+      }
+    }
   }
 }
 

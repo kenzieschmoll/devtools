@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 
 import '../shared/globals.dart';
+import '../shared/primitives/utils.dart';
 import '../shared/server/server.dart' as server;
 
 final _log = Logger('ExtensionService');
@@ -39,6 +40,23 @@ class ExtensionService extends DisposableController
   ValueListenable<List<DevToolsExtensionConfig>> get visibleExtensions =>
       _visibleExtensions;
   final _visibleExtensions = ValueNotifier<List<DevToolsExtensionConfig>>([]);
+
+  /// DevTools extensions available in the user's project that do not require a
+  /// running application.
+  ///
+  /// The user's project roots are detected from the Dart Tooling Daemon.
+  /// Extensions are then derived from the `package_config.json` files contained
+  /// in each of these project roots.
+  ///
+  /// Any static extensions that match a detected runtime extension will be
+  /// ignored to prevent duplicates.
+  final _staticExtensions = <DevToolsExtensionConfig>[];
+
+  /// DevTools extensions available for the connected VM service.
+  ///
+  /// These extensions are derived from the `package_config.json` file contained
+  /// in the package root of the main isolate's root library.
+  final _runtimeExtensions = <DevToolsExtensionConfig>[];
 
   /// Returns the [ValueListenable] that stores the [ExtensionEnabledState] for
   /// the DevTools Extension with [extensionName].
@@ -81,6 +99,7 @@ class ExtensionService extends DisposableController
             await _maybeRefreshExtensions();
           } else {
             _log.fine('app disconnected. Initializing and refreshing.');
+            // Todo reset only runtime extensions
             _reset();
           }
         },
@@ -96,7 +115,7 @@ class ExtensionService extends DisposableController
               null) {
             _log.fine('main isolate changed. Initializing and refreshing.');
             await _initAppRoot();
-            await _maybeRefreshExtensions();
+            await _maybeRefreshRuntimeExtensions();
           } else {
             _reset();
           }
@@ -121,14 +140,55 @@ class ExtensionService extends DisposableController
   }
 
   Future<void> _maybeRefreshExtensions() async {
-    if (_appRoot == null) return;
-
     _refreshInProgress.value = true;
-    _availableExtensions.value =
-        await server.refreshAvailableExtensions(_appRoot!)
-          ..sort();
+    final runtimeExtensions = await _maybeRefreshRuntimeExtensions();
+    final staticExtensions = await _maybeRefreshStaticExtensions();
+    setIgnoreStatesForStaticExtensions();
+    _availableExtensions.value = [
+      ...runtimeExtensions,
+      ...staticExtensions.where((ext) => !ext.ignored),
+    ]..sort();
     await _refreshExtensionEnabledStates();
     _refreshInProgress.value = false;
+  }
+
+  Future<List<DevToolsExtensionConfig>> _maybeRefreshRuntimeExtensions() async {
+    if (_appRoot == null) return const [];
+    // issue: this resets the served plugins directory on the server. maybe we
+    // should have the server handle interacting with DTD? though that may make
+    // development difficult. or maybe **have two separate runtime and static
+    // directories for the server? and add a field 'type' that is 'static' or
+    // 'runtime' on the extension config json
+    return await server.refreshAvailableExtensions(_appRoot!);
+  }
+
+  Future<List<DevToolsExtensionConfig>> _maybeRefreshStaticExtensions() async {
+    // TODO(kenz): add some affordance in the extensions settings menu to force
+    // a deep search in case the default depth for `dtdManager.projectRoots` is
+    // not enough for the user's project.
+    final projectRoots = await  dtdManager.projectRoots();
+    for (final root in projectRoots?.uris ?? const []) {
+      
+    }
+    final connected =
+        serviceConnection.serviceManager.connectedState.value.connected;
+    if (connected) {}
+    // refresh static extensions somehow
+    // await server.refreshAvailableExtensions(_appRoot!)
+    //   ..sort();
+    return [];
+  }
+
+  void setIgnoreStatesForStaticExtensions() {
+    for (final staticExtension in _staticExtensions) {
+      // TODO(kenz): do we need to match on something other than name? Names
+      // _should_ be unique since they match a pub package name, but this may
+      // not always be true for extensions that are not published on pub or
+      // extensions that do not follow best practices for naming.
+      final isDuplicate = _runtimeExtensions
+          .containsWhere((ext) => ext.name == staticExtension.name);
+      staticExtension.ignore(isDuplicate ? true : false);
+    }
   }
 
   Future<void> _refreshExtensionEnabledStates() async {
@@ -198,3 +258,17 @@ Future<Uri?> _connectedAppRoot() async {
   if (packageUriString == null) return null;
   return Uri.parse(packageUriString);
 }
+
+extension on DevToolsExtensionConfig {
+  bool get ignored => _ignoredStaticExtensions.contains(this);
+
+  void ignore([bool ignore = true]) {
+    if (ignore) {
+      _ignoredStaticExtensions.add(this);
+    } else {
+      _ignoredStaticExtensions.remove(this);
+    }
+  }
+}
+
+final _ignoredStaticExtensions = <DevToolsExtensionConfig>{};

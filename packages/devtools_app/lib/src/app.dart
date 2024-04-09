@@ -192,6 +192,7 @@ class DevToolsAppState extends State<DevToolsApp> with AutoDisposeMixin {
     Map<String, String?> args,
     DevToolsNavigationState? state,
   ) {
+    print('getpage: $page');
     // `page` will initially be null while the router is set up, then we will
     // be called again with an empty string for the root.
     if (FrameworkCore.initializationInProgress || page == null) {

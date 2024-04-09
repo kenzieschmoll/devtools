@@ -7,6 +7,7 @@ import 'dart:ui_web' as ui_web;
 
 import 'package:devtools_app_shared/utils.dart';
 import 'package:devtools_extensions/api.dart';
+import 'package:devtools_shared/devtools_extensions_io.dart';
 import 'package:path/path.dart' as path;
 import 'package:web/web.dart';
 
@@ -46,12 +47,14 @@ class EmbeddedExtensionControllerImpl extends EmbeddedExtensionController
       origin: window.location.origin,
       path: window.location.pathname,
     );
+    // print('$basePath + $extensionRequestPath + ${extensionConfig.path} + index.html');
     final baseUri = path.join(
       basePath,
-      'devtools_extensions',
-      extensionConfig.name,
+      // extensionRequestPath,
+      extensionConfig.path,
       'index.html',
     );
+    print('baseUri: $baseUri');
     final queryParams = {
       ...loadQueryParams(),
       ExtensionEventParameters.theme: preferences.darkModeTheme.value
@@ -59,7 +62,9 @@ class EmbeddedExtensionControllerImpl extends EmbeddedExtensionController
           : ExtensionEventParameters.themeValueLight,
       if (dtdManager.uri != null) 'dtdUri': dtdManager.uri.toString(),
     };
-    return Uri.parse(baseUri).copyWith(queryParameters: queryParams).toString();
+    final uri = Uri.parse(baseUri).copyWith(queryParameters: queryParams).toString();
+    print('requesting extension url: $uri');
+    return uri;
   }
 
   HTMLIFrameElement get extensionIFrame => _extensionIFrame;
