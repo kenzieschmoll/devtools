@@ -98,7 +98,7 @@ class MemoryChartPaneController extends DisposableController
   Future<void> resume() async {
     if (!_paused.value) return;
     if (mode != DevToolsMode.connected) throw StateError('Not connected.');
-    await _chartConnection!.maybeConnect();
+    await _chartConnection!.maybeInitialize();
     _paused.value = false;
   }
 

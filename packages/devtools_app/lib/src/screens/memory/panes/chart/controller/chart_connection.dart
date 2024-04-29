@@ -36,14 +36,30 @@ class ChartConnection extends DisposableController
   );
 
   Timer? _pollingTimer;
-  bool _connected = false;
 
-  late final isDeviceAndroid =
-      serviceConnection.serviceManager.vm?.operatingSystem == 'android';
+  bool _initialized = false;
 
-  Future<void> maybeConnect() async {
-    if (_connected) return;
+  late final bool isDeviceAndroid;
+
+  Future<void> maybeInitialize() async {
+    if (_initialized) return;
     await serviceConnection.serviceManager.onServiceAvailable;
+
+    // This should be initialized once we are sure that a VM service connection
+    // is available and initialized in the service manager.
+    isDeviceAndroid =
+        serviceConnection.serviceManager.vm?.operatingSystem == 'android';
+
+    cancelStreamSubscriptions();
+    cancelListeners();
+
+    addAutoDisposeListener(serviceConnection.serviceManager.connectedState, () {
+      final connected =
+          serviceConnection.serviceManager.connectedState.value.connected;
+      if (!connected) {
+        _pollingTimer?.cancel();
+      }
+    });
     autoDisposeStreamSubscription(
       serviceConnection.serviceManager.service!.onExtensionEvent
           .listen(_memoryTracker.onMemoryData),
@@ -52,19 +68,22 @@ class ChartConnection extends DisposableController
       serviceConnection.serviceManager.service!.onGCEvent
           .listen(_memoryTracker.onGCEvent),
     );
-    await _onPoll();
-    _connected = true;
+    await _startPolling();
+    _initialized = true;
   }
 
-  Future<void> _onPoll() async {
-    _pollingTimer = null;
+  Future<void> _startPolling() async {
     await _memoryTracker.pollMemory();
-    _pollingTimer = Timer(chartUpdateDelay, _onPoll);
+    _pollingTimer = Timer.periodic(
+      chartUpdateDelay,
+      (_) => unawaited(_memoryTracker.pollMemory()),
+    );
   }
 
   @override
   void dispose() {
     _pollingTimer?.cancel();
+    _pollingTimer = null;
     super.dispose();
   }
 }
