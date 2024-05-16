@@ -1,9 +1,8 @@
-// Copyright 2019 The Chromium Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
+// Copyright 2019 The Chromium Authors. All rights reserved. 
+// Use of this source code is governed by a BSD-style license that can be 
 // found in the LICENSE file.
 
 import 'dart:async';
-
 import 'package:devtools_app_shared/ui.dart';
 import 'package:devtools_app_shared/utils.dart';
 import 'package:flutter/material.dart';
@@ -23,7 +22,6 @@ import '_logs_table.dart';
 import 'logging_controller.dart';
 import 'shared/constants.dart';
 
-/// Presents logs from the connected app.
 class LoggingScreen extends Screen {
   LoggingScreen()
       : super(
@@ -42,8 +40,7 @@ class LoggingScreen extends Screen {
 
   @override
   Widget buildStatus(BuildContext context) {
-    final LoggingController controller =
-        Provider.of<LoggingController>(context);
+    final LoggingController controller = Provider.of<LoggingController>(context);
 
     return StreamBuilder<String>(
       initialData: controller.statusText,
@@ -58,27 +55,17 @@ class LoggingScreen extends Screen {
 class LoggingScreenBody extends StatefulWidget {
   const LoggingScreenBody({super.key});
 
-  static const filterQueryInstructions = '''
-Type a filter query to show or hide specific logs.
-
+  static const filterQueryInstructions = ''' Type a filter query to show or hide specific logs.
 Any text that is not paired with an available filter key below will be queried against all categories (kind, message).
-
-Available filters:
-    'kind', 'k'       (e.g. 'k:flutter.frame', '-k:gc,stdout')
-
-Example queries:
-    'my log message k:stdout,stdin'
-    'flutter -k:gc'
-''';
+Available filters:   'kind', 'k'    (e.g. 'k:flutter.frame', '-k:gc,stdout')
+Example queries:   'my log message k:stdout,stdin'   'flutter -k:gc' ''';
 
   @override
   State<LoggingScreenBody> createState() => _LoggingScreenState();
 }
 
 class _LoggingScreenState extends State<LoggingScreenBody>
-    with
-        AutoDisposeMixin,
-        ProvidedControllerMixin<LoggingController, LoggingScreenBody> {
+    with AutoDisposeMixin, ProvidedControllerMixin<LoggingController, LoggingScreenBody> {
   late List<LogData> filteredLogs;
 
   @override
@@ -93,7 +80,6 @@ class _LoggingScreenState extends State<LoggingScreenBody>
     if (!initController()) return;
 
     cancelListeners();
-
     filteredLogs = controller.filteredData.value;
     addAutoDisposeListener(controller.filteredData, () {
       setState(() {
@@ -106,17 +92,39 @@ class _LoggingScreenState extends State<LoggingScreenBody>
   Widget build(BuildContext context) {
     return Column(
       children: [
-        _buildLoggingControls(),
+        _LoggingControls(controller: controller),
         const SizedBox(height: intermediateSpacing),
         Expanded(
-          child: _buildLoggingBody(),
+          child: _LoggingBody(filteredLogs: filteredLogs, controller: controller),
         ),
       ],
     );
   }
 
-  // TODO(kenz): replace with helper widget
-  Widget _buildLoggingControls() {
+  void _showFilterDialog() {
+    unawaited(
+      showDialog(
+        context: context,
+        builder: (context) => FilterDialog<LogData>(
+          controller: controller,
+          queryInstructions: LoggingScreenBody.filterQueryInstructions,
+        ),
+      ),
+    );
+  }
+}
+
+// Helper Widget for Logging Controls
+class _LoggingControls extends StatelessWidget {
+  const _LoggingControls({
+    Key? key,
+    required this.controller,
+  }) : super(key: key);
+
+  final LoggingController controller;
+
+  @override
+  Widget build(BuildContext context) {
     final hasData = controller.filteredData.value.isNotEmpty;
     return Row(
       children: [
@@ -128,7 +136,6 @@ class _LoggingScreenState extends State<LoggingScreenBody>
         ),
         const Spacer(),
         const SizedBox(width: denseSpacing),
-        // TODO(kenz): fix focus issue when state is refreshed
         SearchField<LoggingController>(
           searchFieldWidth: isScreenWiderThan(context, loggingMinVerboseWidth)
               ? wideSearchFieldWidth
@@ -138,7 +145,7 @@ class _LoggingScreenState extends State<LoggingScreenBody>
         ),
         const SizedBox(width: denseSpacing),
         DevToolsFilterButton(
-          onPressed: _showFilterDialog,
+          onPressed: _showFilterDialog, // You'll need to pass a function here
           isFilterActive: controller.isFilterActive,
         ),
         const SizedBox(width: denseSpacing),
@@ -165,15 +172,24 @@ class _LoggingScreenState extends State<LoggingScreenBody>
       ],
     );
   }
+}
 
-  // TODO(kenz): replace with helper widget.
-  Widget _buildLoggingBody() {
+// Helper Widget for Logging Body
+class _LoggingBody extends StatelessWidget {
+  const _LoggingBody({
+    Key? key,
+    required this.filteredLogs,
+    required this.controller,
+  }) : super(key: key);
+
+  final List<LogData> filteredLogs;
+  final LoggingController controller;
+
+  @override
+  Widget build(BuildContext context) {
     return SplitPane(
       axis: Axis.vertical,
       initialFractions: const [0.72, 0.28],
-      // TODO(kenz): refactor so that the LogDetails header can be the splitter.
-      // This would be more consistent with other screens that use the console
-      // header as the splitter.
       children: [
         RoundedOutlinedBorder(
           clip: true,
@@ -191,18 +207,6 @@ class _LoggingScreenState extends State<LoggingScreenBody>
           },
         ),
       ],
-    );
-  }
-
-  void _showFilterDialog() {
-    unawaited(
-      showDialog(
-        context: context,
-        builder: (context) => FilterDialog<LogData>(
-          controller: controller,
-          queryInstructions: LoggingScreenBody.filterQueryInstructions,
-        ),
-      ),
     );
   }
 }
