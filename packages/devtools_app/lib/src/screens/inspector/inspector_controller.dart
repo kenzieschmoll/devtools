@@ -22,7 +22,6 @@ import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import 'package:vm_service/vm_service.dart';
 
-import '../../automator.dart';
 import '../../service/service_extensions.dart' as extensions;
 import '../../shared/console/eval/inspector_tree.dart';
 import '../../shared/console/primitives/simple_items.dart';
@@ -53,9 +52,7 @@ class InspectorController extends DisposableController
     unawaited(_init(detailsTree: detailsTree));
   }
 
-  Future<void> _init({
-    InspectorTreeController? detailsTree,
-  }) async {
+  Future<void> _init({InspectorTreeController? detailsTree}) async {
     _refreshRateLimiter = RateLimiter(refreshFramesPerSecond, refresh);
 
     inspectorTree.config = InspectorTreeConfig(
@@ -128,11 +125,6 @@ class InspectorController extends DisposableController
     }
 
     serviceConnection.consoleService.ensureServiceInitialized();
-
-    Automator.instance.registerAction(
-      AutomationAction.inspectorExpandAllInDetailsTree,
-      expandAllNodesInDetailsTree,
-    );
   }
 
   void _handleConnectionStart() {

@@ -484,6 +484,10 @@ class DevToolsAppState extends State<DevToolsApp> with AutoDisposeMixin {
   void _registerAutomatorActions() {
     Automator.instance
       ..registerAction(
+        AutomationAction.navigateToHome,
+        () => routerDelegate.navigateHome(clearScreenParam: true),
+      )
+      ..registerAction(
         AutomationAction.navigateToScreenInspector,
         () => routerDelegate.navigate(ScreenMetaData.inspector.id),
       )

@@ -808,7 +808,7 @@ class _InspectorTreeState extends State<InspectorTree>
       widget.isSummaryTree
           ? AutomationAction.inspectorScrollSummaryTree
           : AutomationAction.inspectorScrollDetailsTree,
-      _scrollControllerY.animateToEnd,
+      () async => await _scrollControllerY.animateToEnd(fast: true),
     );
   }
 

@@ -8,6 +8,7 @@ import 'package:devtools_app_shared/ui.dart';
 import 'package:devtools_app_shared/utils.dart';
 import 'package:flutter/material.dart';
 
+import '../../automator.dart';
 import '../../shared/analytics/constants.dart' as gac;
 import '../../shared/charts/flame_chart.dart';
 import '../../shared/common_widgets.dart';
@@ -89,6 +90,11 @@ class _CpuProfilerState extends State<CpuProfiler>
     super.initState();
     data = widget.data;
     _initTabController();
+
+    Automator.instance.registerAction(
+      AutomationAction.cpuProfilerOpenFlameChart,
+      () => _tabController.animateTo(ProfilerTab.cpuFlameChart.index),
+    );
   }
 
   @override

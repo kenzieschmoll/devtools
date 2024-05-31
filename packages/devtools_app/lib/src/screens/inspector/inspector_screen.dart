@@ -11,6 +11,7 @@ import 'package:devtools_app_shared/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:vm_service/vm_service.dart' hide Stack;
 
+import '../../automator.dart';
 import '../../service/service_extension_widgets.dart';
 import '../../service/service_extensions.dart' as extensions;
 import '../../shared/analytics/analytics.dart' as ga;
@@ -140,6 +141,16 @@ class InspectorScreenBodyState extends State<InspectorScreenBody>
     }
 
     _summaryTreeController.setSearchTarget(searchTarget);
+
+    Automator.instance
+      ..registerAction(
+        AutomationAction.inspectorSelectRoot,
+        _summaryTreeController.navigateDown,
+      )
+      ..registerAction(
+        AutomationAction.inspectorExpandAllInDetailsTree,
+        controller.expandAllNodesInDetailsTree,
+      );
   }
 
   @override
@@ -623,10 +634,7 @@ class InspectorDefaultDetailsViewOption extends StatelessWidget {
       final item = value.name == InspectorDetailsViewType.layoutExplorer.name
           ? gac.defaultDetailsViewToLayoutExplorer
           : gac.defaultDetailsViewToWidgetDetails;
-      ga.select(
-        gac.inspector,
-        item,
-      );
+      ga.select(gac.inspector, item);
     }
   }
 }

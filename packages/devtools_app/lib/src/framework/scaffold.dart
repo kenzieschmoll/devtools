@@ -60,13 +60,13 @@ class DevToolsScaffold extends StatefulWidget {
         );
 
   static List<Widget> defaultActions({Color? color}) => [
-        if (debugPerformanceAutomation) Automator.instance.buildButton(),
         OpenSettingsAction(color: color),
         if (FeatureFlags.devToolsExtensions &&
             !DevToolsQueryParams.load().hideExtensions)
           ExtensionSettingsAction(color: color),
         ReportFeedbackButton(color: color),
         OpenAboutAction(color: color),
+        if (debugPerformanceAutomation) Automator.instance.buildButton(),
       ];
 
   /// The padding around the content in the DevTools UI.

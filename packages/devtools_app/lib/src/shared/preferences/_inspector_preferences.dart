@@ -49,7 +49,7 @@ class InspectorPreferencesController extends DisposableController
             ?.library;
     final rootLibUri = Uri.parse(rootLibUriString ?? '');
     final directorySegments =
-        rootLibUri.pathSegments.sublist(0, rootLibUri.pathSegments.length - 1);
+        rootLibUri.pathSegments.sublist(0, max(0, rootLibUri.pathSegments.length - 1));
     final rootLibDirectory = rootLibUri.replace(
       pathSegments: directorySegments,
     );

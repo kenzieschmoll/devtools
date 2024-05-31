@@ -13,7 +13,6 @@ import 'package:flutter/scheduler.dart';
 
 import 'shared/development_helpers.dart';
 import 'shared/primitives/flutter_widgets/linked_scroll_controller.dart';
-import 'shared/routing.dart';
 
 abstract class Automator {
   /// An automator for DevTools that performs registered actions at set time
@@ -28,7 +27,7 @@ abstract class Automator {
 
   ValueListenable<bool> get automating;
 
-  Future<void> beginAutomation(DevToolsRouterDelegate router);
+  Future<void> beginAutomation();
 
   void stopAutomation();
 
@@ -62,7 +61,7 @@ class _PerformanceAutomator extends Automator {
   final _automating = ValueNotifier(false);
 
   @override
-  Future<void> beginAutomation(DevToolsRouterDelegate router) async {
+  Future<void> beginAutomation() async {
     if (_automating.value) {
       // short-circuit
       return;
@@ -76,20 +75,24 @@ class _PerformanceAutomator extends Automator {
       _frameTimings.clear();
       _bindings.addTimingsCallback(_timingsCallback);
 
-      router.navigateHome(clearScreenParam: true);
-
-      for (var action in AutomationAction.values) {
-        print('Automater: ${action.name}');
+      final actions = AutomationAction.values
+          .where((a) => !AutomationAction._skip.contains(a));
+      print('running actions: ${actions.toList()}');
+      for (final action in actions) {
         await Future.delayed(
-          action.delay,
-          () async => await _callAction(action),
+          _shortDelay,
+          () async {
+            print('Automator: ${action.name}');
+            await _callAction(action);
+          },
         );
         if (!_automating.value) {
           // cancel out early if automation has stopped!
           return;
         }
+        await Future.delayed(action.afterDelay);
       }
-      await Future.delayed(_veryShortDelay);
+      await Future.delayed(_moderateDelay);
     } finally {
       stopAutomation();
     }
@@ -108,29 +111,31 @@ class _PerformanceAutomator extends Automator {
         print('Frame count: ${_frameTimings.length}');
         print('Wall time: ${_stopWatch.elapsed}');
 
-        final things = <String, Duration Function(FrameTiming)>{
-          'totalSpan': (ft) => ft.totalSpan,
+        final measurements = <String, Duration Function(FrameTiming)>{
+          'totalTime': (ft) => ft.totalSpan,
+          'buildDuration': (ft) => ft.buildDuration,
+          'rasterDuration': (ft) => ft.rasterDuration,
         };
 
-        for (var thing in things.entries) {
-          final timing = _frameTimings
-              .map((e) => thing.value(e).inMicroseconds)
+        print('*****');
+        for (final measure in measurements.entries) {
+          final timings = _frameTimings
+              .map((ft) => measure.value(ft).inMicroseconds)
               .toList(growable: false)
             ..sort();
 
-          print('*****');
-          print(thing.key);
-          for (var item in const [50, 90, 95, 99]) {
-            final index = timing.length * item ~/ 100.0;
+          print(measure.key);
+          for (final p in const [50, 90, 95, 99]) {
+            final index = timings.length * p ~/ 100.0;
             print(
-              [item, (timing[index] / 1000.0).toStringAsFixed(2)]
+              ['p$p', (timings[index] / 1000.0).toStringAsFixed(2)]
                   .map((e) => e.toString().padLeft(6))
                   .join('  '),
             );
           }
           print('');
-          print('*****');
         }
+        print('*****');
       }
     }
   }
@@ -146,13 +151,9 @@ class _PerformanceAutomator extends Automator {
               size: defaultIconSize,
             ),
             color: Colors.white,
-            onPressed: () => automating
-                ? Automator.instance.stopAutomation()
-                : unawaited(
-                    Automator.instance.beginAutomation(
-                      DevToolsRouterDelegate.of(context),
-                    ),
-                  ),
+            onPressed: automating
+                ? Automator.instance.stopAutomation
+                : Automator.instance.beginAutomation,
           ),
         ),
       );
@@ -188,31 +189,55 @@ class _PerformanceAutomator extends Automator {
 }
 
 enum AutomationAction {
+  navigateToHome,
   navigateToScreenInspector,
+  inspectorSelectRoot,
   inspectorScrollSummaryTree,
   inspectorExpandAllInDetailsTree,
   inspectorScrollDetailsTree,
   navigateToScreenPerformance,
   navigateToScreenCpuProfiler,
   cpuProfilerLoadAllSamples,
-  cpuProfilerScrollCallTree,
+  cpuProfilerScrollBottomUp,
   cpuProfilerOpenFlameChart,
   cpuProfilerScrollFlameChart,
   navigateToScreenMemory;
 
-  Duration get delay => switch (this) {
-        AutomationAction.navigateToScreenInspector ||
-        AutomationAction.navigateToScreenPerformance ||
-        AutomationAction.navigateToScreenCpuProfiler ||
-        AutomationAction.navigateToScreenMemory =>
-          _moderateDelay,
-        _ => _shortDelay,
+  Duration get afterDelay => switch (this) {
+        navigateToScreenInspector ||
+        navigateToScreenPerformance ||
+        navigateToScreenCpuProfiler ||
+        navigateToScreenMemory ||
+        cpuProfilerLoadAllSamples =>
+          _longDelay,
+        _ => _veryShortDelay,
       };
+
+  /// The set of automation actions to skip.
+  ///
+  /// All of these should be commented out to run the full automation, but you
+  /// can uncomment actions to skip them locally.
+  static const _skip = <AutomationAction>{
+    // navigateToHome,
+    // navigateToScreenInspector,
+    // inspectorSelectRoot,
+    // inspectorScrollSummaryTree,
+    // inspectorExpandAllInDetailsTree,
+    // inspectorScrollDetailsTree,
+    // navigateToScreenPerformance,
+    // navigateToScreenCpuProfiler,
+    // cpuProfilerLoadAllSamples,
+    // cpuProfilerScrollBottomUp,
+    // cpuProfilerOpenFlameChart,
+    // cpuProfilerScrollFlameChart,
+    // navigateToScreenMemory,
+  };
 }
 
-const _veryShortDelay = Duration(seconds: 1);
-const _shortDelay = Duration(milliseconds: 1500);
+const _veryShortDelay = Duration(milliseconds: 500);
+const _shortDelay = Duration(milliseconds: 1000);
 const _moderateDelay = Duration(seconds: 2);
+const _longDelay = Duration(seconds: 4);
 
 /// A no-op automator to use when [debugPerformanceAutomation] is false.
 class _NoopAutomator extends Automator {
@@ -224,7 +249,7 @@ class _NoopAutomator extends Automator {
   ValueListenable<bool> get automating => ValueNotifier<bool>(false);
 
   @override
-  Future<void> beginAutomation(DevToolsRouterDelegate router) async {}
+  Future<void> beginAutomation() async {}
 
   @override
   void stopAutomation() {}
@@ -237,10 +262,10 @@ class _NoopAutomator extends Automator {
 }
 
 extension ScrollingExtensions on ScrollController {
-  Future<void> animateToEnd() async {
+  Future<void> animateToEnd({bool fast = false}) async {
     await animateTo(
       position.maxScrollExtent,
-      duration: const Duration(seconds: 2),
+      duration: Duration(seconds: fast ? 1 : 2),
       curve: Curves.linear,
     );
   }

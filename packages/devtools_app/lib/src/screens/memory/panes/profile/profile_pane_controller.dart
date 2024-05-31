@@ -123,7 +123,7 @@ class ProfilePaneController extends DisposableController
     );
   }
 
-  final String rootPackage;
+  final String? rootPackage;
 
   @visibleForTesting
   void clearCurrentProfile() => _currentAllocationProfile.value = null;

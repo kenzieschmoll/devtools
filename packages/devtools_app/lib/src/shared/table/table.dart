@@ -11,6 +11,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide TableRow;
 import 'package:flutter/services.dart';
 
+import '../../automator.dart';
 import '../collapsible_mixin.dart';
 import '../common_widgets.dart';
 import '../primitives/extent_delegate_list.dart';

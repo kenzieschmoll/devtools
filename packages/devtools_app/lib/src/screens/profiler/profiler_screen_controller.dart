@@ -13,7 +13,6 @@ import '../../shared/config_specific/logger/allowed_error.dart';
 import '../../shared/globals.dart';
 import '../../shared/offline_data.dart';
 import '../../shared/primitives/utils.dart';
-import 'common.dart';
 import 'cpu_profile_model.dart';
 import 'cpu_profile_service.dart';
 import 'cpu_profiler_controller.dart';
@@ -88,20 +87,10 @@ class ProfilerScreenController extends DisposableController
       );
     }
 
-    Automator.instance
-      ..registerAction(
-        AutomationAction.cpuProfilerLoadAllSamples,
-        cpuProfilerController.loadAllSamples,
-      )
-      ..registerAction(
-        AutomationAction.cpuProfilerOpenFlameChart,
-        () {
-          cpuProfilerController.changeSelectedProfilerTab(
-            ProfilerTab.cpuFlameChart.index,
-            ProfilerTab.cpuFlameChart,
-          );
-        },
-      );
+    Automator.instance.registerAction(
+      AutomationAction.cpuProfilerLoadAllSamples,
+      cpuProfilerController.loadAllSamples,
+    );
   }
 
   Future<void> _loadOfflineData(CpuProfileData data) async {

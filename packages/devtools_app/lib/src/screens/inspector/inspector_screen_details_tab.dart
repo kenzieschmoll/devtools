@@ -46,7 +46,8 @@ class InspectorDetails extends StatelessWidget {
     return ValueListenableBuilder(
       valueListenable: preferences.inspector.defaultDetailsView,
       builder: (BuildContext context, value, Widget? child) {
-        int defaultInspectorViewIndex = 0;
+        int defaultInspectorViewIndex =
+            1; // Hack to make the details tree the initial tab.
 
         if (preferences.inspector.defaultDetailsView.value ==
             InspectorDetailsViewType.widgetDetailsTree) {
