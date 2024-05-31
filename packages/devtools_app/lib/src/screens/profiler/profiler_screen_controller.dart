@@ -8,10 +8,12 @@ import 'package:devtools_app_shared/utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:vm_service/vm_service.dart';
 
+import '../../automator.dart';
 import '../../shared/config_specific/logger/allowed_error.dart';
 import '../../shared/globals.dart';
 import '../../shared/offline_data.dart';
 import '../../shared/primitives/utils.dart';
+import 'common.dart';
 import 'cpu_profile_model.dart';
 import 'cpu_profile_service.dart';
 import 'cpu_profiler_controller.dart';
@@ -85,6 +87,21 @@ class ProfilerScreenController extends DisposableController
         loadData: _loadOfflineData,
       );
     }
+
+    Automator.instance
+      ..registerAction(
+        AutomationAction.cpuProfilerLoadAllSamples,
+        cpuProfilerController.loadAllSamples,
+      )
+      ..registerAction(
+        AutomationAction.cpuProfilerOpenFlameChart,
+        () {
+          cpuProfilerController.changeSelectedProfilerTab(
+            ProfilerTab.cpuFlameChart.index,
+            ProfilerTab.cpuFlameChart,
+          );
+        },
+      );
   }
 
   Future<void> _loadOfflineData(CpuProfileData data) async {

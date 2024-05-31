@@ -5,6 +5,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../../../automator.dart';
 import '../../../shared/charts/flame_chart.dart';
 import '../../../shared/ui/colors.dart';
 import '../../../shared/ui/utils.dart';
@@ -42,6 +43,16 @@ class _CpuProfileFlameChartState
   static const stackFramePadding = 1;
 
   final stackFrameLefts = <String, double>{};
+
+  @override
+  void initState() {
+    super.initState();
+
+    Automator.instance.registerAction(
+      AutomationAction.cpuProfilerScrollFlameChart,
+      verticalControllerGroup.animateToEnd,
+    );
+  }
 
   @override
   void initFlameChartElements() {

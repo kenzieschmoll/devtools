@@ -41,6 +41,7 @@ class TreeTable<T extends TreeNode<T>> extends StatefulWidget {
     this.displayTreeGuidelines = false,
     this.tallHeaders = false,
     this.headerColor,
+    this.registerAutomations,
     ValueNotifier<Selection<T?>>? selectionNotifier,
   })  : selectionNotifier = selectionNotifier ??
             ValueNotifier<Selection<T?>>(Selection.empty()),
@@ -119,6 +120,8 @@ class TreeTable<T extends TreeNode<T>> extends StatefulWidget {
   /// If null, defaults to `Theme.of(context).canvasColor`.
   final Color? headerColor;
 
+  final void Function(ScrollController?)? registerAutomations;
+
   @override
   TreeTableState<T> createState() => TreeTableState<T>();
 }
@@ -151,6 +154,10 @@ class TreeTableState<T extends TreeNode<T>> extends State<TreeTable<T>>
 
     _focusNode = FocusNode(debugLabel: 'table');
     autoDisposeFocusNode(_focusNode);
+
+    widget.registerAutomations?.call(
+      _tableController!.verticalScrollController,
+    );
   }
 
   @override

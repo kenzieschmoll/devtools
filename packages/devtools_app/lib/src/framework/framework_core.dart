@@ -13,6 +13,7 @@ import 'package:logging/logging.dart';
 import 'package:vm_service/vm_service.dart';
 
 import '../../devtools.dart' as devtools show version;
+import '../automator.dart';
 import '../extensions/extension_service.dart';
 import '../screens/debugger/breakpoint_manager.dart';
 import '../service/service_manager.dart';
@@ -70,6 +71,7 @@ abstract class FrameworkCore {
     extensionService.dispose();
     preferences.dispose();
     unawaited(dtdManager.dispose());
+    Automator.instance.dispose();
   }
 
   static void _initGlobals() {

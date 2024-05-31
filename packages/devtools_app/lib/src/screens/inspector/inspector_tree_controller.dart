@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
 
+import '../../automator.dart';
 import '../../shared/analytics/analytics.dart' as ga;
 import '../../shared/analytics/constants.dart' as gac;
 import '../../shared/analytics/metrics.dart';
@@ -802,6 +803,13 @@ class _InspectorTreeState extends State<InspectorTree>
         readyWhen: (triggerValue) => !triggerValue,
       );
     }
+
+    Automator.instance.registerAction(
+      widget.isSummaryTree
+          ? AutomationAction.inspectorScrollSummaryTree
+          : AutomationAction.inspectorScrollDetailsTree,
+      _scrollControllerY.animateToEnd,
+    );
   }
 
   @override

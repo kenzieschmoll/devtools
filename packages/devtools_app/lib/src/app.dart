@@ -11,6 +11,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'automator.dart';
 import 'example/conditional_screen.dart';
 import 'extensions/extension_screen.dart';
 import 'framework/framework_core.dart';
@@ -176,6 +177,8 @@ class DevToolsAppState extends State<DevToolsApp> with AutoDisposeMixin {
     });
 
     releaseNotesController = ReleaseNotesController();
+
+    _registerAutomatorActions();
   }
 
   @override
@@ -476,6 +479,26 @@ class DevToolsAppState extends State<DevToolsApp> with AutoDisposeMixin {
     if (params.hideAllExceptExtensions) {
       screens.removeWhere((s) => s is! ExtensionScreen);
     }
+  }
+
+  void _registerAutomatorActions() {
+    Automator.instance
+      ..registerAction(
+        AutomationAction.navigateToScreenInspector,
+        () => routerDelegate.navigate(ScreenMetaData.inspector.id),
+      )
+      ..registerAction(
+        AutomationAction.navigateToScreenPerformance,
+        () => routerDelegate.navigate(ScreenMetaData.performance.id),
+      )
+      ..registerAction(
+        AutomationAction.navigateToScreenCpuProfiler,
+        () => routerDelegate.navigate(ScreenMetaData.cpuProfiler.id),
+      )
+      ..registerAction(
+        AutomationAction.navigateToScreenMemory,
+        () => routerDelegate.navigate(ScreenMetaData.memory.id),
+      );
   }
 }
 

@@ -288,3 +288,5 @@ FutureOr<void> debugTimeAsync(
   final time = DateTime.now().millisecondsSinceEpoch - now;
   _log.info('$debugName: $time ms');
 }
+
+const debugPerformanceAutomation = true;

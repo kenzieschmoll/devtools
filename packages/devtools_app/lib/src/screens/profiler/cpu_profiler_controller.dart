@@ -170,6 +170,8 @@ class CpuProfilerController extends DisposableController
 
   ProfilerTab selectedProfilerTab = ProfilerTab.bottomUp;
 
+  // TODO(kenz): these parameters can likely be consolidated to just pass the
+  // tab and get the index from the tab. Investigate further.
   void changeSelectedProfilerTab(int index, ProfilerTab tab) {
     selectedProfilerTabIndex = index;
 

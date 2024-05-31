@@ -4,6 +4,7 @@
 
 import 'package:flutter/material.dart';
 
+import '../../../automator.dart';
 import '../../../shared/primitives/utils.dart';
 import '../../../shared/table/table.dart';
 import '../../../shared/table/table_data.dart';
@@ -50,6 +51,11 @@ class CpuCallTreeTable extends StatelessWidget {
       defaultSortColumn: totalTimeColumn,
       displayTreeGuidelines: true,
       defaultSortDirection: SortDirection.descending,
+      registerAutomations: (scrollController) =>
+          Automator.instance.registerAction(
+        AutomationAction.cpuProfilerScrollCallTree,
+        () async => await scrollController?.animateToEnd(),
+      ),
     );
   }
 }

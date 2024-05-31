@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../app.dart';
+import '../automator.dart';
 import '../extensions/extension_settings.dart';
 import '../screens/debugger/debugger_screen.dart';
 import '../shared/analytics/prompt.dart';
@@ -16,6 +17,7 @@ import '../shared/banner_messages.dart';
 import '../shared/config_specific/drag_and_drop/drag_and_drop.dart';
 import '../shared/config_specific/import_export/import_export.dart';
 import '../shared/console/widgets/console_pane.dart';
+import '../shared/development_helpers.dart';
 import '../shared/feature_flags.dart';
 import '../shared/framework_controller.dart';
 import '../shared/globals.dart';
@@ -58,6 +60,7 @@ class DevToolsScaffold extends StatefulWidget {
         );
 
   static List<Widget> defaultActions({Color? color}) => [
+        if (debugPerformanceAutomation) Automator.instance.buildButton(),
         OpenSettingsAction(color: color),
         if (FeatureFlags.devToolsExtensions &&
             !DevToolsQueryParams.load().hideExtensions)
