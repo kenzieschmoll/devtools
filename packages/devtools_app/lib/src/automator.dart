@@ -75,9 +75,12 @@ class _PerformanceAutomator extends Automator {
       _frameTimings.clear();
       _bindings.addTimingsCallback(_timingsCallback);
 
-      final actions = AutomationAction.values
-          .where((a) => !AutomationAction._skip.contains(a));
-      print('running actions: ${actions.toList()}');
+      // Uncomment one of the lines that defines the 'actions' variable to run
+      // different automations.
+      const actions = AutomationAction.values;
+      // const actions = AutomationAction.inspectorActions;
+      // const actions = AutomationAction.cpuProfilerActions;
+      // const actions = AutomationAction.cpuProfilerActionsPreLoaded;
       for (final action in actions) {
         await Future.delayed(
           _shortDelay,
@@ -133,7 +136,11 @@ class _PerformanceAutomator extends Automator {
                   .join('  '),
             );
           }
-          print('');
+          final average =
+              ((timings.fold(0.0, (sum, t) => sum + t) / timings.length) /
+                      1000.0)
+                  .toStringAsFixed(2);
+          print('   avg    $average'.padLeft(6));
         }
         print('*****');
       }
@@ -213,25 +220,27 @@ enum AutomationAction {
         _ => _veryShortDelay,
       };
 
-  /// The set of automation actions to skip.
-  ///
-  /// All of these should be commented out to run the full automation, but you
-  /// can uncomment actions to skip them locally.
-  static const _skip = <AutomationAction>{
-    // navigateToHome,
-    // navigateToScreenInspector,
-    // inspectorSelectRoot,
-    // inspectorScrollSummaryTree,
-    // inspectorExpandAllInDetailsTree,
-    // inspectorScrollDetailsTree,
-    // navigateToScreenPerformance,
-    // navigateToScreenCpuProfiler,
-    // cpuProfilerLoadAllSamples,
-    // cpuProfilerScrollBottomUp,
-    // cpuProfilerOpenFlameChart,
-    // cpuProfilerScrollFlameChart,
-    // navigateToScreenMemory,
-  };
+  static const inspectorActions = [
+    navigateToScreenInspector,
+    inspectorSelectRoot,
+    inspectorScrollSummaryTree,
+    inspectorExpandAllInDetailsTree,
+    inspectorScrollDetailsTree,
+  ];
+
+  static const cpuProfilerActions = [
+    navigateToScreenCpuProfiler,
+    cpuProfilerLoadAllSamples,
+    cpuProfilerScrollBottomUp,
+    cpuProfilerOpenFlameChart,
+    cpuProfilerScrollFlameChart,
+  ];
+
+  static const cpuProfilerActionsPreLoaded = [
+    cpuProfilerScrollBottomUp,
+    cpuProfilerOpenFlameChart,
+    cpuProfilerScrollFlameChart,
+  ];
 }
 
 const _veryShortDelay = Duration(milliseconds: 500);
