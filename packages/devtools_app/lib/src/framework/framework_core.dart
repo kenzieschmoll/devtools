@@ -12,7 +12,6 @@ import 'package:devtools_shared/service.dart';
 import 'package:logging/logging.dart';
 import 'package:vm_service/vm_service.dart';
 
-import '../../devtools.dart' as devtools show version;
 import '../automator.dart';
 import '../extensions/extension_service.dart';
 import '../screens/debugger/breakpoint_manager.dart';
