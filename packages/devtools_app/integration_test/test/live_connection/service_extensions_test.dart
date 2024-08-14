@@ -35,42 +35,47 @@ void main() {
     await resetHistory();
   });
 
-  testWidgets('can call services and service extensions', (tester) async {
-    await pumpAndConnectDevTools(tester, testApp);
-    await tester.pump(longDuration);
+  testWidgets(
+    'can call services and service extensions',
 
-    // TODO(kenz): re-work this integration test so that we do not have to be
-    // on the inspector screen for this to pass.
-    await switchToScreen(
-      tester,
-      tabIcon: ScreenMetaData.inspector.icon!,
-      screenId: ScreenMetaData.inspector.id,
-    );
-    await tester.pump(longDuration);
+    (tester) async {
+      await pumpAndConnectDevTools(tester, testApp);
+      await tester.pump(longDuration);
 
-    // Ensure all futures are completed before running checks.
-    await serviceConnection.serviceManager.service!.allFuturesCompleted;
+      // TODO(kenz): re-work this integration test so that we do not have to be
+      // on the inspector screen for this to pass.
+      await switchToScreen(
+        tester,
+        tabIcon: ScreenMetaData.inspector.icon!,
+        screenId: ScreenMetaData.inspector.id,
+      );
+      await tester.pump(longDuration);
 
-    logStatus('verify Flutter framework service extensions');
-    await _verifyBooleanExtension(tester);
-    await _verifyNumericExtension(tester);
-    await _verifyStringExtension(tester);
+      // Ensure all futures are completed before running checks.
+      await serviceConnection.serviceManager.service!.allFuturesCompleted;
 
-    logStatus('verify Flutter engine service extensions');
-    expect(
-      await serviceConnection.queryDisplayRefreshRate,
-      equals(60),
-    );
+      logStatus('verify Flutter framework service extensions');
+      await _verifyBooleanExtension(tester);
+      await _verifyNumericExtension(tester);
+      await _verifyStringExtension(tester);
 
-    logStatus('verify services that are registered to exactly one client');
-    await _verifyHotReloadAndHotRestart();
-    await expectLater(
-      serviceConnection.serviceManager.callService('fakeMethod'),
-      throwsException,
-    );
+      logStatus('verify Flutter engine service extensions');
+      expect(
+        await serviceConnection.queryDisplayRefreshRate,
+        equals(60),
+      );
 
-    await disconnectFromTestApp(tester);
-  });
+      logStatus('verify services that are registered to exactly one client');
+      await _verifyHotReloadAndHotRestart();
+      await expectLater(
+        serviceConnection.serviceManager.callService('fakeMethod'),
+        throwsException,
+      );
+
+      await disconnectFromTestApp(tester);
+    },
+    skip: true, // https://github.com/flutter/devtools/issues/8107
+  );
 
   testWidgets('loads initial extension states from device', (tester) async {
     await pumpAndConnectDevTools(tester, testApp);
@@ -356,7 +361,7 @@ Future<void> _verifyExtensionStateInServiceManager(
       .getServiceExtensionState(extensionName);
 
   // Wait for the service extension state to match the expected value.
-  final Completer<ServiceExtensionState> stateCompleter = Completer();
+  final stateCompleter = Completer<ServiceExtensionState>();
   void stateListener() {
     if (stateListenable.value.value == value) {
       stateCompleter.complete(stateListenable.value);
@@ -366,7 +371,7 @@ Future<void> _verifyExtensionStateInServiceManager(
   stateListenable.addListener(stateListener);
   stateListener();
 
-  final ServiceExtensionState state = await stateCompleter.future;
+  final state = await stateCompleter.future;
   stateListenable.removeListener(stateListener);
   expect(
     state.enabled,

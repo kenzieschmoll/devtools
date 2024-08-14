@@ -10,12 +10,12 @@ library;
 import 'dart:async';
 import 'dart:js_interop';
 
+import 'package:devtools_app_shared/ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 import 'package:unified_analytics/unified_analytics.dart' as ua;
 import 'package:web/web.dart';
 
-import '../../../devtools.dart' as devtools show version;
 import '../dtd_manager_extensions.dart';
 import '../globals.dart';
 import '../server/server.dart' as server;
@@ -26,23 +26,23 @@ import 'gtags.dart';
 import 'metrics.dart';
 
 // Dimensions1 AppType values:
-const String appTypeFlutter = 'flutter';
-const String appTypeWeb = 'web';
-const String appTypeFlutterWeb = 'flutter_web';
-const String appTypeDartCLI = 'dart_cli';
+const appTypeFlutter = 'flutter';
+const appTypeWeb = 'web';
+const appTypeFlutterWeb = 'flutter_web';
+const appTypeDartCLI = 'dart_cli';
 // Dimensions2 BuildType values:
-const String buildTypeDebug = 'debug';
-const String buildTypeProfile = 'profile';
+const buildTypeDebug = 'debug';
+const buildTypeProfile = 'profile';
 // Start with Android_n.n.n
-const String devToolsPlatformTypeAndroid = 'Android_';
+const devToolsPlatformTypeAndroid = 'Android_';
 // Dimension5 devToolsChrome starts with
-const String devToolsChromeName = 'Chrome/'; // starts with and ends with n.n.n
-const String devToolsChromeIos = 'Crios/'; // starts with and ends with n.n.n
-const String devToolsChromeOS = 'CrOS'; // Chrome OS
+const devToolsChromeName = 'Chrome/'; // starts with and ends with n.n.n
+const devToolsChromeIos = 'Crios/'; // starts with and ends with n.n.n
+const devToolsChromeOS = 'CrOS'; // Chrome OS
 // Dimension6 devToolsVersion
 
 // Dimension7 ideLaunched
-const String ideLaunchedCLI = 'CLI'; // Command Line Interface
+const ideLaunchedCLI = 'CLI'; // Command Line Interface
 
 final _log = Logger('_analytics_web');
 
@@ -244,7 +244,7 @@ GtagEventDevTools _gtagEvent({
     flutter_client_id: flutterClientId,
     is_external_build: isExternalBuild.toString(),
     is_embedded: isEmbedded().toString(),
-    g3_username: devToolsExtensionPoints.username(),
+    g3_username: devToolsEnvironmentParameters.username(),
     ide_launched_feature: ideLaunchedFeature,
     // [PerformanceScreenMetrics]
     ui_duration_micros: screenMetrics is PerformanceScreenMetrics
@@ -309,7 +309,7 @@ GtagExceptionDevTools _gtagException(
     flutter_client_id: flutterClientId,
     is_external_build: isExternalBuild.toString(),
     is_embedded: isEmbedded().toString(),
-    g3_username: devToolsExtensionPoints.username(),
+    g3_username: devToolsEnvironmentParameters.username(),
     ide_launched_feature: ideLaunchedFeature,
     // [PerformanceScreenMetrics]
     ui_duration_micros: screenMetrics is PerformanceScreenMetrics
@@ -638,7 +638,7 @@ String _devtoolsPlatformType =
     ''; // dimension4 MacIntel/Linux/Windows/Android_n
 String _devtoolsChrome = ''; // dimension5 Chrome/n.n.n  or Crios/n.n.n
 
-const String devtoolsVersion = devtools.version; //dimension6 n.n.n
+final devtoolsVersion = devToolsVersion; //dimension6 n.n.n
 
 String _ideLaunched = ''; // dimension7 IDE launched DevTools (VSCode, CLI, ...)
 
@@ -740,15 +740,15 @@ external void jsHookupListenerForGA();
 /// devtoolsChrome.
 void computeDevToolsCustomGTagsData() {
   // Platform
-  final String platform = window.navigator.platform;
+  final platform = window.navigator.platform;
   platform.replaceAll(' ', '_');
   devtoolsPlatformType = platform;
 
-  final String appVersion = window.navigator.appVersion;
-  final List<String> splits = appVersion.split(' ');
+  final appVersion = window.navigator.appVersion;
+  final splits = appVersion.split(' ');
   final len = splits.length;
   for (int index = 0; index < len; index++) {
-    final String value = splits[index];
+    final value = splits[index];
     // Chrome or Chrome iOS
     if (value.startsWith(devToolsChromeName) ||
         value.startsWith(devToolsChromeIos)) {
@@ -818,7 +818,7 @@ void setupUserApplicationDimensions() {
   }
 }
 
-Map<String, dynamic> generateSurveyQueryParameters() {
+Map<String, Object?> generateSurveyQueryParameters() {
   const ideKey = 'IDE';
   const versionKey = 'Version';
   const internalKey = 'Internal';

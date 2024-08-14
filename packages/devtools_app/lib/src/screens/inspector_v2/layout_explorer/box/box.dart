@@ -96,14 +96,11 @@ class BoxLayoutExplorerWidgetState extends LayoutExplorerWidgetState<
         ),
       );
     }
-    return Container(
-      margin: const EdgeInsets.all(denseSpacing),
-      child: AnimatedBuilder(
-        animation: changeController,
-        builder: (context, _) {
-          return LayoutBuilder(builder: _buildLayout);
-        },
-      ),
+    return AnimatedBuilder(
+      animation: changeController,
+      builder: (context, _) {
+        return LayoutBuilder(builder: _buildLayout);
+      },
     );
   }
 
@@ -326,7 +323,7 @@ class BoxLayoutExplorerWidgetState extends LayoutExplorerWidgetState<
       widget = WidgetVisualizer(
         // TODO(jacobr): this node's name can be misleading more often than
         // in the flex case the widget doesn't have its own RenderObject.
-        // Consider showing the true ancestor for the summary tree that first
+        // Consider showing the true ancestor for the inspector tree that first
         // has a different render object.
         title: describeBoxName(parentProperties),
         largeTitle: true,

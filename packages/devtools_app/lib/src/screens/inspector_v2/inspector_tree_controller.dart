@@ -18,7 +18,7 @@ import '../../shared/analytics/constants.dart' as gac;
 import '../../shared/analytics/metrics.dart';
 import '../../shared/collapsible_mixin.dart';
 import '../../shared/common_widgets.dart';
-import '../../shared/console/eval/inspector_tree.dart';
+import '../../shared/console/eval/inspector_tree_v2.dart';
 import '../../shared/console/widgets/description.dart';
 import '../../shared/diagnostics/diagnostics_node.dart';
 import '../../shared/diagnostics_text_styles.dart';
@@ -29,7 +29,6 @@ import '../../shared/ui/colors.dart';
 import '../../shared/ui/search.dart';
 import '../../shared/ui/utils.dart';
 import '../../shared/utils.dart';
-import 'inspector_breadcrumbs.dart';
 import 'inspector_controller.dart';
 
 final _log = Logger('inspector_tree_controller');
@@ -90,11 +89,17 @@ class _InspectorTreeRowState extends State<_InspectorTreeRowWidget>
   void onExpandChanged(bool expanded) {
     setState(() {
       final row = widget.row;
-      if (expanded) {
-        widget.inspectorTreeState.treeController!.onExpandRow(row);
-      } else {
-        widget.inspectorTreeState.treeController!.onCollapseRow(row);
-      }
+      final treeController = widget.inspectorTreeState.treeController!;
+      treeController.refreshTree(
+        updateTreeAction: () {
+          if (expanded) {
+            treeController.onExpandRow(row);
+          } else {
+            treeController.onCollapseRow(row);
+          }
+          return true;
+        },
+      );
     });
   }
 
@@ -112,19 +117,20 @@ class InspectorTreeController extends DisposableController
       screenMetricsProvider: () => InspectorScreenMetrics.v2(
         inspectorTreeControllerId: gaId,
         rootSetCount: _rootSetCount,
-        rowCount: _root?.subtreeSize,
+        rowCount: _rowsInTree.value.length,
       ),
     );
   }
 
   /// Clients the controller notifies to trigger changes to the UI.
-  final Set<InspectorControllerClient> _clients = {};
+  final _clients = <InspectorControllerClient>{};
 
   /// Identifier used when sending Google Analytics about events in this
   /// [InspectorTreeController].
   final int? gaId;
 
-  InspectorTreeNode createNode() => InspectorTreeNode();
+  InspectorTreeNode createNode() =>
+      InspectorTreeNode(whenDirty: _handleDirtyNode);
 
   SearchTargetType _searchTarget = SearchTargetType.widget;
   int _rootSetCount = 0;
@@ -144,14 +150,6 @@ class InspectorTreeController extends DisposableController
     }
   }
 
-  // Method defined to avoid a direct Flutter dependency.
-  void setState(VoidCallback fn) {
-    fn();
-    for (final client in _clients) {
-      client.onChanged();
-    }
-  }
-
   void requestFocus() {
     for (final client in _clients) {
       client.requestFocus();
@@ -162,21 +160,24 @@ class InspectorTreeController extends DisposableController
   InspectorTreeNode? _root;
 
   set root(InspectorTreeNode? node) {
-    setState(() {
-      _root = node;
-      _populateSearchableCachedRows();
-
-      ga.select(
-        gac.inspector,
-        gac.inspectorTreeControllerRootChange,
-        nonInteraction: true,
-        screenMetricsProvider: () => InspectorScreenMetrics.v2(
-          inspectorTreeControllerId: gaId,
-          rootSetCount: ++_rootSetCount,
-          rowCount: _root?.subtreeSize,
-        ),
+    if (node != null) {
+      _updateRows(
+        node: node,
+        updateSearchableRows: true,
       );
-    });
+    }
+    _root = node;
+
+    ga.select(
+      gac.inspector,
+      gac.inspectorTreeControllerRootChange,
+      nonInteraction: true,
+      screenMetricsProvider: () => InspectorScreenMetrics.v2(
+        inspectorTreeControllerId: gaId,
+        rootSetCount: ++_rootSetCount,
+        rowCount: _rowsInTree.value.length,
+      ),
+    );
   }
 
   InspectorTreeNode? get selection => _selection;
@@ -184,18 +185,26 @@ class InspectorTreeController extends DisposableController
 
   late final InspectorTreeConfig config;
 
-  set selection(InspectorTreeNode? node) {
-    if (node == _selection) return;
+  /// Refreshes the tree's rows if the return value of the [updateTreeAction]
+  /// callback is true.
+  void refreshTree({required bool Function() updateTreeAction}) {
+    final requiresRefresh = updateTreeAction();
+    if (requiresRefresh) {
+      _updateRows();
+    }
+  }
 
-    setState(() {
-      _selection?.selected = false;
-      _selection = node;
-      _selection?.selected = true;
-      final configLocal = config;
-      if (configLocal.onSelectionChange != null) {
-        configLocal.onSelectionChange!();
-      }
-    });
+  bool setSelectedNode(InspectorTreeNode? node) {
+    if (node == _selection) return false;
+
+    _selection?.selected = false;
+    _selection = node;
+    _selection?.selected = true;
+    final configLocal = config;
+    if (configLocal.onSelectionChange != null) {
+      configLocal.onSelectionChange!();
+    }
+    return true;
   }
 
   InspectorTreeNode? get hover => _hover;
@@ -203,62 +212,80 @@ class InspectorTreeController extends DisposableController
 
   double? lastContentWidth;
 
-  final cachedRows = <InspectorTreeRow?>[];
   InspectorTreeRow? _cachedSelectedRow;
 
   /// All cached rows of the tree.
   ///
-  /// Similar to [cachedRows] but:
+  /// Similar to [rowsInTree] but:
   /// * contains every row in the tree (including collapsed rows)
   /// * items don't change when nodes are expanded or collapsed
   /// * items are populated only when root is changed
   final _searchableCachedRows = <InspectorTreeRow?>[];
+
+  /// All the rows that should be displayed in the tree.
+  ///
+  /// The rows can be updated with a call to [_updateRows].
+  ValueListenable<List<InspectorTreeRow?>> get rowsInTree => _rowsInTree;
+  final _rowsInTree = ValueNotifier<List<InspectorTreeRow>>([]);
+
+  /// Map from node to the index for that node's row in [rowsInTree].
+  final _nodeToRowIndex = <InspectorTreeNode, int>{};
+
+  /// Rebuilds the tree and updates [rowsInTree] with the new values.
+  ///
+  /// If [updateSearchableRows] is true, also updates [_searchableCachedRows]
+  /// with the new values.
+  void _updateRows({
+    InspectorTreeNode? node,
+    bool updateSearchableRows = false,
+  }) {
+    // TODO(elliette): Consider only updating an [InspectorTreeNode]'s branch
+    // when it is marked as dirty, instead of the entire tree. See:
+    // https://github.com/flutter/devtools/issues/7980
+    node ??= root;
+    if (node == null) return;
+
+    final rows = _buildRows(node);
+    _rowsInTree.value = rows;
+
+    // Build the reverse node-to-index map for faster lookups:
+    for (int i = 0; i < _rowsInTree.value.length; i++) {
+      final row = _rowsInTree.value[i];
+      final node = row.node;
+      _nodeToRowIndex[node] = i;
+    }
+
+    if (updateSearchableRows) {
+      final searchableRows = _buildRows(
+        node,
+        includeHiddenRows: true,
+        includeCollapsedRows: true,
+      );
+
+      _searchableCachedRows
+        ..clear()
+        ..addAll(searchableRows);
+    }
+  }
+
+  /// Resets the state if the root has been marked as dirty.
+  void _handleDirtyNode(InspectorTreeNode node) {
+    if (node == root) {
+      _cachedSelectedRow = null;
+      lastContentWidth = null;
+      _updateRows();
+    }
+  }
 
   void setSearchTarget(SearchTargetType searchTarget) {
     _searchTarget = searchTarget;
     refreshSearchMatches();
   }
 
-  // TODO: we should add a listener instead that clears the cache when the
-  // root is marked as dirty.
-  void _maybeClearCache() {
-    final rootLocal = root;
-    if (rootLocal != null && rootLocal.isDirty) {
-      cachedRows.clear();
-      _cachedSelectedRow = null;
-      rootLocal.isDirty = false;
-      lastContentWidth = null;
-    }
-  }
+  InspectorTreeRow? rowAtIndex(int index) => _rowsInTree.value.safeGet(index);
 
-  void _populateSearchableCachedRows() {
-    _searchableCachedRows.clear();
-    for (int i = 0; i < numRows; i++) {
-      _searchableCachedRows.add(getCachedRow(i));
-    }
-  }
-
-  InspectorTreeRow? getCachedRow(int index) {
-    if (index < 0) return null;
-
-    _maybeClearCache();
-    while (cachedRows.length <= index) {
-      cachedRows.add(null);
-    }
-    cachedRows[index] ??= root?.getRow(index);
-
-    final cachedRow = cachedRows[index];
-    cachedRow?.isSearchMatch =
-        _searchableCachedRows.safeGet(index)?.isSearchMatch ?? false;
-
-    if (cachedRow?.isSelected == true) {
-      _cachedSelectedRow = cachedRow;
-    }
-    return cachedRow;
-  }
-
-  double getRowOffset(int index) {
-    return (getCachedRow(index)?.depth ?? 0) * inspectorColumnWidth;
+  double rowOffset(int index) {
+    return (rowAtIndex(index)?.depth ?? 0) * inspectorColumnIndent;
   }
 
   List<InspectorTreeNode> getPathFromSelectedRowToRoot() {
@@ -278,10 +305,8 @@ class InspectorTreeController extends DisposableController
     if (node == _hover) {
       return;
     }
-    setState(() {
-      _hover = node;
-      // TODO(jacobr): we could choose to repaint only a portion of the UI
-    });
+
+    _hover = node;
   }
 
   void navigateUp() {
@@ -302,15 +327,18 @@ class InspectorTreeController extends DisposableController
       return;
     }
 
-    if (selectionLocal.isExpanded) {
-      setState(() {
-        selectionLocal.isExpanded = false;
-      });
-      return;
-    }
-    if (selectionLocal.parent != null) {
-      selection = selectionLocal.parent;
-    }
+    refreshTree(
+      updateTreeAction: () {
+        if (selectionLocal.isExpanded) {
+          selectionLocal.isExpanded = false;
+          return true;
+        }
+        if (selectionLocal.parent != null) {
+          return setSelectedNode(selectionLocal.parent);
+        }
+        return false;
+      },
+    );
   }
 
   void navigateRight() {
@@ -324,33 +352,36 @@ class InspectorTreeController extends DisposableController
       return;
     }
 
-    setState(() {
-      selectionLocal.isExpanded = true;
-    });
+    selectionLocal.isExpanded = true;
+    _updateRows();
   }
 
   void _navigateHelper(int indexOffset) {
-    if (numRows == 0) return;
+    if (_numRows == 0) return;
 
-    if (selection == null) {
-      selection = root;
-      return;
-    }
-
-    final rootLocal = root!;
-
-    selection = rootLocal
-        .getRow(
-          (rootLocal.getRowIndex(selection!) + indexOffset)
-              .clamp(0, numRows - 1),
-        )
-        ?.node;
+    refreshTree(
+      updateTreeAction: () {
+        final nodeToSelect = selection == null
+            ? root
+            : rowAtIndex(
+                (_rowIndexFromNode(selection!) + indexOffset)
+                    .clamp(0, _numRows - 1),
+              )?.node;
+        setSelectedNode(nodeToSelect);
+        return true;
+      },
+    );
   }
 
   double get horizontalPadding => 10.0;
 
+  /// Returns the indentation of a row at the given [depth] in the inspector.
+  ///
+  /// This indentation roughly corresponds to the center of the icon next to the
+  /// widget name.
   double getDepthIndent(int depth) {
-    return (depth + 1) * inspectorColumnWidth + horizontalPadding;
+    // Note: depth is 0-based, therefore add 1.
+    return (depth + 1) * inspectorColumnIndent + horizontalPadding;
   }
 
   double rowYTop(int index) {
@@ -358,27 +389,15 @@ class InspectorTreeController extends DisposableController
   }
 
   void nodeChanged(InspectorTreeNode node) {
-    setState(() {
-      node.isDirty = true;
-    });
+    node.isDirty = true;
   }
 
   void removeNodeFromParent(InspectorTreeNode node) {
-    setState(() {
-      node.parent?.removeChild(node);
-    });
-  }
-
-  void appendChild(InspectorTreeNode node, InspectorTreeNode child) {
-    setState(() {
-      node.appendChild(child);
-    });
+    node.parent?.removeChild(node);
   }
 
   void expandPath(InspectorTreeNode? node) {
-    setState(() {
-      _expandPath(node);
-    });
+    _expandPath(node);
   }
 
   void _expandPath(InspectorTreeNode? node) {
@@ -390,50 +409,100 @@ class InspectorTreeController extends DisposableController
     }
   }
 
-  void collapseToSelected() {
-    setState(() {
-      _collapseAllNodes(root!);
-      if (selection == null) return;
-      _expandPath(selection);
-    });
+  void toggleHiddenGroup(InspectorTreeNode? node) {
+    final diagnostic = node?.diagnostic;
+    if (diagnostic != null) {
+      diagnostic.toggleHiddenGroup();
+    }
   }
 
-  void _collapseAllNodes(InspectorTreeNode root) {
-    root.isExpanded = false;
-    root.children.forEach(_collapseAllNodes);
+  int get _numRows => _rowsInTree.value.length;
+
+  int _rowIndexFromNode(InspectorTreeNode node) => _nodeToRowIndex[node] ?? -1;
+
+  int _rowIndexFromOffset(double y) => max(0, y ~/ inspectorRowHeight);
+
+  List<InspectorTreeRow> _buildRows(
+    InspectorTreeNode node, {
+    bool includeHiddenRows = false,
+    bool includeCollapsedRows = false,
+  }) {
+    final rows = <InspectorTreeRow>[];
+
+    void buildRowsHelper(
+      InspectorTreeNode node, {
+      required int depth,
+      required List<int> ticks,
+    }) {
+      final currentIdx = rows.length;
+      final isHidden = node.diagnostic?.isHidden ?? false;
+      if (!isHidden || includeHiddenRows) {
+        rows.add(
+          InspectorTreeRow(
+            node: node,
+            index: currentIdx,
+            ticks: ticks,
+            depth: depth,
+            lineToParent: !node.isProperty &&
+                currentIdx != 0 &&
+                node.parent!.showLinesToChildren,
+            hasSingleChild: node.children.length == 1,
+          ),
+        );
+      }
+
+      final style = node.diagnostic?.style;
+      final indented = style != DiagnosticsTreeStyle.flat &&
+          style != DiagnosticsTreeStyle.error;
+
+      if (!node.isExpanded && !includeCollapsedRows) return;
+      final children = node.children;
+      final parentDepth = depth;
+      final childrenDepth = children.length > 1 ? parentDepth + 1 : parentDepth;
+      for (final child in children) {
+        final shouldAddTick = children.length > 1 &&
+            children.last != child &&
+            !children.last.isProperty &&
+            indented;
+
+        buildRowsHelper(
+          child,
+          depth: childrenDepth,
+          ticks: [
+            ...ticks,
+            if (shouldAddTick) parentDepth,
+          ],
+        );
+      }
+    }
+
+    buildRowsHelper(node, depth: 0, ticks: <int>[]);
+    return rows;
   }
-
-  int get numRows => root?.subtreeSize ?? 0;
-
-  int getRowIndex(double y) => max(0, y ~/ inspectorRowHeight);
 
   InspectorTreeRow? getRowForNode(InspectorTreeNode node) {
     final rootLocal = root;
     if (rootLocal == null) return null;
-    return getCachedRow(rootLocal.getRowIndex(node));
+    return rowAtIndex(_rowIndexFromNode(node));
   }
 
-  InspectorTreeRow? getRow(Offset offset) {
+  InspectorTreeRow? rowForOffset(Offset offset) {
     final rootLocal = root;
     if (rootLocal == null) return null;
-    final int row = getRowIndex(offset.dy);
-    return row < rootLocal.subtreeSize ? getCachedRow(row) : null;
+    final row = _rowIndexFromOffset(offset.dy);
+    return row < _rowsInTree.value.length ? rowAtIndex(row) : null;
   }
 
   void onExpandRow(InspectorTreeRow row) {
-    setState(() {
-      final onExpand = config.onExpand;
-      row.node.isExpanded = true;
-      if (onExpand != null) {
-        onExpand(row.node);
-      }
-    });
+    final onExpand = config.onExpand;
+    row.node.isExpanded = true;
+    if (onExpand != null) {
+      onExpand(row.node);
+    }
   }
 
   void onCollapseRow(InspectorTreeRow row) {
-    setState(() {
-      row.node.isExpanded = false;
-    });
+    row.node.isExpanded = false;
   }
 
   void onSelectRow(InspectorTreeRow row) {
@@ -441,11 +510,15 @@ class InspectorTreeController extends DisposableController
   }
 
   void onSelectNode(InspectorTreeNode? node) {
-    selection = node;
+    setSelectedNode(node);
     ga.select(
       gac.inspector,
       gac.treeNodeSelection,
     );
+    final diagnostic = node?.diagnostic;
+    if (diagnostic != null && diagnostic.groupIsHidden) {
+      diagnostic.hideableGroupLeader?.toggleHiddenGroup();
+    }
     expandPath(node);
   }
 
@@ -476,7 +549,7 @@ class InspectorTreeController extends DisposableController
   /// Width each row in the tree should have ignoring its indent.
   ///
   /// Content in rows should wrap if it exceeds this width.
-  final double rowWidth = 1200;
+  final rowWidth = 1200;
 
   /// Maximum indent of the tree in pixels.
   double? _maxIndent;
@@ -484,8 +557,8 @@ class InspectorTreeController extends DisposableController
   double get maxRowIndent {
     if (lastContentWidth == null) {
       double maxIndent = 0;
-      for (int i = 0; i < numRows; i++) {
-        final row = getCachedRow(i);
+      for (int i = 0; i < _numRows; i++) {
+        final row = rowAtIndex(i);
         if (row != null) {
           maxIndent = max(maxIndent, getDepthIndent(row.depth));
         }
@@ -539,25 +612,30 @@ class InspectorTreeController extends DisposableController
     InspectorTreeNode node,
     RemoteDiagnosticsNode diagnosticsNode, {
     required bool expandChildren,
-    required bool expandProperties,
+    RemoteDiagnosticsNode? hideableGroupLeader,
   }) {
     node.diagnostic = diagnosticsNode;
     final configLocal = config;
     if (configLocal.onNodeAdded != null) {
       configLocal.onNodeAdded!(node, diagnosticsNode);
     }
+    final inHideableGroup = diagnosticsNode.inHideableGroup;
+    if (inHideableGroup && hideableGroupLeader != null) {
+      hideableGroupLeader.addHideableGroupSubordinate(diagnosticsNode);
+    }
 
     if (diagnosticsNode.hasChildren ||
         diagnosticsNode.inlineProperties.isNotEmpty) {
       if (diagnosticsNode.childrenReady || !diagnosticsNode.hasChildren) {
-        final bool styleIsMultiline =
+        final styleIsMultiline =
             expandPropertiesByDefault(diagnosticsNode.style);
         setupChildren(
           diagnosticsNode,
           node,
           node.diagnostic!.childrenNow,
           expandChildren: expandChildren && styleIsMultiline,
-          expandProperties: expandProperties && styleIsMultiline,
+          hideableGroupLeader:
+              inHideableGroup ? (hideableGroupLeader ?? diagnosticsNode) : null,
         );
       } else {
         node.clearChildren();
@@ -572,38 +650,41 @@ class InspectorTreeController extends DisposableController
     InspectorTreeNode treeNode,
     List<RemoteDiagnosticsNode>? children, {
     required bool expandChildren,
-    required bool expandProperties,
+    RemoteDiagnosticsNode? hideableGroupLeader,
   }) {
     treeNode.isExpanded = expandChildren;
     if (treeNode.children.isNotEmpty) {
       // Only case supported is this is the loading node.
       assert(treeNode.children.length == 1);
-      removeNodeFromParent(treeNode.children.first);
+      refreshTree(
+        updateTreeAction: () {
+          removeNodeFromParent(treeNode.children.first);
+          return true;
+        },
+      );
     }
     final inlineProperties = parent.inlineProperties;
 
     for (final property in inlineProperties) {
-      appendChild(
-        treeNode,
+      treeNode.appendChild(
         setupInspectorTreeNode(
           createNode(),
           property,
           // We are inside a property so only expand children if
           // expandProperties is true.
-          expandChildren: expandProperties,
-          expandProperties: expandProperties,
+          expandChildren: false,
         ),
       );
     }
     if (children != null) {
       for (final child in children) {
-        appendChild(
-          treeNode,
+        treeNode.appendChild(
           setupInspectorTreeNode(
             createNode(),
             child,
             expandChildren: expandChildren,
-            expandProperties: expandProperties,
+            hideableGroupLeader:
+                child.inHideableGroup ? hideableGroupLeader : null,
           ),
         );
       }
@@ -611,7 +692,7 @@ class InspectorTreeController extends DisposableController
   }
 
   Future<void> maybePopulateChildren(InspectorTreeNode treeNode) async {
-    final RemoteDiagnosticsNode? diagnostic = treeNode.diagnostic;
+    final diagnostic = treeNode.diagnostic;
     if (diagnostic != null &&
         diagnostic.hasChildren &&
         (treeNode.hasPlaceholderChildren || treeNode.children.isEmpty)) {
@@ -623,12 +704,16 @@ class InspectorTreeController extends DisposableController
             treeNode,
             children,
             expandChildren: true,
-            expandProperties: false,
           );
-          nodeChanged(treeNode);
-          if (treeNode == selection) {
-            expandPath(treeNode);
-          }
+          refreshTree(
+            updateTreeAction: () {
+              nodeChanged(treeNode);
+              if (treeNode == selection) {
+                expandPath(treeNode);
+              }
+              return true;
+            },
+          );
         }
       } catch (e, st) {
         _log.shout(e, e, st);
@@ -639,7 +724,12 @@ class InspectorTreeController extends DisposableController
   /* Search support */
   @override
   void onMatchChanged(int index) {
-    onSelectRow(searchMatches.value[index]);
+    refreshTree(
+      updateTreeAction: () {
+        onSelectRow(searchMatches.value[index]);
+        return true;
+      },
+    );
   }
 
   @override
@@ -653,7 +743,7 @@ class InspectorTreeController extends DisposableController
     final matches = <InspectorTreeRow>[];
 
     if (searchPreviousMatches) {
-      final List<InspectorTreeRow> previousMatches = searchMatches.value;
+      final previousMatches = searchMatches.value;
       for (final previousMatch in previousMatches) {
         if (previousMatch.node.diagnostic!.searchValue
             .caseInsensitiveContains(search)) {
@@ -726,8 +816,6 @@ extension RemoteDiagnosticsNodeExtension on RemoteDiagnosticsNode {
 }
 
 abstract class InspectorControllerClient {
-  void onChanged();
-
   void scrollToRect(Rect rect);
 
   void requestFocus();
@@ -737,22 +825,12 @@ class InspectorTree extends StatefulWidget {
   const InspectorTree({
     super.key,
     required this.treeController,
-    this.summaryTreeController,
-    this.isSummaryTree = false,
     this.widgetErrors,
     this.screenId,
-  }) : assert(isSummaryTree == (summaryTreeController == null));
+  });
 
   final InspectorTreeController? treeController;
 
-  /// Stores the summary tree controller when this instance of [InspectorTree]
-  /// is for the details tree (i.e. when [isSummaryTree] is false).
-  ///
-  /// This value should be null when this instance of [InspectorTree] is for the
-  /// summary tree itself.
-  final InspectorTreeController? summaryTreeController;
-
-  final bool isSummaryTree;
   final LinkedHashMap<String, InspectableWidgetError>? widgetErrors;
   final String? screenId;
 
@@ -779,7 +857,7 @@ class _InspectorTreeState extends State<InspectorTree>
   late FocusNode _focusNode;
 
   /// When autoscrolling, the number of rows to pad the target location with.
-  static const int _scrollPadCount = 3;
+  static const _scrollPadCount = 3;
 
   @override
   void initState() {
@@ -788,9 +866,7 @@ class _InspectorTreeState extends State<InspectorTree>
     _scrollControllerY = ScrollController();
     // TODO(devoncarew): Commented out as per flutter/devtools/pull/2001.
     //_scrollControllerY.addListener(_onScrollYChange);
-    if (widget.isSummaryTree) {
-      _constraintDisplayController = longAnimationController(this);
-    }
+    _constraintDisplayController = longAnimationController(this);
     _focusNode = FocusNode(debugLabel: 'inspector-tree');
     autoDisposeFocusNode(_focusNode);
     final mainIsolateState =
@@ -812,7 +888,7 @@ class _InspectorTreeState extends State<InspectorTree>
 
   @override
   void didUpdateWidget(InspectorTree oldWidget) {
-    final InspectorTreeController? oldTreeController = oldWidget.treeController;
+    final oldTreeController = oldWidget.treeController;
     if (oldTreeController != widget.treeController) {
       oldTreeController?.removeClient(this);
 
@@ -946,7 +1022,7 @@ class _InspectorTreeState extends State<InspectorTree>
     required double initialX,
     int padCount = _scrollPadCount,
   }) {
-    return initialX - inspectorColumnWidth * padCount;
+    return initialX - inspectorColumnIndent * padCount;
   }
 
   /// Pad [initialY] so that a row would be placed in the vertical center of
@@ -986,11 +1062,6 @@ class _InspectorTreeState extends State<InspectorTree>
   }
 
   @override
-  void onChanged() {
-    setState(() {});
-  }
-
-  @override
   Widget build(BuildContext context) {
     super.build(context);
     final treeControllerLocal = treeController;
@@ -998,106 +1069,99 @@ class _InspectorTreeState extends State<InspectorTree>
       // Indicate the tree is loading.
       return const CenteredCircularProgressIndicator();
     }
-    if (treeControllerLocal.numRows == 0) {
-      // This works around a bug when Scrollbars are present on a short lived
-      // widget.
-      return const SizedBox();
-    }
 
-    if (!controller.firstInspectorTreeLoadCompleted && widget.isSummaryTree) {
-      final screenId = widget.screenId;
-      if (screenId != null) {
-        ga.timeEnd(screenId, gac.pageReady);
-        unawaited(
-          serviceConnection.sendDwdsEvent(
-            screen: screenId,
-            action: gac.pageReady,
-          ),
-        );
-      }
-      controller.firstInspectorTreeLoadCompleted = true;
-    }
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final viewportWidth = constraints.maxWidth;
-        final Widget tree = Scrollbar(
-          thumbVisibility: true,
-          controller: _scrollControllerX,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            controller: _scrollControllerX,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: treeControllerLocal.rowWidth +
-                    treeControllerLocal.maxRowIndent,
+    return ValueListenableBuilder<List<InspectorTreeRow?>>(
+      valueListenable: treeControllerLocal.rowsInTree,
+      builder: (context, rows, _) {
+        // Note: The inspector rows contain only the fake root node when the
+        // inspector tree is shutdown.
+        if (rows.length <= 1) {
+          // This works around a bug when Scrollbars are present on a short lived
+          // widget.
+          return const SizedBox(child: CenteredCircularProgressIndicator());
+        }
+
+        if (!controller.firstInspectorTreeLoadCompleted) {
+          final screenId = widget.screenId;
+          if (screenId != null) {
+            ga.timeEnd(screenId, gac.pageReady);
+            unawaited(
+              serviceConnection.sendDwdsEvent(
+                screen: screenId,
+                action: gac.pageReady,
               ),
-              // TODO(kenz): this scrollbar needs to be sticky to the right side of
-              // the visible container - right now it is lined up to the right of
-              // the widest row (which is likely not visible). This may require some
-              // refactoring.
-              child: GestureDetector(
-                onTap: _focusNode.requestFocus,
-                child: Focus(
-                  onKeyEvent: _handleKeyEvent,
-                  autofocus: widget.isSummaryTree,
-                  focusNode: _focusNode,
-                  child: OffsetScrollbar(
-                    isAlwaysShown: true,
-                    axis: Axis.vertical,
-                    controller: _scrollControllerY,
-                    offsetController: _scrollControllerX,
-                    offsetControllerViewportDimension: viewportWidth,
-                    child: ListView.custom(
-                      itemExtent: inspectorRowHeight,
-                      childrenDelegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          if (index == treeControllerLocal.numRows) {
-                            return SizedBox(height: inspectorRowHeight);
-                          }
-                          final InspectorTreeRow row =
-                              treeControllerLocal.getCachedRow(index)!;
-                          final inspectorRef = row.node.diagnostic?.valueRef.id;
-                          return _InspectorTreeRowWidget(
-                            key: PageStorageKey(row.node),
-                            inspectorTreeState: this,
-                            row: row,
-                            scrollControllerX: _scrollControllerX,
-                            viewportWidth: viewportWidth,
-                            error: widget.widgetErrors != null &&
-                                    inspectorRef != null
-                                ? widget.widgetErrors![inspectorRef]
-                                : null,
-                          );
-                        },
-                        childCount: treeControllerLocal.numRows + 1,
+            );
+          }
+          controller.firstInspectorTreeLoadCompleted = true;
+        }
+
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final viewportWidth = constraints.maxWidth;
+            final tree = Scrollbar(
+              thumbVisibility: true,
+              controller: _scrollControllerX,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                controller: _scrollControllerX,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: treeControllerLocal.rowWidth +
+                        treeControllerLocal.maxRowIndent,
+                  ),
+                  // TODO(kenz): this scrollbar needs to be sticky to the right side of
+                  // the visible container - right now it is lined up to the right of
+                  // the widest row (which is likely not visible). This may require some
+                  // refactoring.
+                  child: GestureDetector(
+                    onTap: _focusNode.requestFocus,
+                    child: Focus(
+                      onKeyEvent: _handleKeyEvent,
+                      autofocus: true,
+                      focusNode: _focusNode,
+                      child: OffsetScrollbar(
+                        isAlwaysShown: true,
+                        axis: Axis.vertical,
+                        controller: _scrollControllerY,
+                        offsetController: _scrollControllerX,
+                        offsetControllerViewportDimension: viewportWidth,
+                        child: ListView.custom(
+                          itemExtent: inspectorRowHeight,
+                          childrenDelegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              if (index == rows.length) {
+                                return SizedBox(height: inspectorRowHeight);
+                              }
+                              final row =
+                                  treeControllerLocal.rowAtIndex(index)!;
+                              final inspectorRef =
+                                  row.node.diagnostic?.valueRef.id;
+                              return _InspectorTreeRowWidget(
+                                key: PageStorageKey(row.node),
+                                inspectorTreeState: this,
+                                row: row,
+                                scrollControllerX: _scrollControllerX,
+                                viewportWidth: viewportWidth,
+                                error: widget.widgetErrors != null &&
+                                        inspectorRef != null
+                                    ? widget.widgetErrors![inspectorRef]
+                                    : null,
+                              );
+                            },
+                            childCount: rows.length + 1,
+                          ),
+                          controller: _scrollControllerY,
+                        ),
                       ),
-                      controller: _scrollControllerY,
                     ),
                   ),
                 ),
               ),
-            ),
-          ),
+            );
+
+            return tree;
+          },
         );
-
-        final bool shouldShowBreadcrumbs = !widget.isSummaryTree;
-        if (shouldShowBreadcrumbs) {
-          final inspectorTreeController = widget.summaryTreeController!;
-
-          final parents =
-              inspectorTreeController.getPathFromSelectedRowToRoot();
-          return Column(
-            children: [
-              InspectorBreadcrumbNavigator(
-                items: parents,
-                onTap: (node) => inspectorTreeController.onSelectNode(node),
-              ),
-              Expanded(child: tree),
-            ],
-          );
-        }
-
-        return tree;
       },
     );
   }
@@ -1109,6 +1173,24 @@ class _InspectorTreeState extends State<InspectorTree>
 Paint _defaultPaint(ColorScheme colorScheme) => Paint()
   ..color = colorScheme.treeGuidelineColor
   ..strokeWidth = chartLineStrokeWidth;
+
+/// The distance (on the x-axis) between the expand/collapse and the start of
+/// the row, as determined by a percentage of the [inspectorColumnIndent].
+const _expandCollapseToRowStartXDistancePercentage = 0.68;
+
+/// The distance (on the x-axis) between the center of the widget icon and the
+/// start of the row, as determined by a percentage of the
+/// [inspectorColumnIndent].
+const _iconCenterToRowStartXDistancePercentage = 0.15;
+
+/// The distance (on the y-axis) between the bottom of the widget icon and the
+/// top of the row, as determined by a percentage of the [inspectorRowHeight].
+const _iconBottomToRowTopYDistancePercentage = 0.75;
+
+/// The distance (on the y-axis) between the top of the child widget's icon and
+/// the top of the current row, as determined by a percentage of the
+/// [inspectorRowHeight].
+const _childIconTopToRowTopYDistancePercentage = 1.25;
 
 /// Custom painter that draws lines indicating how parent and child rows are
 /// connected to each other.
@@ -1128,37 +1210,73 @@ class _RowPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    double currentX = 0;
     final paint = _defaultPaint(colorScheme);
 
-    final InspectorTreeNode node = row.node;
-    final bool showExpandCollapse = node.showExpandCollapse;
+    final node = row.node;
+    final showExpandCollapse = node.showExpandCollapse;
+    final distanceFromExpandCollapseToRowStart =
+        inspectorColumnIndent * _expandCollapseToRowStartXDistancePercentage;
     for (final tick in row.ticks) {
-      currentX = _controller.getDepthIndent(tick) - inspectorColumnWidth * 0.5;
+      final expandCollapseX = _controller.getDepthIndent(tick) -
+          distanceFromExpandCollapseToRowStart;
       // Draw a vertical line for each tick identifying a connection between
       // an ancestor of this node and some other node in the tree.
       canvas.drawLine(
-        Offset(currentX, 0.0),
-        Offset(currentX, inspectorRowHeight),
+        Offset(expandCollapseX, 0.0),
+        Offset(expandCollapseX, inspectorRowHeight),
         paint,
       );
     }
     // If this row is itself connected to a parent then draw the L shaped line
     // to make that connection.
     if (row.lineToParent) {
-      currentX = _controller.getDepthIndent(row.depth - 1) -
-          inspectorColumnWidth * 0.5;
-      final double width = showExpandCollapse
-          ? inspectorColumnWidth * 0.5
-          : inspectorColumnWidth;
+      final parentExpandCollapseX = _controller.getDepthIndent(row.depth - 1) -
+          distanceFromExpandCollapseToRowStart;
+      final width = showExpandCollapse
+          ? inspectorColumnIndent * 0.6
+          : inspectorColumnIndent;
       canvas.drawLine(
-        Offset(currentX, 0.0),
-        Offset(currentX, inspectorRowHeight * 0.5),
+        Offset(parentExpandCollapseX, 0.0),
+        Offset(parentExpandCollapseX, inspectorRowHeight * 0.5),
         paint,
       );
       canvas.drawLine(
-        Offset(currentX, inspectorRowHeight * 0.5),
-        Offset(currentX + width, inspectorRowHeight * 0.5),
+        Offset(parentExpandCollapseX, inspectorRowHeight * 0.5),
+        Offset(parentExpandCollapseX + width, inspectorRowHeight * 0.5),
+        paint,
+      );
+    }
+
+    // Draw a straight vertical line from current node's icon to the icon below
+    // it if either the current node:
+    // 1. is expanded (meaning its child is visible) and it only has one child
+    //    (because multiple children get indented).
+    // 2. is NOT the first node in a hidden group of which the last hidden node
+    //    in that group is childless (meaning that last node is at the end of a
+    //    branch and therefore has nothing below it).
+    final expandedWithSingleChild = row.hasSingleChild && node.isExpanded;
+    final subordinates =
+        node.diagnostic?.hideableGroupSubordinates ?? <RemoteDiagnosticsNode>[];
+    final groupIsHidden = node.diagnostic?.groupIsHidden ?? false;
+    final lastHiddenSubordinateHasNoChildren = groupIsHidden &&
+        subordinates.isNotEmpty &&
+        subordinates.last.childrenNow.isEmpty;
+    if (expandedWithSingleChild && !lastHiddenSubordinateHasNoChildren) {
+      final distanceFromIconCenterToRowStart =
+          inspectorColumnIndent * _iconCenterToRowStartXDistancePercentage;
+      final iconCenterX = _controller.getDepthIndent(row.depth) -
+          distanceFromIconCenterToRowStart;
+      // Draw a line from the bottom of the current row's icon to the top of the
+      // child row's icon:
+      canvas.drawLine(
+        Offset(
+          iconCenterX,
+          inspectorRowHeight * _iconBottomToRowTopYDistancePercentage,
+        ),
+        Offset(
+          iconCenterX,
+          inspectorRowHeight * _childIconTopToRowTopYDistancePercentage,
+        ),
         paint,
       );
     }
@@ -1212,8 +1330,8 @@ class InspectorRowContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double currentX =
-        controller.getDepthIndent(row.depth) - inspectorColumnWidth;
+    final currentX =
+        controller.getDepthIndent(row.depth) - inspectorColumnIndent;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -1225,7 +1343,9 @@ class InspectorRowContent extends StatelessWidget {
     }
 
     final node = row.node;
-
+    final diagnostic = node.diagnostic;
+    final isHideableGroupLeader = diagnostic?.isHideableGroupLeader ?? false;
+    const expandCollapseWidth = 14.0;
     Widget rowWidget = Padding(
       padding: EdgeInsets.only(left: currentX),
       child: ValueListenableBuilder<String>(
@@ -1248,7 +1368,7 @@ class InspectorRowContent extends StatelessWidget {
                         ),
                       )
                     : const SizedBox(
-                        width: defaultSpacing,
+                        width: expandCollapseWidth,
                         height: defaultSpacing,
                       ),
                 Expanded(
@@ -1256,11 +1376,16 @@ class InspectorRowContent extends StatelessWidget {
                     color: backgroundColor,
                     child: InkWell(
                       onTap: () {
-                        controller.onSelectRow(row);
-                        // TODO(gmoothart): It may be possible to capture the tap
-                        // and request focus directly from the InspectorTree. Then
-                        // we wouldn't need this.
-                        controller.requestFocus();
+                        controller.refreshTree(
+                          updateTreeAction: () {
+                            controller.onSelectRow(row);
+                            // TODO(gmoothart): It may be possible to capture the tap
+                            // and request focus directly from the InspectorTree. Then
+                            // we wouldn't need this.
+                            controller.requestFocus();
+                            return true;
+                          },
+                        );
                       },
                       child: SizedBox(
                         height: inspectorRowHeight,
@@ -1269,6 +1394,7 @@ class InspectorRowContent extends StatelessWidget {
                           isSelected: row.isSelected,
                           searchValue: searchValue,
                           errorText: error?.errorMessage,
+                          emphasizeNodesFromLocalProject: true,
                           nodeDescriptionHighlightStyle:
                               searchValue.isEmpty || !row.isSearchMatch
                                   ? DiagnosticsTextStyles.regular(
@@ -1277,6 +1403,29 @@ class InspectorRowContent extends StatelessWidget {
                                   : row.isSelected
                                       ? theme.searchMatchHighlightStyleFocused
                                       : theme.searchMatchHighlightStyle,
+                          actionLabel: isHideableGroupLeader
+                              ? diagnostic!.groupIsHidden
+                                  ? '(expand)'
+                                  : '(collapse)'
+                              : null,
+                          actionCallback: isHideableGroupLeader
+                              ? () {
+                                  controller.refreshTree(
+                                    updateTreeAction: () {
+                                      controller.toggleHiddenGroup(node);
+                                      return true;
+                                    },
+                                  );
+                                }
+                              : null,
+                          customDescription: isHideableGroupLeader &&
+                                  diagnostic!.groupIsHidden
+                              ? '${diagnostic.hideableGroupSubordinates!.length + 1} more widgets...'
+                              : null,
+                          customIconName:
+                              isHideableGroupLeader && diagnostic!.groupIsHidden
+                                  ? 'HiddenGroup'
+                                  : null,
                         ),
                       ),
                     ),

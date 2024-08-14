@@ -15,11 +15,9 @@ import '../../shared/ui/search.dart';
 import 'deep_link_list_view.dart';
 import 'deep_links_controller.dart';
 
-const kDeeplinkTableCellDefaultWidth = 200.0;
 const kToolTipWidth = 344.0;
 const metaDataDeepLinkingFlagTag =
     '<meta-data android:name="flutter_deeplinking_enabled" android:value="true" />';
-const missingDomain = 'missing domain';
 const missingScheme = 'missing scheme';
 
 enum PlatformOS {
@@ -39,9 +37,13 @@ class CommonError {
 
 class DomainError extends CommonError {
   const DomainError(super.title, super.explanation, super.fixDetails);
+}
+
+class AndroidDomainError extends DomainError {
+  const AndroidDomainError(super.title, super.explanation, super.fixDetails);
 
   /// Existence of an asset link file.
-  static const existence = DomainError(
+  static const existence = AndroidDomainError(
     'Digital Asset Links JSON file does not exist',
     'This test checks whether the assetlinks.json file, '
         'which is used to verify the association between the app and the '
@@ -52,7 +54,7 @@ class DomainError extends CommonError {
   );
 
   /// Asset link file should define a link to this app.
-  static const appIdentifier = DomainError(
+  static const appIdentifier = AndroidDomainError(
     'Package name not found',
     'The test checks your Digital Asset Links JSON file '
         'for package name validation, which the mobile device '
@@ -64,7 +66,7 @@ class DomainError extends CommonError {
   );
 
   /// Asset link file should contain the correct fingerprint.
-  static const fingerprints = DomainError(
+  static const fingerprints = AndroidDomainError(
     'Fingerprint validation failed',
     'This test checks your Digital Asset Links JSON file for '
         'sha256 fingerprint validation, which the mobile device uses '
@@ -76,7 +78,7 @@ class DomainError extends CommonError {
   );
 
   /// Asset link file should be served with the correct content type.
-  static const contentType = DomainError(
+  static const contentType = AndroidDomainError(
     'JSON content type incorrect',
     'This test checks your Digital Asset Links JSON file for content type '
         'validation, which defines the format of the JSON file. This allows '
@@ -85,7 +87,7 @@ class DomainError extends CommonError {
   );
 
   /// Asset link file should be accessible via https.
-  static const httpsAccessibility = DomainError(
+  static const httpsAccessibility = AndroidDomainError(
     'HTTPS accessibility check failed',
     'This test tries to access your Digital Asset Links '
         'JSON file over an HTTPS connection, which must be '
@@ -96,7 +98,7 @@ class DomainError extends CommonError {
   );
 
   /// Asset link file should be accessible with no redirects.
-  static const nonRedirect = DomainError(
+  static const nonRedirect = AndroidDomainError(
     'Domain non-redirect check failed',
     'This test checks that your domain is accessible without '
         'redirects. This domain must be directly accessible '
@@ -105,7 +107,7 @@ class DomainError extends CommonError {
   );
 
   /// Asset link domain should be valid/not malformed.
-  static const hostForm = DomainError(
+  static const hostForm = AndroidDomainError(
     'Host attribute is not formed properly',
     'This test checks that your android:host attribute has a valid domain URL pattern.',
     'Make sure the host is a properly formed web address such '
@@ -114,7 +116,61 @@ class DomainError extends CommonError {
 
   /// Issues that are not covered by other checks. An example that may be in this
   /// category is Android validation API failures.
-  static const other = DomainError('Check failed', '', '');
+  static const other = AndroidDomainError('Check failed', '', '');
+}
+
+class IosDomainError extends DomainError {
+  const IosDomainError(super.title, super.explanation, super.fixDetails);
+  // TODO(hangyujin): Finalize strings for these domain errors.
+
+  /// Existence of an Apple-App-Site-Association file.
+  static const existence = IosDomainError(
+    'Apple-App-Site-Association file does not exist',
+    'This test checks whether the Apple-App-Site-Association file, '
+        'which is required to verify the association between the app and the '
+        'domain name, exists under your domain.',
+    'Add an Apple-App-Side-Association file to all of the '
+        'failed website domains at the following location: '
+        'https://[domain.name]/apple-app-site-association.',
+  );
+
+  /// AASA file should define a link to this app.
+  static const appIdentifier = IosDomainError(
+    'App identifier not found',
+    'This test checks your Apple-App-Site-Association file '
+        'for App identifier validation, which the mobile device '
+        'uses to verify ownership of the app.',
+    'Ensure your Apple-App-Site-Association file declares the '
+        'correct app identifier.',
+  );
+
+  /// AASA file should be accessible via https.
+  static const httpsAccessibility = IosDomainError(
+    'HTTPS accessibility check failed',
+    'This test tries to access your Apple-App-Site-Association '
+        'file over an HTTPS connection, which must be '
+        'accessible to verify ownership of the app.',
+    'Ensure your Apple-App-Site-Association file is accessible '
+        'over an HTTPS connection for all of the failed website domains.',
+  );
+
+  /// AASA file should be accessible with no redirects.
+  static const nonRedirect = IosDomainError(
+    'Domain non-redirect check failed',
+    'This test checks that your domain is accessible without '
+        'redirects. Your domain must be accessible without '
+        'redirects to verify ownership of the app.',
+    'Ensure your domain is accessible without any redirects.',
+  );
+
+  /// TODO(hangyujin): There are sub checkes of this check, add them and add links when finalized.
+  /// AASA file format follows guidelines.
+  static const fileFormat = IosDomainError(
+    'Apple-App-Site-Association file format is incorrect',
+    'This test checks that your Apple-App-Site-Association file '
+        'follows the correct format guidelines.',
+    'Ensure your Apple-App-Site-Association file follows the correct format guidelines.',
+  );
 }
 
 /// There are currently two types of path errors, errors from intent filters and path format errors.
@@ -201,9 +257,9 @@ class LinkData with SearchableDataMixin {
     this.associatedDomains = const <String>[],
   });
 
-  final String path;
+  final String? path;
   final String? domain;
-  final List<PlatformOS> os;
+  final Set<PlatformOS> os;
   final Set<String> scheme;
   final List<DomainError> domainErrors;
   Set<PathError> pathErrors;
@@ -214,11 +270,14 @@ class LinkData with SearchableDataMixin {
   @override
   bool matchesSearchToken(RegExp regExpSearch) {
     return (domain?.caseInsensitiveContains(regExpSearch) ?? false) ||
-        path.caseInsensitiveContains(regExpSearch);
+        (path?.caseInsensitiveContains(regExpSearch) ?? false);
   }
 
   @override
   String toString() => 'LinkData($domain $path)';
+
+  String get safePath => path ?? '';
+  String get safeDomain => domain ?? '';
 }
 
 class _ErrorAwareText extends StatelessWidget {
@@ -308,6 +367,12 @@ class DomainColumn extends ColumnData<LinkData>
   SortingOption? sortingOption;
 
   @override
+  bool get supportsSorting {
+    // Sorting options for this column are handled manually by [controller].
+    return false;
+  }
+
+  @override
   Widget? buildHeader(
     BuildContext context,
     Widget Function() defaultHeaderRenderer,
@@ -371,6 +436,12 @@ class PathColumn extends ColumnData<LinkData>
   SortingOption? sortingOption;
 
   @override
+  bool get supportsSorting {
+    // Sorting options for this column are handled manually by [controller].
+    return false;
+  }
+
+  @override
   Widget? buildHeader(
     BuildContext context,
     Widget Function() defaultHeaderRenderer,
@@ -392,7 +463,7 @@ class PathColumn extends ColumnData<LinkData>
   }
 
   @override
-  String getValue(LinkData dataObject) => dataObject.path;
+  String getValue(LinkData dataObject) => dataObject.safePath;
 
   @override
   Widget build(
@@ -405,7 +476,7 @@ class PathColumn extends ColumnData<LinkData>
     return _ErrorAwareText(
       isError: dataObject.pathErrors.isNotEmpty,
       controller: controller,
-      text: dataObject.path,
+      text: dataObject.safePath,
       link: dataObject,
     );
   }
@@ -443,6 +514,13 @@ class SchemeColumn extends ColumnData<LinkData>
   SchemeColumn(this.controller) : super.wide('Scheme');
 
   DeepLinksController controller;
+
+  @override
+  bool get supportsSorting {
+    // The sorting action for this column is used instead to provide filter
+    // options. This is handled manually by [controller].
+    return false;
+  }
 
   @override
   Widget? buildHeader(
@@ -493,6 +571,13 @@ class OSColumn extends ColumnData<LinkData>
   DeepLinksController controller;
 
   @override
+  bool get supportsSorting {
+    // The sorting action for this column is used instead to provide filter
+    // options. This is handled manually by [controller].
+    return false;
+  }
+
+  @override
   Widget? buildHeader(
     BuildContext context,
     Widget Function() defaultHeaderRenderer,
@@ -540,6 +625,13 @@ class StatusColumn extends ColumnData<LinkData>
   DeepLinksController controller;
 
   TableViewType viewType;
+
+  @override
+  bool get supportsSorting {
+    // The sorting action for this column is used instead to provide filter
+    // options. This is handled manually by [controller].
+    return false;
+  }
 
   @override
   String getValue(LinkData dataObject) {
@@ -618,6 +710,9 @@ class NavigationColumn extends ColumnData<LinkData>
           '',
           fixedWidthPx: scaleByFontFactor(40),
         );
+
+  @override
+  bool get supportsSorting => false;
 
   @override
   String getValue(LinkData dataObject) => '';
@@ -730,12 +825,12 @@ int _compareLinkData(
       }
       return 0;
     case SortingOption.aToZ:
-      if (compareDomain) return (a.domain ?? '').compareTo(b.domain ?? '');
+      if (compareDomain) return a.safeDomain.compareTo(b.safeDomain);
 
-      return a.path.compareTo(b.path);
+      return a.safePath.compareTo(b.safePath);
     case SortingOption.zToA:
-      if (compareDomain) return (b.domain ?? '').compareTo(a.domain ?? '');
+      if (compareDomain) return b.safeDomain.compareTo(a.safeDomain);
 
-      return b.path.compareTo(a.path);
+      return b.safePath.compareTo(a.safePath);
   }
 }

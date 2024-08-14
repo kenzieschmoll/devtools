@@ -130,7 +130,7 @@ class InspectorScreenBodyState extends State<InspectorScreenBody>
       }
     });
     addAutoDisposeListener(preferences.inspector.pubRootDirectories, () {
-      if (serviceConnection.serviceManager.hasConnection &&
+      if (serviceConnection.serviceManager.connectedState.value.connected &&
           controller.firstInspectorTreeLoadCompleted) {
         _refreshInspector();
       }
@@ -437,7 +437,7 @@ class InspectorSummaryTreeControls extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: denseSpacing),
                 child: Text(
                   'Widget Tree',
-                  style: Theme.of(context).textTheme.titleSmall,
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
               ),
               ...!isSearchVisible

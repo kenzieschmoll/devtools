@@ -34,7 +34,7 @@ part 'extension_manager.dart';
 ///   "args": [
 ///     "--dart-define=use_simulated_environment=true"
 ///   ]
-const bool _simulatedEnvironmentEnabled =
+const _simulatedEnvironmentEnabled =
     bool.fromEnvironment('use_simulated_environment');
 
 bool get _useSimulatedEnvironment =>
@@ -159,8 +159,7 @@ class _DevToolsExtensionState extends State<DevToolsExtension>
     setGlobal(ExtensionManager, ExtensionManager());
     setGlobal(ServiceManager, ServiceManager());
     setGlobal(DTDManager, DTDManager());
-    // TODO(kenz): pull the IDE theme from the url query params.
-    setGlobal(IdeTheme, IdeTheme());
+    setGlobal(IdeTheme, getIdeTheme());
   }
 
   Future<void> _shutdown() async {

@@ -157,7 +157,7 @@ class ExtensionManager {
     // TODO(kenz): investigate. this is weird but `vmServiceUri` != null even
     // when the `toString()` representation is 'null'.
     if (vmServiceUri == null || vmServiceUri == 'null') {
-      if (serviceManager.hasConnection) {
+      if (serviceManager.connectedState.value.connected) {
         await serviceManager.manuallyDisconnect();
       }
       if (loadQueryParams().containsKey(_vmServiceQueryParameter)) {
@@ -291,6 +291,28 @@ class ExtensionManager {
         message: message,
         extensionName: extensionName,
         ignoreIfAlreadyDismissed: ignoreIfAlreadyDismissed,
+      ),
+    );
+  }
+
+  /// Copy [content] to clipboard from DevTools.
+  ///
+  /// [successMessage] is an optional message that DevTools will show as a
+  /// notification when [content] has been successfully copied to the clipboard.
+  /// Defaults to [CopyToClipboardExtensionEvent.defaultSuccessMessage].
+  ///
+  /// This method of copying text is preferred over calling `Clipboard.setData`
+  /// directly because DevTools contains additional logic for copying text from
+  /// within an IDE-embedded web view. This scenario will occur when a user is
+  /// using a DevTools extension from within their IDE.
+  void copyToClipboard(
+    String content, {
+    String successMessage = CopyToClipboardExtensionEvent.defaultSuccessMessage,
+  }) {
+    postMessageToDevTools(
+      CopyToClipboardExtensionEvent(
+        content: content,
+        successMessage: successMessage,
       ),
     );
   }

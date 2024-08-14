@@ -124,7 +124,7 @@ class PerfettoControllerImpl extends PerfettoController {
       path: window.location.pathname,
     );
     final indexFilePath = ui_web.assetManager
-        .getAssetUrl(devToolsExtensionPoints.perfettoIndexLocation);
+        .getAssetUrl(devToolsEnvironmentParameters.perfettoIndexLocation);
     final baseUrl = '$basePath/$indexFilePath';
     return '$baseUrl$_embeddedModeQuery';
   }
@@ -164,7 +164,7 @@ class PerfettoControllerImpl extends PerfettoController {
     );
     _initialized = true;
 
-    _perfettoIFrame = createIFrameElement()
+    _perfettoIFrame = HTMLIFrameElement()
       // This url is safe because we built it ourselves and it does not include
       // any user input.
       // ignore: unsafe_html

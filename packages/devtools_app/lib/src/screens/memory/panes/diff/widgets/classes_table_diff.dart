@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 
 import '../../../../../shared/analytics/analytics.dart' as ga;
 import '../../../../../shared/analytics/constants.dart' as gac;
-import '../../../../../shared/common_widgets.dart';
 import '../../../../../shared/globals.dart';
 import '../../../../../shared/memory/classes.dart';
 import '../../../../../shared/primitives/utils.dart';
@@ -45,9 +44,6 @@ class _ClassNameColumn extends ColumnData<DiffClassData>
   String? getValue(DiffClassData data) => data.className.className;
 
   @override
-  bool get supportsSorting => true;
-
-  @override
   // Tooltip is removed, because it is provided by [HeapClassView].
   String getTooltip(DiffClassData data) => '';
 
@@ -62,7 +58,7 @@ class _ClassNameColumn extends ColumnData<DiffClassData>
     return HeapClassView(
       theClass: data.className,
       showCopyButton: isRowSelected,
-      copyGaItem: gac.MemoryEvent.diffClassDiffCopy,
+      copyGaItem: gac.MemoryEvents.diffClassDiffCopy.name,
       rootPackage: serviceConnection.serviceManager.rootInfoNow().package,
     );
   }
@@ -243,8 +239,7 @@ class ClassesTableDiffColumns {
 
   late final sizeDeltaColumn = _SizeColumn(_DataPart.delta, sizeType);
 
-  late final List<ColumnData<DiffClassData>> columnList =
-      <ColumnData<DiffClassData>>[
+  late final columnList = <ColumnData<DiffClassData>>[
     _ClassNameColumn(diffData),
     _InstanceColumn(_DataPart.created, diffData),
     _InstanceColumn(_DataPart.deleted, diffData),
@@ -351,7 +346,7 @@ class ClassesTableDiff extends StatelessWidget {
           selectionNotifier: diffData.selection,
           onItemSelected: (_) => ga.select(
             gac.memory,
-            gac.MemoryEvent.diffClassDiffSelect,
+            gac.MemoryEvents.diffClassDiffSelect.name,
           ),
           defaultSortColumn: columns.sizeDeltaColumn,
           defaultSortDirection: SortDirection.descending,

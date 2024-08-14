@@ -312,7 +312,11 @@ void main() {
         expectNoSelection();
 
         final textElement = tester.element(
-          find.text('https://jsonplaceholder.typicode.com/albums/1').first,
+          find
+              .text(
+                'https://jsonplaceholder.typicode.com/albums/1?userId=1&title=myalbum',
+              )
+              .first,
         );
         final selectableTextWidget =
             textElement.findAncestorWidgetOfExactType<SelectableText>()!;
@@ -365,7 +369,9 @@ void main() {
         // Verify general information.
         expect(find.text('Request uri: '), findsOneWidget);
         expect(
-          find.text('https://jsonplaceholder.typicode.com/albums/1'),
+          find.text(
+            'https://jsonplaceholder.typicode.com/albums/1?userId=1&title=myalbum',
+          ),
           findsOneWidget,
         );
         expect(find.text('Method: '), findsOneWidget);
@@ -454,17 +460,17 @@ void main() {
         // Verify general information.
         expect(find.text('Request uri: '), findsOneWidget);
         expect(
-          find.text('InternetAddress(\'2606:4700:3037::ac43:bd8f\', IPv6)'),
+          find.text('[2606:4700:3037::ac43:bd8f]:443'),
           findsOneWidget,
         );
         expect(find.text('Method: '), findsOneWidget);
-        expect(find.text('GET'), findsOneWidget);
+        expect(find.text('SOCKET'), findsOneWidget);
         expect(find.text('Status: '), findsOneWidget);
-        expect(find.text('101'), findsOneWidget);
+        expect(find.text('Closed'), findsOneWidget);
         expect(find.text('Port: '), findsOneWidget);
         expect(find.text('443'), findsOneWidget);
         expect(find.text('Content type: '), findsOneWidget);
-        expect(find.text('websocket'), findsOneWidget);
+        expect(find.text('socket'), findsOneWidget);
         expect(find.text('Socket id: '), findsOneWidget);
         expect(find.text('10000'), findsOneWidget);
         expect(find.text('Socket type: '), findsOneWidget);
@@ -507,17 +513,17 @@ void main() {
         // Verify general information.
         expect(find.text('Request uri: '), findsOneWidget);
         expect(
-          find.text('InternetAddress(\'2606:4700:3037::ac43:0000\', IPv6)'),
+          find.text('[2606:4700:3037::ac43:0000]:80'),
           findsOneWidget,
         );
         expect(find.text('Method: '), findsOneWidget);
-        expect(find.text('GET'), findsOneWidget);
+        expect(find.text('SOCKET'), findsOneWidget);
         expect(find.text('Status: '), findsOneWidget);
-        expect(find.text('101'), findsOneWidget);
+        expect(find.text('Open'), findsOneWidget);
         expect(find.text('Port: '), findsOneWidget);
         expect(find.text('80'), findsOneWidget);
         expect(find.text('Content type: '), findsOneWidget);
-        expect(find.text('websocket'), findsOneWidget);
+        expect(find.text('socket'), findsOneWidget);
         expect(find.text('Socket id: '), findsOneWidget);
         expect(find.text('11111'), findsOneWidget);
         expect(find.text('Socket type: '), findsOneWidget);

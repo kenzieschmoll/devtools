@@ -49,7 +49,7 @@ abstract class MemoryDefaultSceneHeaps {
     return result;
   }
 
-  static final List<HeapProvider> forDiffTesting = [
+  static final forDiffTesting = [
     {'A': 1, 'B': 2, 'C': 1},
     {'A': 1, 'B': 2},
     {'B': 1, 'C': 2, 'D': 3},
@@ -76,7 +76,7 @@ class MemoryDefaultScene extends Scene {
   @override
   Widget build(BuildContext context) {
     return wrapWithControllers(
-      const MemoryBody(),
+      const MemoryScreenBody(),
       memory: controller,
     );
   }
@@ -85,7 +85,7 @@ class MemoryDefaultScene extends Scene {
     await tester.pumpSceneAsync(this);
     // Delay to ensure the memory profiler has collected data.
     await tester.pumpAndSettle(const Duration(seconds: 1));
-    expect(find.byType(MemoryBody), findsOneWidget);
+    expect(find.byType(MemoryScreenBody), findsOneWidget);
   }
 
   @override
@@ -149,10 +149,8 @@ class MemoryDefaultScene extends Scene {
       rootPackage: 'root',
     )..derived.applyFilter(showAllFilter);
 
-    final profileController = ProfilePaneController(
-      mode: ControllerCreationMode.connected,
-      rootPackage: 'root',
-    )..setFilter(showAllFilter);
+    final profileController = ProfilePaneController(rootPackage: 'root')
+      ..setFilter(showAllFilter);
 
     controller = MemoryController(
       connectedDiff: diffController,
@@ -161,7 +159,7 @@ class MemoryDefaultScene extends Scene {
 
     await controller.initialized;
 
-    controller.chart!.data.timeline.data
+    controller.chart.data.timeline.data
       ..clear()
       ..addAll(memoryJson.data);
   }

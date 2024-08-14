@@ -9,16 +9,21 @@ import 'dart:typed_data';
 
 import 'package:devtools_app_shared/utils.dart';
 import 'package:devtools_app_shared/web_utils.dart';
+import 'package:devtools_shared/devtools_shared.dart';
 import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
 import 'package:web/web.dart';
 
 import '../../../../../shared/analytics/analytics.dart' as ga;
 import '../../../../../shared/analytics/constants.dart' as gac;
 import '../../../../../shared/globals.dart';
 import '../../../../../shared/primitives/utils.dart';
+import '../../../../../shared/utils.dart';
 import '../../../performance_utils.dart';
 import '_perfetto_controller_web.dart';
 import 'perfetto_controller.dart';
+
+final _log = Logger('PerfettoWeb');
 
 class Perfetto extends StatefulWidget {
   const Perfetto({
@@ -163,9 +168,9 @@ class _PerfettoViewController extends DisposableController
       _handleMessageListener = _handleMessage.toJS,
     );
 
-    unawaited(_loadStyle(preferences.darkModeTheme.value));
-    addAutoDisposeListener(preferences.darkModeTheme, () async {
-      await _loadStyle(preferences.darkModeTheme.value);
+    unawaited(_loadStyle(darkMode: isDarkThemeEnabled()));
+    addAutoDisposeListener(preferences.darkModeEnabled, () async {
+      await _loadStyle(darkMode: isDarkThemeEnabled());
       reloadCssForThemeChange();
     });
 
@@ -224,7 +229,7 @@ class _PerfettoViewController extends DisposableController
     });
   }
 
-  Future<void> _loadStyle(bool darkMode) async {
+  Future<void> _loadStyle({required bool darkMode}) async {
     // This message will be handled by [devtools_theme_handler.js], which is
     // included in the Perfetto build inside
     // [packages/perfetto_ui_compiled/dist].
@@ -262,12 +267,16 @@ class _PerfettoViewController extends DisposableController
   void _postMessage(Object message) async {
     await _perfettoIFrameReady.future;
     if (_perfettoIFrameUnloaded) return;
-    assert(
-      perfettoController.perfettoIFrame.contentWindow != null,
-      'Something went wrong. The iFrame\'s contentWindow is null after the'
-      ' _perfettoIFrameReady future completed.',
-    );
-    perfettoController.perfettoIFrame.contentWindow!.postMessage(
+    final iFrameWindow = perfettoController.perfettoIFrame.contentWindow;
+    if (iFrameWindow == null) {
+      _log.warning(
+        'Something went wrong. The iFrame\'s contentWindow is null after the'
+        ' _perfettoIFrameReady future completed.',
+      );
+      return;
+    }
+
+    iFrameWindow.postMessage(
       message.jsify(),
       perfettoController.perfettoUrl.toJS,
     );
@@ -288,14 +297,11 @@ class _PerfettoViewController extends DisposableController
   void _handleMessage(Event e) {
     if (e.isMessageEvent) {
       final messageData = ((e as MessageEvent).data as JSString).toDart;
-      if (messageData == EmbeddedPerfettoEvent.pong.event &&
-          !_perfettoHandlerReady.isCompleted) {
-        _perfettoHandlerReady.complete();
+      if (messageData == EmbeddedPerfettoEvent.pong.event) {
+        _perfettoHandlerReady.safeComplete();
       }
-
-      if (messageData == EmbeddedPerfettoEvent.devtoolsThemePong.event &&
-          !_devtoolsThemeHandlerReady.isCompleted) {
-        _devtoolsThemeHandlerReady.complete();
+      if (messageData == EmbeddedPerfettoEvent.devtoolsThemePong.event) {
+        _devtoolsThemeHandlerReady.safeComplete();
       }
     }
   }

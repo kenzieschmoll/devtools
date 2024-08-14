@@ -5,6 +5,7 @@
 import 'package:devtools_app_shared/service.dart';
 import 'package:devtools_app_shared/utils.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 
 import '../extensions/extension_service.dart';
 import '../screens/debugger/breakpoint_manager.dart';
@@ -45,7 +46,7 @@ DTDManager get dtdManager => globals[DTDManager] as DTDManager;
 PreferencesController get preferences =>
     globals[PreferencesController] as PreferencesController;
 
-DevToolsEnvironmentParameters get devToolsExtensionPoints =>
+DevToolsEnvironmentParameters get devToolsEnvironmentParameters =>
     globals[DevToolsEnvironmentParameters] as DevToolsEnvironmentParameters;
 
 OfflineDataController get offlineDataController =>
@@ -64,6 +65,9 @@ EvalService get evalService => globals[EvalService] as EvalService;
 
 ExtensionService get extensionService =>
     globals[ExtensionService] as ExtensionService;
+
+GlobalKey<NavigatorState> get navigatorKey =>
+    globals[GlobalKey<NavigatorState>] as GlobalKey<NavigatorState>;
 
 /// Whether DevTools is being run in integration test mode.
 bool get integrationTestMode => _integrationTestMode;

@@ -2,9 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:math';
-
 import 'package:devtools_app_shared/ui.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -43,17 +42,9 @@ class _DeepLinkListViewState extends State<DeepLinkListView>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    initController();
+    if (!initController()) return;
     callWhenControllerReady((_) {
-      controller.selectedAndroidVariantIndex.value = _getReleaseVariantIndex(
-        controller.selectedProject.value!.androidVariants,
-      );
-      if (FeatureFlags.deepLinkIosCheck) {
-        controller.selectedIosConfigurationIndex.value =
-            _getReleaseVariantIndex(
-          controller.selectedProject.value!.iosBuildOptions.configurations,
-        );
-      }
+      controller.firstLoadWithDefaultConfigurations();
     });
   }
 
@@ -71,14 +62,6 @@ class _DeepLinkListViewState extends State<DeepLinkListView>
         ),
       ),
     );
-  }
-
-  int _getReleaseVariantIndex(List<String> variants) {
-    final index = variants.indexWhere(
-      (variant) => variant.caseInsensitiveContains('release'),
-    );
-    // If not found, default to 0.
-    return max(index, 0);
   }
 }
 
@@ -171,20 +154,17 @@ class _ValidatedDeepLinksView extends StatelessWidget {
               Expanded(
                 child: ValueListenableBuilder<LinkData?>(
                   valueListenable: controller.selectedLink,
-                  builder: (context, selectedLink, _) => TabBarView(
+                  builder: (context, _, __) => TabBarView(
                     children: [
                       ValidationDetailView(
-                        linkData: selectedLink!,
                         controller: controller,
                         viewType: TableViewType.domainView,
                       ),
                       ValidationDetailView(
-                        linkData: selectedLink,
                         controller: controller,
                         viewType: TableViewType.pathView,
                       ),
                       ValidationDetailView(
-                        linkData: selectedLink,
                         controller: controller,
                         viewType: TableViewType.singleUrlView,
                       ),
@@ -285,18 +265,31 @@ class _DeepLinkListViewTopPanel extends StatelessWidget {
         children: [
           Text(
             'Validate and fix',
-            style: Theme.of(context).textTheme.titleSmall,
+            style: Theme.of(context).textTheme.titleMedium,
           ),
           const Spacer(),
-          _VariantDropdown(
-            os: PlatformOS.android,
-            controller: controller,
+          _ConfigurationDropdown(
+            title: 'Android Variant:',
+            valueListenable: controller.selectedAndroidVariantIndex,
+            configurations: controller.selectedProject.value!.androidVariants,
+            onChanged: controller.updateSelectedAndroidVariantIndex,
           ),
           if (FeatureFlags.deepLinkIosCheck) ...[
             const SizedBox(width: denseSpacing),
-            _VariantDropdown(
-              os: PlatformOS.ios,
-              controller: controller,
+            _ConfigurationDropdown(
+              title: 'iOS Configuration:',
+              valueListenable: controller.selectedIosConfigurationIndex,
+              configurations: controller
+                  .selectedProject.value!.iosBuildOptions.configurations,
+              onChanged: controller.updateSelectedIosConfigurationIndex,
+            ),
+            const SizedBox(width: denseSpacing),
+            _ConfigurationDropdown(
+              title: 'iOS Target:',
+              valueListenable: controller.selectedIosTargetIndex,
+              configurations:
+                  controller.selectedProject.value!.iosBuildOptions.targets,
+              onChanged: controller.updateSelectedIosTargetIndex,
             ),
           ],
         ],
@@ -305,40 +298,36 @@ class _DeepLinkListViewTopPanel extends StatelessWidget {
   }
 }
 
-class _VariantDropdown extends StatelessWidget {
-  const _VariantDropdown({
-    required this.os,
-    required this.controller,
+class _ConfigurationDropdown extends StatelessWidget {
+  const _ConfigurationDropdown({
+    required this.valueListenable,
+    required this.configurations,
+    required this.title,
+    required this.onChanged,
   });
-  final PlatformOS os;
-  final DeepLinksController controller;
+  final ValueListenable valueListenable;
+  final List<String> configurations;
+  final String title;
+  final void Function(int) onChanged;
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder(
-      valueListenable: os == PlatformOS.android
-          ? controller.selectedAndroidVariantIndex
-          : controller.selectedIosConfigurationIndex,
+      valueListenable: valueListenable,
       builder: (_, index, __) {
-        final variants = os == PlatformOS.android
-            ? controller.selectedProject.value!.androidVariants
-            : controller.selectedProject.value!.iosBuildOptions.configurations;
         return Row(
           children: [
-            Text('${os.description} Variant:'),
+            Text(title),
             RoundedDropDownButton<int>(
               roundedCornerOptions: RoundedCornerOptions.empty,
               value: index,
               items: [
-                for (int i = 0; i < variants.length; i++)
-                  DropdownMenuItem<int>(value: i, child: Text(variants[i])),
+                for (int i = 0; i < configurations.length; i++)
+                  DropdownMenuItem<int>(
+                    value: i,
+                    child: Text(configurations[i]),
+                  ),
               ],
-              onChanged: (int? newIndex) {
-                if (os == PlatformOS.android) {
-                  controller.selectedAndroidVariantIndex.value = newIndex!;
-                } else {
-                  controller.selectedIosConfigurationIndex.value = newIndex!;
-                }
-              },
+              onChanged: (index) => onChanged(index!),
             ),
           ],
         );
@@ -374,7 +363,7 @@ class _AllDeepLinkDataTable extends StatelessWidget {
                       const EdgeInsets.symmetric(horizontal: defaultSpacing),
                   child: Text(
                     'All deep links',
-                    style: textTheme.titleSmall,
+                    style: textTheme.titleMedium,
                   ),
                 ),
                 Padding(

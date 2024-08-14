@@ -374,7 +374,7 @@ class _CodeViewState extends State<CodeView> with AutoDisposeMixin {
                         Expanded(
                           child: LayoutBuilder(
                             builder: (context, constraints) {
-                              final double fileWidth = calculateTextSpanWidth(
+                              final fileWidth = calculateTextSpanWidth(
                                 findLongestTextSpan(lines),
                               );
 
@@ -1428,7 +1428,7 @@ class ScriptPopupMenu extends StatelessWidget {
       itemBuilder: (_) => [
         for (final menuOption in defaultScriptPopupMenuOptions)
           menuOption.build(),
-        for (final extensionMenuOption in devToolsExtensionPoints
+        for (final extensionMenuOption in devToolsEnvironmentParameters
             .buildExtraDebuggerScriptPopupMenuOptions())
           extensionMenuOption.build(),
       ],

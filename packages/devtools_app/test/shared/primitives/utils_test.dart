@@ -715,7 +715,7 @@ void main() {
     group('SafeAccess', () {
       test('safeFirst', () {
         final list = <int?>[];
-        final Iterable<int?> iterable = list;
+        final iterable = list;
         expect(list.safeFirst, isNull);
         expect(iterable.safeFirst, isNull);
         list.addAll([1, 2, 3]);
@@ -1067,27 +1067,6 @@ void main() {
         expect(['a', 'b'].joinWith('z'), equals(['a', 'z', 'b']));
       });
 
-      test('containsWhere', () {
-        final list = [1, 2, 1, 2, 3, 4];
-        expect(list.containsWhere((element) => element == 1), isTrue);
-        expect(list.containsWhere((element) => element == 5), isFalse);
-        expect(list.containsWhere((element) => element + 2 == 3), isTrue);
-
-        final otherList = ['hi', 'hey', 'foo', 'bar'];
-        expect(
-          otherList.containsWhere((element) => element.contains('h')),
-          isTrue,
-        );
-        expect(
-          otherList.containsWhere((element) => element.startsWith('ba')),
-          isTrue,
-        );
-        expect(
-          otherList.containsWhere((element) => element.endsWith('ba')),
-          isFalse,
-        );
-      });
-
       test('allIndicesWhere', () {
         final list = [1, 2, 1, 2, 3, 4];
         expect(list.allIndicesWhere((element) => element.isEven), [1, 3, 5]);
@@ -1108,25 +1087,13 @@ void main() {
     });
 
     group('SetExtension', () {
-      test('containsWhere', () {
-        final set = {1, 2, 3, 4};
-        expect(set.containsWhere((element) => element == 1), isTrue);
-        expect(set.containsWhere((element) => element == 5), isFalse);
-        expect(set.containsWhere((element) => element + 2 == 3), isTrue);
-
-        final otherSet = {'hi', 'hey', 'foo', 'bar'};
-        expect(
-          otherSet.containsWhere((element) => element.contains('h')),
-          isTrue,
-        );
-        expect(
-          otherSet.containsWhere((element) => element.startsWith('ba')),
-          isTrue,
-        );
-        expect(
-          otherSet.containsWhere((element) => element.endsWith('ba')),
-          isFalse,
-        );
+      test('containsAny', () {
+        final test = {1, 2, 3, 4};
+        final subSet = {1, 2};
+        final disjointSet = {5, 6, 7};
+        expect(test.containsAny(test), true);
+        expect(test.containsAny(subSet), true);
+        expect(test.containsAny(disjointSet), false);
       });
     });
 
@@ -1144,22 +1111,6 @@ void main() {
     });
 
     group('StringExtension', () {
-      test('fuzzyMatch', () {
-        const str = 'hello_world_file';
-        expect(str.caseInsensitiveFuzzyMatch('h'), isTrue);
-        expect(str.caseInsensitiveFuzzyMatch('o_'), isTrue);
-        expect(str.caseInsensitiveFuzzyMatch('hw'), isTrue);
-        expect(str.caseInsensitiveFuzzyMatch('hwf'), isTrue);
-        expect(str.caseInsensitiveFuzzyMatch('_e'), isTrue);
-        expect(str.caseInsensitiveFuzzyMatch('HWF'), isTrue);
-        expect(str.caseInsensitiveFuzzyMatch('_E'), isTrue);
-
-        expect(str.caseInsensitiveFuzzyMatch('hwfh'), isFalse);
-        expect(str.caseInsensitiveFuzzyMatch('hfw'), isFalse);
-        expect(str.caseInsensitiveFuzzyMatch('gello'), isFalse);
-        expect(str.caseInsensitiveFuzzyMatch('files'), isFalse);
-      });
-
       test('caseInsensitiveContains', () {
         const str = 'This is a test string with a path/to/uri';
         expect(str.caseInsensitiveContains('test'), isTrue);

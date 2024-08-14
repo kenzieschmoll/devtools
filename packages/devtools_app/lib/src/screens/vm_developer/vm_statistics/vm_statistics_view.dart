@@ -23,7 +23,6 @@ class VMStatisticsView extends VMDeveloperView {
           title: 'VM',
           icon: Icons.devices,
         );
-  static const id = 'vm-statistics';
 
   @override
   Widget build(BuildContext context) => VMStatisticsViewBody();
@@ -247,6 +246,9 @@ class _IsolateNewSpaceColumn extends _IsolateMemoryColumn {
 
   @override
   int getUsage(Isolate i) => i.newSpaceUsage;
+
+  @override
+  bool get numeric => true;
 }
 
 class _IsolateOldSpaceColumn extends _IsolateMemoryColumn {
@@ -257,6 +259,9 @@ class _IsolateOldSpaceColumn extends _IsolateMemoryColumn {
 
   @override
   int getUsage(Isolate i) => i.oldSpaceUsage;
+
+  @override
+  bool get numeric => true;
 }
 
 class _IsolateHeapColumn extends _IsolateMemoryColumn {
@@ -267,6 +272,9 @@ class _IsolateHeapColumn extends _IsolateMemoryColumn {
 
   @override
   int getUsage(Isolate i) => i.dartHeapSize;
+
+  @override
+  bool get numeric => true;
 }
 
 /// Displays general statistics about running isolates including:

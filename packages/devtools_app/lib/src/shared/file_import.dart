@@ -132,7 +132,7 @@ class _FileImportContainerState extends State<FileImportContainer> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _buildImportInstructions(),
+                    CenteredMessage(widget.instructions),
                     _buildImportFileRow(),
                     if (widget.actionText != null && widget.onAction != null)
                       _buildActionButton(),
@@ -143,19 +143,6 @@ class _FileImportContainerState extends State<FileImportContainer> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildImportInstructions() {
-    return Padding(
-      padding: const EdgeInsets.all(defaultSpacing),
-      child: Text(
-        widget.instructions,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          color: Theme.of(context).textTheme.displayLarge!.color,
-        ),
-      ),
     );
   }
 
@@ -194,13 +181,12 @@ class _FileImportContainerState extends State<FileImportContainer> {
           child: Text(
             importedFile?.path ?? 'No File Selected',
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: Theme.of(context).textTheme.displayLarge!.color,
-            ),
+            style: Theme.of(context).regularTextStyle,
             textAlign: TextAlign.left,
           ),
         ),
-        if (importedFile != null) clearInputButton(_clearFile),
+        if (importedFile != null)
+          InputDecorationSuffixButton.clear(onPressed: _clearFile),
       ],
     );
   }
@@ -271,7 +257,7 @@ Future<DevToolsJsonFile?> importFileFromPicker({
   final acceptedTypeGroups = [XTypeGroup(extensions: acceptedTypes)];
   final file = await openFile(acceptedTypeGroups: acceptedTypeGroups);
   if (file == null) return null;
-  return await _toDevToolsFile(file);
+  return await toDevToolsFile(file);
 }
 
 Future<List<XFile>> importRawFilesFromPicker({
@@ -281,7 +267,8 @@ Future<List<XFile>> importRawFilesFromPicker({
   return await openFiles(acceptedTypeGroups: acceptedTypeGroups);
 }
 
-Future<DevToolsJsonFile> _toDevToolsFile(XFile file) async {
+@visibleForTesting
+Future<DevToolsJsonFile> toDevToolsFile(XFile file) async {
   final data = jsonDecode(await file.readAsString());
   final lastModifiedTime = await file.lastModified();
   // TODO(kenz): this will need to be modified if we need to support other file

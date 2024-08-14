@@ -19,6 +19,7 @@ enum PerformanceEvents {
   disableClipLayers,
   disableOpacityLayers,
   disablePhysicalShapeLayers,
+  countWidgetBuilds('trackRebuildWidgets'),
   collectRasterStats,
   clearRasterStats,
   fullScreenLayerImage,
@@ -41,6 +42,7 @@ enum PerformanceEvents {
 }
 
 enum PerformanceDocs {
+  flutterPerformanceDocs,
   performanceOverlayDocs,
   trackWidgetBuildsDocs,
   trackPaintsDocs,

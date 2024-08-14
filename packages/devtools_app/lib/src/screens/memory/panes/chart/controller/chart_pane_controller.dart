@@ -6,7 +6,6 @@ import 'package:devtools_app_shared/utils.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../../../../shared/globals.dart';
-import '../../../../../shared/primitives/simple_items.dart';
 import 'chart_connection.dart';
 import 'chart_data.dart';
 import 'charts/android_chart_controller.dart';
@@ -15,18 +14,8 @@ import 'charts/vm_chart_controller.dart';
 
 class MemoryChartPaneController extends DisposableController
     with AutoDisposeControllerMixin {
-  MemoryChartPaneController(this.mode, {ChartData? data})
-      : assert(
-          mode == ControllerCreationMode.connected ||
-              (mode == ControllerCreationMode.offlineData &&
-                  data != null &&
-                  data.isDeviceAndroid != null),
-          '$mode, $data, ${data?.isDeviceAndroid}',
-        ) {
-    if (mode == ControllerCreationMode.connected) {
-      this.data = ChartData(mode: ControllerCreationMode.connected);
-    } else {
-      this.data = data!;
+  MemoryChartPaneController({required this.data}) {
+    if (offlineDataController.showingOfflineData.value) {
       // Setting paused to false, because `recomputeChartData` is noop when it is true.
       _paused.value = false;
       recomputeChartData();
@@ -43,18 +32,13 @@ class MemoryChartPaneController extends DisposableController
     );
   }
 
-  /// The mode at which the controller was created.
-  ControllerCreationMode mode;
-
   late final ChartData data;
 
   ChartVmConnection? _chartConnection;
 
-  late final EventChartController event =
-      EventChartController(data.timeline, paused: paused);
-  late final VMChartController vm =
-      VMChartController(data.timeline, paused: paused);
-  late final AndroidChartController android = AndroidChartController(
+  late final event = EventChartController(data.timeline, paused: paused);
+  late final vm = VMChartController(data.timeline, paused: paused);
+  late final android = AndroidChartController(
     data.timeline,
     sharedLabels: vm.labelTimestamps,
     paused: paused,
@@ -96,7 +80,7 @@ class MemoryChartPaneController extends DisposableController
 
   void _maybeUpdateChart() {
     if (!isChartVisible.value) return;
-    if (mode == ControllerCreationMode.connected) {
+    if (!offlineDataController.showingOfflineData.value) {
       if (_chartConnection == null) {
         _chartConnection ??= _chartConnection = ChartVmConnection(
           data.timeline,

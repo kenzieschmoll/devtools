@@ -9,6 +9,7 @@ import '../../diagnostics/dart_object_node.dart';
 import '../../diagnostics/diagnostics_node.dart';
 import '../../diagnostics/tree_builder.dart';
 import '../../diagnostics_text_styles.dart';
+import '../../feature_flags.dart';
 import '../../globals.dart';
 import '../../primitives/utils.dart';
 import '../../ui/hover.dart';
@@ -41,6 +42,11 @@ class DiagnosticsNodeDescription extends StatelessWidget {
     this.multiline = false,
     this.style,
     this.nodeDescriptionHighlightStyle,
+    this.emphasizeNodesFromLocalProject = false,
+    this.actionLabel,
+    this.actionCallback,
+    this.customDescription,
+    this.customIconName,
   });
 
   final RemoteDiagnosticsNode? diagnostic;
@@ -50,6 +56,14 @@ class DiagnosticsNodeDescription extends StatelessWidget {
   final bool multiline;
   final TextStyle? style;
   final TextStyle? nodeDescriptionHighlightStyle;
+  // TODO(https://github.com/flutter/devtools/issues/7860): Remove and default
+  // to true when turning on inspector V2. This is currently true for the V2
+  // inspector and false for the legacy inspector.
+  final bool emphasizeNodesFromLocalProject;
+  final String? actionLabel;
+  final VoidCallback? actionCallback;
+  final String? customDescription;
+  final String? customIconName;
 
   static Widget _paddedIcon(Widget icon) {
     return Padding(
@@ -57,6 +71,11 @@ class DiagnosticsNodeDescription extends StatelessWidget {
       child: icon,
     );
   }
+
+  /// Returns the custom description if specified, or the default description
+  /// for the diagnostic node.
+  String get descriptionText =>
+      customDescription ?? diagnostic?.description ?? '';
 
   /// Approximates the width of the elements inside a [RemoteDiagnosticsNode]
   /// widget.
@@ -164,6 +183,8 @@ class DiagnosticsNodeDescription extends StatelessWidget {
     RemoteDiagnosticsNode? diagnostic,
     String? searchValue,
     TextStyle? nodeDescriptionHighlightStyle,
+    String? actionLabel,
+    VoidCallback? actionCallback,
   }) {
     // Store the textStyle of the built widget so that it can be used in
     // [approximateNodeWidth] later.
@@ -185,8 +206,13 @@ class DiagnosticsNodeDescription extends StatelessWidget {
 
     return HoverCardTooltip.async(
       enabled: () =>
-          preferences.inspector.hoverEvalModeEnabled.value &&
-          diagnosticLocal.objectGroupApi != null,
+          // TODO(https://github.com/flutter/devtools/issues/7860) Clean up
+          // after Inspector V2 release.
+          FeatureFlags.inspectorV2
+              ? preferences.inspectorV2.hoverEvalModeEnabled.value &&
+                  diagnosticLocal.objectGroupApi != null
+              : preferences.inspector.hoverEvalModeEnabled.value &&
+                  diagnosticLocal.objectGroupApi != null,
       asyncGenerateHoverCardData: ({
         required event,
         required isHoverStale,
@@ -223,12 +249,12 @@ class DiagnosticsNodeDescription extends StatelessWidget {
           ),
         );
       },
-      child: multiline
-          ? SelectableText.rich(textSpan)
-          : RichText(
-              overflow: TextOverflow.ellipsis,
-              text: textSpan,
-            ),
+      child: DescriptionDisplay(
+        text: textSpan,
+        multiline: multiline,
+        actionLabel: actionLabel,
+        actionCallback: actionCallback,
+      ),
     );
   }
 
@@ -242,7 +268,10 @@ class DiagnosticsNodeDescription extends StatelessWidget {
 
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final icon = diagnosticLocal.icon;
+    final icon = customIconName != null
+        ? RemoteDiagnosticsNode.iconMaker.fromWidgetName(customIconName)
+        : diagnosticLocal.icon;
+
     final children = <Widget>[];
 
     if (icon != null) {
@@ -258,7 +287,6 @@ class DiagnosticsNodeDescription extends StatelessWidget {
         colorScheme,
       ),
     );
-    var descriptionTextStyle = textStyle;
     // TODO(jacobr): use TextSpans and SelectableText instead of Text.
     if (diagnosticLocal.isProperty) {
       // Display of inline properties.
@@ -274,37 +302,35 @@ class DiagnosticsNodeDescription extends StatelessWidget {
         );
         // provide some contrast between the name and description if both are
         // present.
-        descriptionTextStyle =
-            descriptionTextStyle.merge(theme.subtleTextStyle);
+        textStyle = textStyle.merge(theme.subtleTextStyle);
       }
 
       if (diagnosticLocal.isCreatedByLocalProject) {
         textStyle = textStyle.merge(DiagnosticsTextStyles.regularBold);
       }
 
-      String description = diagnosticLocal.description ?? '';
+      String description = descriptionText;
       if (propertyType != null && properties != null) {
         switch (propertyType) {
           case 'Color':
             {
-              final int alpha = JsonUtils.getIntMember(properties, 'alpha');
-              final int red = JsonUtils.getIntMember(properties, 'red');
-              final int green = JsonUtils.getIntMember(properties, 'green');
-              final int blue = JsonUtils.getIntMember(properties, 'blue');
+              final alpha = JsonUtils.getIntMember(properties, 'alpha');
+              final red = JsonUtils.getIntMember(properties, 'red');
+              final green = JsonUtils.getIntMember(properties, 'green');
+              final blue = JsonUtils.getIntMember(properties, 'blue');
               String radix(int chan) => chan.toRadixString(16).padLeft(2, '0');
               description = alpha == 255
                   ? '#${radix(red)}${radix(green)}${radix(blue)}'
                   : '#${radix(alpha)}${radix(red)}${radix(green)}${radix(blue)}';
 
-              final Color color = Color.fromARGB(alpha, red, green, blue);
+              final color = Color.fromARGB(alpha, red, green, blue);
               children.add(_paddedIcon(_colorIconMaker.getCustomIcon(color)));
               break;
             }
 
           case 'IconData':
             {
-              final int codePoint =
-                  JsonUtils.getIntMember(properties, 'codePoint');
+              final codePoint = JsonUtils.getIntMember(properties, 'codePoint');
               if (codePoint > 0) {
                 final icon = FlutterMaterialIcons.getIconForCodePoint(
                   codePoint,
@@ -327,7 +353,7 @@ class DiagnosticsNodeDescription extends StatelessWidget {
         Flexible(
           child: buildDescription(
             description: description,
-            textStyle: descriptionTextStyle,
+            textStyle: textStyle,
             colorScheme: colorScheme,
             diagnostic: diagnostic,
             searchValue: searchValue,
@@ -365,8 +391,7 @@ class DiagnosticsNodeDescription extends StatelessWidget {
               style: textStyle,
             ),
           );
-          if (diagnosticLocal.separator != ' ' &&
-              (diagnosticLocal.description?.isNotEmpty ?? false)) {
+          if (diagnosticLocal.separator != ' ' && descriptionText.isNotEmpty) {
             children.add(
               Text(
                 ' ',
@@ -377,18 +402,32 @@ class DiagnosticsNodeDescription extends StatelessWidget {
         }
       }
 
-      if (!diagnosticLocal.isSummaryTree &&
+      // TODO(https://github.com/flutter/devtools/issues/7860): Remove this
+      // if-block once the widget details tree is gone. This bolding is only
+      // used there.
+      if (!emphasizeNodesFromLocalProject &&
+          !diagnosticLocal.isSummaryTree &&
           diagnosticLocal.isCreatedByLocalProject) {
         textStyle = textStyle.merge(DiagnosticsTextStyles.regularBold);
       }
 
+      // Grey out nodes that were not created by the local project to emphasize
+      // those that were:
+      if (emphasizeNodesFromLocalProject &&
+          !diagnosticLocal.isCreatedByLocalProject &&
+          diagnosticLocal.description != '[root]') {
+        textStyle = textStyle.merge(theme.subtleTextStyle);
+      }
+
       var diagnosticDescription = buildDescription(
-        description: diagnosticLocal.description ?? '',
-        textStyle: descriptionTextStyle,
+        description: descriptionText,
+        textStyle: textStyle,
         colorScheme: colorScheme,
         diagnostic: diagnostic,
         searchValue: searchValue,
         nodeDescriptionHighlightStyle: nodeDescriptionHighlightStyle,
+        actionLabel: actionLabel,
+        actionCallback: actionCallback,
       );
 
       if (errorText != null) {
@@ -511,5 +550,63 @@ class DiagnosticsNodeDescription extends StatelessWidget {
     spans.add(quoteSpan);
 
     return TextSpan(children: spans);
+  }
+}
+
+class DescriptionDisplay extends StatelessWidget {
+  const DescriptionDisplay({
+    super.key,
+    required this.text,
+    this.multiline = false,
+    this.actionLabel,
+    this.actionCallback,
+  })  : assert(
+          multiline ? actionLabel == null : true,
+          'Action labels are not supported for multiline descriptions',
+        ),
+        assert(
+          (actionLabel == null) == (actionCallback == null),
+          'Actions require both a label and a callback',
+        );
+
+  final TextSpan text;
+  final bool multiline;
+  final String? actionLabel;
+  final VoidCallback? actionCallback;
+
+  @override
+  Widget build(BuildContext context) {
+    if (multiline) {
+      return SelectableText.rich(text);
+    }
+
+    if (actionLabel != null) {
+      return Row(
+        children: [
+          Flexible(
+            child: RichText(
+              overflow: TextOverflow.ellipsis,
+              text: text,
+            ),
+          ),
+          Flexible(
+            child: TextButton(
+              style: TextButton.styleFrom(
+                textStyle: Theme.of(context).regularTextStyle,
+              ),
+              onPressed: actionCallback,
+              child: Text(
+                actionLabel!,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return RichText(
+      overflow: TextOverflow.ellipsis,
+      text: text,
+    );
   }
 }

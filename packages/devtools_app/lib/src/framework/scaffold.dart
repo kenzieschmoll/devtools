@@ -25,7 +25,6 @@ import '../shared/query_parameters.dart';
 import '../shared/routing.dart';
 import '../shared/screen.dart';
 import '../shared/title.dart';
-import '../shared/utils.dart';
 import 'about_dialog.dart';
 import 'app_bar.dart';
 import 'report_feedback_button.dart';
@@ -77,11 +76,10 @@ class DevToolsScaffold extends StatefulWidget {
         isEmbedded() ? 2.0 : intermediateSpacing,
       );
 
-  // Note: when changing this value, also update `flameChartContainerOffset`
-  // from flame_chart.dart.
   /// Horizontal padding around the content in the DevTools UI.
-  static EdgeInsets get horizontalPadding =>
-      EdgeInsets.symmetric(horizontal: isEmbedded() ? 2.0 : 16.0);
+  static EdgeInsets get horizontalPadding => EdgeInsets.symmetric(
+        horizontal: isEmbedded() ? densePadding : largeSpacing,
+      );
 
   /// All of the [Screen]s that it's possible to navigate to from this Scaffold.
   final List<Screen> screens;
@@ -108,7 +106,7 @@ class DevToolsScaffoldState extends State<DevToolsScaffold>
     with AutoDisposeMixin, TickerProviderStateMixin {
   /// A tag used for [Hero] widgets to keep the [AppBar] in the same place
   /// across route transitions.
-  static const Object _appBarTag = 'DevTools AppBar';
+  static const _appBarTag = 'DevTools AppBar';
 
   /// The controller for animating between tabs.
   ///
@@ -373,7 +371,8 @@ class DevToolsScaffoldState extends State<DevToolsScaffold>
               bottomNavigationBar: StatusLine(
                 currentScreen: _currentScreen,
                 isEmbedded: widget.embedMode.embedded,
-                isConnected: serviceConnection.serviceManager.hasConnection &&
+                isConnected: serviceConnection
+                        .serviceManager.connectedState.value.connected &&
                     serviceConnection.serviceManager.connectedAppInitialized,
               ),
             ),

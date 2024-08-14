@@ -1,7 +1,12 @@
-# 10.0.0-dev.3
+# 10.0.2
+* Update dependency `web_socket_channel: '>=2.4.0 <4.0.0'`.
+
+# 10.0.1
 * Added helper `deserialize` and `deserializeNullable`
 * Extended serialization for `HeapSample` and `ExtensionEvents`
 * Added mixin `Serializable`
+* Fix a regression with accessing the Flutter store file.
+* Bump minimum Dart SDK version to Dart stable `3.4.3`.
 
 # 10.0.0-dev.2
 * Support detecting package roots for nested Dart projects in the

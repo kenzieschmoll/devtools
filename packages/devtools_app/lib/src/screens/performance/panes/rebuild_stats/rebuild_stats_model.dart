@@ -121,7 +121,7 @@ class LocationMap {
     return json;
   }
 
-  void processLocationMap(Map<String, dynamic> json) {
+  void processLocationMap(Map<String, Object?> json) {
     for (final path in json.keys) {
       final entries = (json[path]! as Map).cast<String, List<Object?>>();
 
@@ -185,7 +185,7 @@ class RebuildCountModel {
 
   // Maximum number of historic frames to keep rebuild counts to ensure memory
   // usage from rebuild counts is not excessive.
-  static const int rebuildFrameCacheSize = 10000;
+  static const rebuildFrameCacheSize = 10000;
 
   /// Source of truth for all resolution fo location ids to [Location] objects.
   final locationMap = LocationMap();
@@ -227,11 +227,12 @@ class RebuildCountModel {
     };
   }
 
-  void processRebuildEvent(Map<String, dynamic> json) {
+  void processRebuildEvent(Map<String, Object?> json) {
     // parse locations
     if (json.containsKey(_locationsKey)) {
-      locationMap
-          .processLocationMap(json[_locationsKey] as Map<String, dynamic>);
+      locationMap.processLocationMap(
+        (json[_locationsKey] as Map).cast<String, Object?>(),
+      );
     }
 
     processRebuildsForFrame(json);
@@ -250,15 +251,14 @@ class RebuildCountModel {
     _rebuildsForFrame.clear();
   }
 
-  void processRebuildsForFrame(Map<String, dynamic> json) {
-    if (json[_frameNumberKey] == null) {
-      // Old version of the rebuild JSON that is not supported by DevTools.
-      return;
-    }
+  void processRebuildsForFrame(Map<String, Object?> json) {
+    final frameNumber = json[_frameNumberKey] as int?;
 
-    final int frameNumber = json[_frameNumberKey];
+    // Old version of the rebuild JSON that is not supported by DevTools.
+    if (frameNumber == null) return;
+
     // parse events
-    final List<int> events = (json[_eventsKey] as List).cast<int>();
+    final events = (json[_eventsKey] as List).cast<int>();
     final rebuildsForFrame = <RebuildLocation>[];
     for (int i = 0; i < events.length; i += 2) {
       final id = events[i];

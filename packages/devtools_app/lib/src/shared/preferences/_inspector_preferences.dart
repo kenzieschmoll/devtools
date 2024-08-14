@@ -212,8 +212,8 @@ class InspectorPreferencesController extends DisposableController
   /// directories are for the current project so we make a best guess based on
   /// the root library for the main isolate.
   Future<String?> _inferPubRootDirectory() async {
-    final fileUriString =
-        await serviceConnection.mainIsolateRootLibraryUriAsString();
+    final fileUriString = await serviceConnection.serviceManager
+        .mainIsolateRootLibraryUriAsString();
     if (fileUriString == null) {
       return null;
     }
@@ -304,7 +304,9 @@ class InspectorPreferencesController extends DisposableController
       (element) => RegExp('^[/\\s]*\$').firstMatch(element) != null,
     );
 
-    if (!serviceConnection.serviceManager.hasConnection) return;
+    if (!serviceConnection.serviceManager.connectedState.value.connected) {
+      return;
+    }
     await _pubRootDirectoryBusyTracker(() async {
       final localInspectorService = _inspectorService;
       if (localInspectorService is! InspectorService) return;
@@ -320,7 +322,9 @@ class InspectorPreferencesController extends DisposableController
   Future<void> removePubRootDirectories(
     List<String> pubRootDirectories,
   ) async {
-    if (!serviceConnection.serviceManager.hasConnection) return;
+    if (!serviceConnection.serviceManager.connectedState.value.connected) {
+      return;
+    }
     await _pubRootDirectoryBusyTracker(() async {
       final localInspectorService = _inspectorService;
       if (localInspectorService is! InspectorService) return;
