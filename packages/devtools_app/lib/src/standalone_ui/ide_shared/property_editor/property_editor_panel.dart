@@ -13,6 +13,7 @@ import '../../../shared/analytics/analytics.dart' as ga;
 import '../../../shared/analytics/constants.dart';
 import '../../../shared/editor/editor_client.dart';
 import '../../../shared/ui/common_widgets.dart';
+import 'ai.dart';
 import 'property_editor_controller.dart';
 import 'property_editor_view.dart';
 
@@ -106,24 +107,38 @@ class _PropertyEditorConnectedPanelState
 
   @override
   Widget build(BuildContext context) {
-    return Scrollbar(
-      controller: scrollController,
-      thumbVisibility: true,
-      child: SingleChildScrollView(
-        controller: scrollController,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            denseSpacing,
-            defaultSpacing,
-            defaultSpacing, // Additional right padding for scroll bar.
-            defaultSpacing,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [PropertyEditorView(controller: widget.controller)],
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Flexible(
+          flex: 3,
+          child: Scrollbar(
+            controller: scrollController,
+            thumbVisibility: true,
+            child: SingleChildScrollView(
+              controller: scrollController,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  denseSpacing,
+                  defaultSpacing,
+                  defaultSpacing, // Additional right padding for scroll bar.
+                  defaultSpacing,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    PropertyEditorView(controller: widget.controller),
+                    const PaddedDivider(),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
-      ),
+        Flexible(
+          child: ChatWidget(propertyEditorController: widget.controller),
+        ),
+      ],
     );
   }
 }
