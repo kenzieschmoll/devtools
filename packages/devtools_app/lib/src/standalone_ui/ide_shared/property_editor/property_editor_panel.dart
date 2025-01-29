@@ -136,7 +136,7 @@ class _PropertyEditorConnectedPanelState
           ),
         ),
         Flexible(
-          child: ChatWidget(propertyEditorController: widget.controller),
+          child: AiPropertyEditor(propertyEditorController: widget.controller),
         ),
       ],
     );
