@@ -13,7 +13,7 @@ import '../../../shared/analytics/analytics.dart' as ga;
 import '../../../shared/analytics/constants.dart';
 import '../../../shared/editor/editor_client.dart';
 import '../../../shared/ui/common_widgets.dart';
-import 'ai.dart';
+import 'ai_property_editor.dart';
 import 'property_editor_controller.dart';
 import 'property_editor_view.dart';
 

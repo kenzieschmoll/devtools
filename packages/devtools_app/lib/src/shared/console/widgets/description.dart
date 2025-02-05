@@ -2,13 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file or at https://developers.google.com/open-source/licenses/bsd.
 
+import 'dart:async';
+
 import 'package:devtools_app_shared/ui.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../../screens/inspector_shared/inspector_screen_controller.dart';
+import '../../../screens/inspector_v2/inspector_ai_agents.dart';
 import '../../diagnostics/dart_object_node.dart';
 import '../../diagnostics/diagnostics_node.dart';
 import '../../diagnostics/tree_builder.dart';
 import '../../globals.dart';
+import '../../managers/error_badge_manager.dart';
 import '../../primitives/diagnostics_text_styles.dart';
 import '../../primitives/utils.dart';
 import '../../ui/hover.dart';
@@ -34,7 +40,7 @@ class DiagnosticsNodeDescription extends StatelessWidget {
     super.key,
     this.isSelected = false,
     this.searchValue,
-    this.errorText,
+    this.error,
     this.multiline = false,
     this.style,
     this.nodeDescriptionHighlightStyle,
@@ -49,7 +55,7 @@ class DiagnosticsNodeDescription extends StatelessWidget {
 
   final RemoteDiagnosticsNode? diagnostic;
   final bool isSelected;
-  final String? errorText;
+  final DevToolsError? error;
   final String? searchValue;
   final bool multiline;
   final TextStyle? style;
@@ -363,7 +369,7 @@ class DiagnosticsNodeDescription extends StatelessWidget {
             description: description,
             textStyle: textStyle,
             colorScheme: colorScheme,
-            diagnostic: diagnostic,
+            diagnostic: diagnosticLocal,
             searchValue: searchValue,
             nodeDescriptionHighlightStyle: nodeDescriptionHighlightStyle,
           ),
@@ -423,19 +429,21 @@ class DiagnosticsNodeDescription extends StatelessWidget {
         description: descriptionText,
         textStyle: textStyle,
         colorScheme: colorScheme,
-        diagnostic: diagnostic,
+        diagnostic: diagnosticLocal,
         searchValue: searchValue,
         nodeDescriptionHighlightStyle: nodeDescriptionHighlightStyle,
         actionLabel: actionLabel,
         actionCallback: actionCallback,
       );
 
-      if (errorText != null) {
+      if (error != null) {
         // TODO(dantup): Find if there's a way to achieve this without
         //  the nested row.
-        diagnosticDescription = Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [diagnosticDescription, _buildErrorText(colorScheme)],
+        diagnosticDescription = _ErrorText(
+          diagnosticDescription: diagnosticDescription,
+          diagnostic: diagnosticLocal,
+          error: error!,
+          isSelected: isSelected,
         );
       } else if (multiline &&
           diagnosticLocal.hasCreationLocation &&
@@ -462,24 +470,6 @@ class DiagnosticsNodeDescription extends StatelessWidget {
           text:
               '${location.getFile()!.split('/').last}:${location.getLine()}:${location.getColumn()}            ',
           style: DiagnosticsTextStyles.regular(Theme.of(context).colorScheme),
-        ),
-      ),
-    );
-  }
-
-  Flexible _buildErrorText(ColorScheme colorScheme) {
-    return Flexible(
-      child: RichText(
-        textAlign: TextAlign.right,
-        overflow: TextOverflow.ellipsis,
-        text: TextSpan(
-          text: errorText,
-          // When the node is selected, the background will be an error
-          // color so don't render the text the same color.
-          style:
-              isSelected
-                  ? DiagnosticsTextStyles.regular(colorScheme)
-                  : DiagnosticsTextStyles.error(colorScheme),
         ),
       ),
     );
@@ -536,6 +526,127 @@ class DiagnosticsNodeDescription extends StatelessWidget {
     spans.add(quoteSpan);
 
     return TextSpan(children: spans);
+  }
+}
+
+class _ErrorText extends StatelessWidget {
+  const _ErrorText({
+    required this.diagnosticDescription,
+    required this.diagnostic,
+    required this.error,
+    required this.isSelected,
+  });
+
+  final Widget diagnosticDescription;
+  final RemoteDiagnosticsNode diagnostic;
+  final DevToolsError error;
+  final bool isSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        diagnosticDescription,
+        Expanded(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Flexible(
+                child: RichText(
+                  textAlign: TextAlign.right,
+                  overflow: TextOverflow.ellipsis,
+                  text: TextSpan(
+                    text: ' - ${error.errorMessage}',
+                    // When the node is selected, the background will be an error
+                    // color so don't render the text the same color.
+                    style:
+                        isSelected
+                            ? DiagnosticsTextStyles.regular(colorScheme)
+                            : DiagnosticsTextStyles.error(colorScheme),
+                  ),
+                ),
+              ),
+              _FixErrorGeminiAction(diagnostic: diagnostic, error: error),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _FixErrorGeminiAction extends StatefulWidget {
+  const _FixErrorGeminiAction({required this.diagnostic, required this.error});
+
+  final RemoteDiagnosticsNode diagnostic;
+  final DevToolsError error;
+
+  @override
+  State<_FixErrorGeminiAction> createState() => _FixErrorGeminiActionState();
+}
+
+class _FixErrorGeminiActionState extends State<_FixErrorGeminiAction> {
+  bool _fixInProgress = false;
+
+  late FlutterLayoutAgent _flutterLayoutAgent;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // TODO(kenz): this will also not work if this is triggered from the console
+    // or the logging page (outside of context of the inspector).
+
+    // TODO(kenz): this will not work if v2 inspector is not enabled. Shouldn't be
+    // a problem after v2 is cleaned up.
+    final inspectorController =
+        Provider.of<InspectorScreenController>(context).v2InspectorController;
+    _flutterLayoutAgent = inspectorController.flutterLayoutAgent!;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: densePadding),
+      child: SizedBox(
+        height: defaultIconSize,
+        width: defaultIconSize,
+        child: DevToolsTooltip(
+          message:
+              _fixInProgress
+                  ? 'Generating fix wth Gemini...'
+                  : 'Fix this error',
+          child:
+              _fixInProgress
+                  ? const CircularProgressIndicator()
+                  : IconButton(
+                    icon: Icon(Icons.auto_awesome, size: defaultIconSize),
+                    padding: EdgeInsets.zero,
+                    onPressed: _fixError,
+                  ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _fixError() async {
+    setState(() {
+      _fixInProgress = true;
+    });
+    try {
+      await _flutterLayoutAgent.fixError(
+        diagnostic: widget.diagnostic,
+        error: widget.error,
+      );
+      notificationService.push('Applied fix to source code.');
+    } catch (e) {
+      notificationService.pushError('Failed to generate fix: $e');
+    } finally {
+      setState(() {
+        _fixInProgress = false;
+      });
+    }
   }
 }
 

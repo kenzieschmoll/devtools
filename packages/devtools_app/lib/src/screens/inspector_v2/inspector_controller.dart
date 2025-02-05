@@ -36,6 +36,7 @@ import '../../shared/managers/notifications.dart';
 import '../../shared/primitives/query_parameters.dart';
 import '../../shared/primitives/utils.dart';
 import '../inspector_shared/inspector_screen.dart';
+import 'inspector_ai_agents.dart';
 import 'inspector_data_models.dart';
 import 'inspector_tree_controller.dart';
 
@@ -143,6 +144,14 @@ class InspectorController extends DisposableController
         vmService.onExtensionEvent.listen(_maybeAutoRefreshInspector),
       );
     }
+
+    _initAiAgents();
+  }
+
+  FlutterLayoutAgent? flutterLayoutAgent;
+
+  void _initAiAgents() {
+    flutterLayoutAgent = FlutterLayoutAgent(inspectorController: this)..init();
   }
 
   void _handleConnectionStart() {
@@ -1097,6 +1106,7 @@ class InspectorController extends DisposableController
     _treeGroups = null;
     _selectionGroups?.clear(false);
     _selectionGroups = null;
+    flutterLayoutAgent = null;
     super.dispose();
   }
 

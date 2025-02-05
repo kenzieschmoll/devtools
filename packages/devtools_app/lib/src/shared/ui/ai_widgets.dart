@@ -9,19 +9,48 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 
-class GeminiChatWidgetController {
-  Stream<String> get _chats => _chatController.stream;
+class GeminiChatController {
 
-  final _chatController = StreamController<String>.broadcast();
+  late final GenerativeModel _model;
+  late final ChatSession _chat;
 
-  void chat(String message) {
-    _chatController.add(message);
+  void init() {
+    _model = GenerativeModel(model: 'gemini-2.0-flash-exp', apiKey: _apiKey);
+    _chat = _model.startChat();
   }
 
-  Future<void> dispose() async {
-    await _chatController.close();
+  Future<void> sendChat({
+    required String prompt,
+    String? promptContext,
+    FutureOr<void> Function(GenerateContentResponse chatResponse)?
+    onChatResponse,
+    bool newChat = false,
+  }) async {
+    if (newChat) {
+      // TODO(kenz): does this leak or does the previous chat session get GC'ed
+      // automatically.
+      _chat = _model.startChat();
+    }
+    final response = await _chat.sendMessage(
+      Content.text([promptContext, prompt].nonNulls.join('\n')),
+    );
+    await onChatResponse?.call(response);
   }
 }
+
+// class GeminiChatWidgetController {
+//   Stream<String> get _chats => _chatController.stream;
+
+//   final _chatController = StreamController<String>.broadcast();
+
+//   void chat(String message) {
+//     _chatController.add(message);
+//   }
+
+//   Future<void> dispose() async {
+//     await _chatController.close();
+//   }
+// }
 
 class GeminiChatWidget extends StatefulWidget {
   const GeminiChatWidget({
@@ -29,13 +58,13 @@ class GeminiChatWidget extends StatefulWidget {
 
     required this.prompt,
     required this.hintText,
-    this.chatController,
+    // this.chatController,
     this.onChatResponse,
   });
 
   final String prompt;
   final String hintText;
-  final GeminiChatWidgetController? chatController;
+  // final GeminiChatWidgetController? chatController;
   final FutureOr<void> Function(String chatResponse)? onChatResponse;
 
   @override
@@ -44,42 +73,44 @@ class GeminiChatWidget extends StatefulWidget {
 
 class _GeminiChatWidgetState extends State<GeminiChatWidget>
     with AutoDisposeMixin {
-  late final GenerativeModel _model;
-  late final ChatSession _chat;
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _textController = TextEditingController();
   final FocusNode _textFieldFocus = FocusNode(debugLabel: 'TextField');
   bool _loading = false;
 
+  late GeminiChatController _chatController;
+
   @override
   void initState() {
     super.initState();
-    _model = GenerativeModel(
-      model: 'gemini-pro',
-      apiKey: GeminiChatWidget.apiKey,
-    );
-    _chat = _model.startChat();
-    _listenForIncomingChats();
+    _chatController = GeminiChatController()..init();
+    // _listenForIncomingChats();
+  }
+
+  @override
+  void dispose() {
+    // _chatController.dispose();
+    super.dispose();
   }
 
   @override
   void didUpdateWidget(covariant GeminiChatWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.chatController != oldWidget.chatController) {
-      cancelListeners();
-      _listenForIncomingChats();
-    }
+    // if (widget.chatController != oldWidget.chatController) {
+    //   cancelListeners();
+    //   _listenForIncomingChats();
+    // }
   }
 
-  void _listenForIncomingChats() {
-    if (widget.chatController != null) {
-      autoDisposeStreamSubscription(
-        widget.chatController!._chats.listen((message) async {
-          await _sendAndHandleChat(message);
-        }),
-      );
-    }
-  }
+  // void _listenForIncomingChats() {
+  //   if (widget.chatController != null) {
+  //     autoDisposeStreamSubscription(
+  //       widget.chatController!._chats.listen((message) async {
+  //         await _sendAndHandleChat(message);
+  //       }),
+  //     );
+  //   }
+  // }
 
   void _scrollDown() {
     WidgetsBinding.instance.addPostFrameCallback(
@@ -93,7 +124,7 @@ class _GeminiChatWidgetState extends State<GeminiChatWidget>
 
   @override
   Widget build(BuildContext context) {
-    final history = _chat.history.toList();
+    final history = _chatController._chat.history.toList();
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Column(
@@ -128,14 +159,14 @@ class _GeminiChatWidgetState extends State<GeminiChatWidget>
                     focusNode: _textFieldFocus,
                     decoration: textFieldDecoration(context, widget.hintText),
                     controller: _textController,
-                    onSubmitted: _sendAndHandleChat,
+                    onSubmitted: _sendChatMessage,
                   ),
                 ),
                 const SizedBox.square(dimension: 15),
                 if (!_loading)
                   IconButton(
                     onPressed: () async {
-                      await _sendAndHandleChat(_textController.text);
+                      await _sendChatMessage(_textController.text);
                     },
                     icon: Icon(
                       Icons.send,
@@ -152,39 +183,32 @@ class _GeminiChatWidgetState extends State<GeminiChatWidget>
     );
   }
 
-  Future<void> _sendAndHandleChat(String message) async {
-    final response = await _sendChatMessage(message);
-    await widget.onChatResponse?.call(response);
-  }
-
-  Future<String> _sendChatMessage(String message) async {
+  Future<void> _sendChatMessage(String message) async {
     setState(() {
       _loading = true;
     });
 
     try {
-      final response = await _chat.sendMessage(
-        Content.text('${widget.prompt}\n$message'),
+      await _chatController.sendChat(
+        promptContext: widget.prompt,
+        prompt: message,
+        onChatResponse: (response) {
+          final text = response.text;
+          if (text == null) {
+            _showError('Empty response.');
+          } else {
+            setState(() {
+              _loading = false;
+              _scrollDown();
+            });
+          }
+        },
       );
-      final text = response.text;
-
-      if (text == null) {
-        _showError('Empty response.');
-        return '';
-      } else {
-        setState(() {
-          _loading = false;
-          _scrollDown();
-        });
-      }
-
-      return text;
     } catch (e) {
       _showError(e.toString());
       setState(() {
         _loading = false;
       });
-      return '';
     } finally {
       _textController.clear();
       setState(() {

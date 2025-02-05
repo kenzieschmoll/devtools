@@ -102,7 +102,11 @@ class ErrorBadgeManager extends DisposableController
     );
     final inspectorRef = queryParams.inspectorRef ?? '';
 
-    return InspectableWidgetError(errorMessage, inspectorRef);
+    return InspectableWidgetError(
+      errorMessage,
+      inspectorRef,
+      errorDetails: node.json,
+    );
   }
 
   void _handleStdErr(Event _) {
@@ -184,19 +188,35 @@ class ErrorBadgeManager extends DisposableController
 }
 
 class DevToolsError {
-  DevToolsError(this.errorMessage, this.id, {this.read = false});
+  DevToolsError(
+    this.errorMessage,
+    this.id, {
+    this.read = false,
+    this.errorDetails,
+  });
 
   final String errorMessage;
+  final Map<String, Object?>? errorDetails;
   final String id;
   final bool read;
 
-  DevToolsError asRead() => DevToolsError(errorMessage, id, read: true);
+  DevToolsError asRead() =>
+      DevToolsError(errorMessage, id, read: true, errorDetails: errorDetails);
 }
 
 class InspectableWidgetError extends DevToolsError {
-  InspectableWidgetError(super.errorMessage, super.id, {super.read});
+  InspectableWidgetError(
+    super.errorMessage,
+    super.id, {
+    super.read,
+    super.errorDetails,
+  });
 
   @override
-  InspectableWidgetError asRead() =>
-      InspectableWidgetError(errorMessage, id, read: true);
+  InspectableWidgetError asRead() => InspectableWidgetError(
+    errorMessage,
+    id,
+    read: true,
+    errorDetails: errorDetails,
+  );
 }

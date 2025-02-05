@@ -1276,7 +1276,7 @@ class InspectorRowContent extends StatelessWidget {
                           node.diagnostic,
                           isSelected: row.isSelected,
                           searchValue: searchValue,
-                          errorText: error?.errorMessage,
+                          error: error,
                           nodeDescriptionHighlightStyle:
                               searchValue.isEmpty || !row.isSearchMatch
                                   ? DiagnosticsTextStyles.regular(
