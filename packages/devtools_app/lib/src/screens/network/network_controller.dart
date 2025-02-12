@@ -65,7 +65,7 @@ class NetworkController extends DisposableController
   List<DartIOHttpRequestData>? _httpRequests;
 
   Future<String?> exportAsHarFile() async {
-    await _fetchFullDataBeforeExport();
+    await fetchFullDataBeforeExport();
     _httpRequests =
         filteredData.value.whereType<DartIOHttpRequestData>().toList();
 
@@ -472,7 +472,7 @@ class NetworkController extends DisposableController
     );
   }
 
-  Future<void> _fetchFullDataBeforeExport() => Future.wait(
+  Future<void> fetchFullDataBeforeExport() => Future.wait(
     filteredData.value.whereType<DartIOHttpRequestData>().map(
       (item) => item.getFullRequestData(),
     ),

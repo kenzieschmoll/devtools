@@ -40,8 +40,13 @@ TODO: Remove this section if there are not any general updates.
 
 ## Network profiler updates
 
-* Offline support added for the network screen. - [#8332](https://github.com/flutter/devtools/pull/8332)
-  
+* Offline support added for the network screen (thanks to @hrajwade96!) - 
+[#8332](https://github.com/flutter/devtools/pull/8332)
+
+  ![Network profiler controls](images/network_controls.png "Network profiler controls")
+
+  ![Network profiler open / save button](images/network_open_save_button.png "Network profiler open / save button")
+
 * Changed the context menu style to be consistent with other screens
   [#8859](https://github.com/flutter/devtools/pull/8859).
 
