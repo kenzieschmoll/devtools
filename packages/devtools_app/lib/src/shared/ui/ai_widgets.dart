@@ -10,6 +10,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 
 class GeminiChatController {
+  static const _apiKey = '<bring your own key here>';
 
   late final GenerativeModel _model;
   late final ChatSession _chat;
