@@ -38,33 +38,17 @@ class GeminiChatController {
   }
 }
 
-// class GeminiChatWidgetController {
-//   Stream<String> get _chats => _chatController.stream;
-
-//   final _chatController = StreamController<String>.broadcast();
-
-//   void chat(String message) {
-//     _chatController.add(message);
-//   }
-
-//   Future<void> dispose() async {
-//     await _chatController.close();
-//   }
-// }
-
 class GeminiChatWidget extends StatefulWidget {
   const GeminiChatWidget({
     super.key,
 
     required this.prompt,
     required this.hintText,
-    // this.chatController,
     this.onChatResponse,
   });
 
   final String prompt;
   final String hintText;
-  // final GeminiChatWidgetController? chatController;
   final FutureOr<void> Function(String chatResponse)? onChatResponse;
 
   @override
@@ -84,33 +68,7 @@ class _GeminiChatWidgetState extends State<GeminiChatWidget>
   void initState() {
     super.initState();
     _chatController = GeminiChatController()..init();
-    // _listenForIncomingChats();
   }
-
-  @override
-  void dispose() {
-    // _chatController.dispose();
-    super.dispose();
-  }
-
-  @override
-  void didUpdateWidget(covariant GeminiChatWidget oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // if (widget.chatController != oldWidget.chatController) {
-    //   cancelListeners();
-    //   _listenForIncomingChats();
-    // }
-  }
-
-  // void _listenForIncomingChats() {
-  //   if (widget.chatController != null) {
-  //     autoDisposeStreamSubscription(
-  //       widget.chatController!._chats.listen((message) async {
-  //         await _sendAndHandleChat(message);
-  //       }),
-  //     );
-  //   }
-  // }
 
   void _scrollDown() {
     WidgetsBinding.instance.addPostFrameCallback(
