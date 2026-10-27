@@ -62,9 +62,12 @@ jobs:
           done
           if kill -0 "$SETUP_PID" 2>/dev/null; then
             echo "::group::Process tree at hang"
-            ps -axo pid,ppid,etime,%cpu,rss,command | grep -v ' grep ' | grep -E 'dart|flutter|xcrun|xcodebuild|swift|pod|git|adb|java|bash' || true
+            ps -axo pid,ppid,pgid,stat,etime,%cpu,rss,command | cut -c1-400 || true
             echo "::endgroup::"
             for pid in $(pgrep dartvm); do
+              echo "::group::lsof $pid"
+              lsof -p "$pid" 2>/dev/null | grep -v -E ' (REG|DIR) ' | head -60 || true
+              echo "::endgroup::"
               echo "::group::sample $pid"
               sample "$pid" 3 2>/dev/null | head -150 || true
               echo "::endgroup::"
