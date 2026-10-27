@@ -1,0 +1,80 @@
+# Temporary workflow to bisect a macOS-only `flutter pub get` hang in
+# packages/devtools_app (see flutter/devtools#10048). Not intended to merge.
+
+name: bisect-macos-pub-get
+
+on:
+  push:
+    branches:
+      - bisect-macos-pubget
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      shas: ${{ steps.read.outputs.shas }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - id: read
+        run: |
+          SHAS=$(grep -v '^\s*$' tool/bisect_shas.txt | jq -R . | jq -cs .)
+          echo "shas=$SHAS" >> "$GITHUB_OUTPUT"
+
+  bisect:
+    name: ${{ matrix.sha }}
+    needs: matrix
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        sha: ${{ fromJSON(needs.matrix.outputs.shas) }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - name: Clone Flutter SDK at ${{ matrix.sha }}
+        env:
+          SHA: ${{ matrix.sha }}
+        run: |
+          git clone -q https://github.com/flutter/flutter.git ./tool/flutter-sdk
+          git -C tool/flutter-sdk checkout -q "$SHA"
+          git -C tool/flutter-sdk log -1 --oneline
+
+      - name: Run CI setup with a hang watchdog
+        timeout-minutes: 30
+        run: |
+          set +e
+          ./tool/ci/bots_setup_only.sh > setup.log 2>&1 &
+          SETUP_PID=$!
+          tail -f setup.log &
+          TAIL_PID=$!
+          # Generous budget: normal setup (incl. first-run artifact download)
+          # takes ~2-4 minutes on macOS.
+          for _ in $(seq 1 180); do
+            sleep 5
+            kill -0 "$SETUP_PID" 2>/dev/null || break
+          done
+          if kill -0 "$SETUP_PID" 2>/dev/null; then
+            echo "::group::Process tree at hang"
+            ps -axo pid,ppid,etime,%cpu,rss,command | grep -v ' grep ' | grep -E 'dart|flutter|xcrun|xcodebuild|swift|pod|git|adb|java|bash' || true
+            echo "::endgroup::"
+            for pid in $(pgrep dartvm); do
+              echo "::group::sample $pid"
+              sample "$pid" 3 2>/dev/null | head -150 || true
+              echo "::endgroup::"
+            done
+            echo "BISECT_RESULT=HANG"
+            kill "$TAIL_PID"
+            exit 1
+          fi
+          wait "$SETUP_PID"
+          RC=$?
+          kill "$TAIL_PID"
+          echo "BISECT_RESULT=EXIT_$RC"
+          exit "$RC"
