@@ -42,3 +42,7 @@ jobs:
           $DART tool/posix_spawn_repro.dart --drain-stdin < /dev/null || true
           echo "== 3. drain stdin from a pipe"
           echo hi | $DART tool/posix_spawn_repro.dart --drain-stdin || true
+          echo "== 4. nested, stdin NOT drained in parent"
+          $DART tool/posix_spawn_repro.dart --nested < /dev/null || true
+          echo "== 5. nested, parent drains stdin from /dev/null"
+          $DART tool/posix_spawn_repro.dart --drain-stdin --nested < /dev/null || true
