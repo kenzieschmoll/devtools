@@ -7,6 +7,8 @@ on:
   push:
     branches:
       - bisect-macos-pubget
+    paths:
+      - tool/bisect_shas.txt
 
 permissions:
   contents: read

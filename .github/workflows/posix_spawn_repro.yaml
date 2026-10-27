@@ -1,0 +1,44 @@
+# Temporary: minimal repro for the macOS posix_spawn Process hang.
+name: posix-spawn-repro
+
+on:
+  push:
+    branches:
+      - bisect-macos-pubget
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  repro:
+    name: repro ${{ matrix.sha }}
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        sha:
+          - d26bc92262c09e1f60330a643e25b1aebd69a223 # last good
+          - ad22e79b227ce0d138228890ac7d28655a7dccf7 # PR candidate
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - name: Get Dart SDK from Flutter ${{ matrix.sha }}
+        env:
+          SHA: ${{ matrix.sha }}
+        run: |
+          git clone -q https://github.com/flutter/flutter.git ./tool/flutter-sdk
+          git -C tool/flutter-sdk checkout -q "$SHA"
+          ./tool/flutter-sdk/bin/flutter --version
+          ./tool/flutter-sdk/bin/cache/dart-sdk/bin/dart --version
+      - name: Repro cases
+        run: |
+          DART=./tool/flutter-sdk/bin/cache/dart-sdk/bin/dart
+          echo "== 1. control (stdin not drained)"
+          $DART tool/posix_spawn_repro.dart < /dev/null || true
+          echo "== 2. drain stdin from /dev/null"
+          $DART tool/posix_spawn_repro.dart --drain-stdin < /dev/null || true
+          echo "== 3. drain stdin from a pipe"
+          echo hi | $DART tool/posix_spawn_repro.dart --drain-stdin || true
